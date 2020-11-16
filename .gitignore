@@ -25,8 +25,7 @@ htmlcov/
 build
 dist
 MANIFEST
-cylc.egg-info
-cylc_flow.egg-info
+*.egg-info
 .eggs
 
 # virtualenv
