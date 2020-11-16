@@ -1,0 +1,42 @@
+# python bytecode
+*.py[cod]
+__pycache__/
+
+# vim backup files
+*.swp
+
+# emacs backup files
+*~
+
+# vscode
+.vscode
+
+# processed suite definitions
+*.rc.processed
+*.cylc.processed
+
+# coverage
+.coverage
+.coverage*
+coverage.xml
+htmlcov/
+
+# distutils files
+build
+dist
+MANIFEST
+cylc.egg-info
+cylc_flow.egg-info
+.eggs
+
+# virtualenv
+venv
+
+# mypy
+.mypy_cache/
+
+# docker stuffs
+.docker*
+
+# operating system junk
+.DS_Store
