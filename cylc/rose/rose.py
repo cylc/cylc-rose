@@ -19,7 +19,6 @@ configuration files.
 
 import os
 import shlex
-import nest_asyncio
 
 from pathlib import Path
 
