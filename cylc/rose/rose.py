@@ -19,7 +19,6 @@ configuration files.
 
 import os
 import shlex
-import nest_asyncio
 
 from pathlib import Path
 
@@ -102,9 +101,6 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
         from metomi.rose.popen import RosePopener
         from metomi.rose.reporter import Reporter
         from metomi.rose.fs_util import FileSystemUtil
-
-        # Allow nested asyncio usage.
-        nest_asyncio.apply()
 
         # Update config tree with install location
         # NOTE-TO-SELF: value=os.environ["CYLC_SUITE_RUN_DIR"]
