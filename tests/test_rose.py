@@ -93,14 +93,14 @@ def rose_config_template(tmp_path, scope='module'):
 @pytest.mark.parametrize(
     'override, section, exp_ANOTHER_JINJA2_ENV, exp_JINJA2_VAR',
     [
-        (None, 'jinja2', 'Defined in config', '64'),
-        (None, 'empy', 'Defined in config', '64'),
-        ('environment', 'jinja2', 'Optional config picked from env var', '42'),
-        ('CLI', 'jinja2', 'Optional config picked from CLI', '99'),
-        ('environment', 'empy', 'Optional config picked from env var', '42'),
-        ('CLI', 'empy', 'Optional config picked from CLI', '99'),
-        ('override', 'jinja2', 'Variable overridden', '99'),
-        ('override', 'empy', 'Variable overridden', '99')
+        (None, 'jinja2', 'Defined in config', 64),
+        (None, 'empy', 'Defined in config', 64),
+        ('environment', 'jinja2', 'Optional config picked from env var', 42),
+        ('CLI', 'jinja2', 'Optional config picked from CLI', 99),
+        ('environment', 'empy', 'Optional config picked from env var', 42),
+        ('CLI', 'empy', 'Optional config picked from CLI', 99),
+        ('override', 'jinja2', 'Variable overridden', 99),
+        ('override', 'empy', 'Variable overridden', 99)
     ]
 )
 def test_get_rose_vars(
@@ -139,35 +139,75 @@ def test_get_rose_vars(
         rose_config_template(section), options
     )[f"{section}:suite.rc"]
 
-    expected = {
-        'Another_Jinja2_var': f'{exp_ANOTHER_JINJA2_ENV}',
-        'JINJA2_VAR': f'{exp_JINJA2_VAR}'
-    }
-
-    assert result == expected
+    assert result['Another_Jinja2_var'] == exp_ANOTHER_JINJA2_ENV
+    assert result['JINJA2_VAR'] == exp_JINJA2_VAR
 
 
-def test_get_env_section(tmp_path):
+def test_get_rose_vars_env_section(tmp_path):
     with open(tmp_path / 'rose-suite.conf', 'w+') as testfh:
         testfh.write(
             "[env]\n"
             "DOG_TYPE = Spaniel \n"
         )
 
-    assert get_rose_vars(tmp_path)['env'] == {'DOG_TYPE': 'Spaniel'}
+    assert get_rose_vars(tmp_path)['env']['DOG_TYPE'] == 'Spaniel'
+
+
+def test_get_rose_vars_expansions(tmp_path):
+    # Check that variables are expanded correctly.
+    os.environ['XYZ'] = "xyz"
+    (tmp_path / "rose-suite.conf").write_text(
+        "[env]\n"
+        "FOO=a\n"
+        "[jinja2:suite.rc]\n"
+        'BAR="${FOO}b"\n'
+        'LOCAL_ENV="$XYZ"\n'
+        'ESCAPED_ENV="\\$HOME"\n'
+        "INT=42\n"
+        "BOOL=True\n"
+        'LIST=["a", 1, True]\n'
+    )
+    rose_vars = get_rose_vars(tmp_path)
+    assert rose_vars['jinja2:suite.rc']['LOCAL_ENV'] == 'xyz'
+    assert rose_vars['jinja2:suite.rc']['BAR'] == 'ab'
+    assert rose_vars['jinja2:suite.rc']['ESCAPED_ENV'] == '$HOME'
+    assert rose_vars['jinja2:suite.rc']['INT'] == 42
+    assert rose_vars['jinja2:suite.rc']['BOOL'] is True
+    assert rose_vars['jinja2:suite.rc']['LIST'] == ["a", 1, True]
+
+
+def test_get_rose_vars_ROSE_VARS(tmp_path):
+    # Test that rose variables are available in the environment section.
+    (tmp_path / "rose-suite.conf").touch()
+    rose_vars = get_rose_vars(tmp_path)
+    assert list(rose_vars['env'].keys()) == [
+        'ROSE_ORIG_HOST',
+        'CYLC_VERSION',
+        'ROSE_VERSION',
+        'ROSE_SITE'
+    ]
+
+
+def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
+    # Test that ROSE_SUITE_VARIABLES are available to jinja2.
+    (tmp_path / "rose-suite.conf").write_text(
+        "[jinja2:suite.rc]"
+    )
+    rose_vars = get_rose_vars(tmp_path)
+    assert rose_vars == rose_vars['jinja2:suite.rc']['ROSE_SUITE_VARIABLES']
 
 
 @pytest.mark.parametrize(
     'override, section, exp_ANOTHER_JINJA2_ENV, exp_JINJA2_VAR',
     [
-        (None, 'jinja2', 'Defined in config', '64'),
-        (None, 'empy', 'Defined in config', '64'),
-        ('environment', 'jinja2', 'Optional config picked from env var', '42'),
-        ('CLI', 'jinja2', 'Optional config picked from CLI', '99'),
-        ('environment', 'empy', 'Optional config picked from env var', '42'),
-        ('CLI', 'empy', 'Optional config picked from CLI', '99'),
-        ('override', 'jinja2', 'Variable overridden', '99'),
-        ('override', 'empy', 'Variable overridden', '99')
+        (None, 'jinja2', 'Defined in config', 64),
+        (None, 'empy', 'Defined in config', 64),
+        ('environment', 'jinja2', 'Optional config picked from env var', 42),
+        ('CLI', 'jinja2', 'Optional config picked from CLI', 99),
+        ('environment', 'empy', 'Optional config picked from env var', 42),
+        ('CLI', 'empy', 'Optional config picked from CLI', 99),
+        ('override', 'jinja2', 'Variable overridden', 99),
+        ('override', 'empy', 'Variable overridden', 99)
     ]
 )
 def test_rose_config_tree_loader(

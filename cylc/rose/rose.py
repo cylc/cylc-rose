@@ -23,6 +23,11 @@ import shlex
 from pathlib import Path
 
 # from cylc.flow import LOG
+from metomi.rose.config_processor import ConfigProcessError
+from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
+from metomi.rose import __version__ as ROSE_VERSION
+from cylc.flow import __version__ as CYLC_VERSION
+from metomi.rose.resource import ResourceLocator
 
 
 def get_rose_vars(dir_=None, opts=None):
@@ -59,14 +64,44 @@ def get_rose_vars(dir_=None, opts=None):
         'empy:suite.rc': None,
         'jinja2:suite.rc': None
     }
-    # Return None if dir_ does not exist
+    # Return a blank config dict if dir_ does not exist
     if not rose_config_exists(dir_):
         return config
 
-    # Load the config tree
+    # Load the raw config tree
     config_tree = rose_config_tree_loader(dir_, opts)
 
-    # For each of the template language sections...
+    # Process config_tree for environement variables in
+    # env, jinja2 and empy sections.
+    for section in ['env', 'jinja2:suite.rc', 'empy:suite.rc']:
+        # Set standardized rose-variables
+        if section not in config_tree.node.value:
+            if section != 'env':
+                continue
+            else:
+                config_tree.node.set([section])
+        config_tree.node[section].set(
+            ['ROSE_SITE'], ResourceLocator().get_conf().get_value(['site'], '')
+        )
+        config_tree.node[section].set(['ROSE_VERSION'], ROSE_VERSION)
+        config_tree.node[section].set(['CYLC_VERSION'], CYLC_VERSION)
+        config_tree.node[section].set(
+            ['ROSE_ORIG_HOST'], os.environ['HOSTNAME']
+        )
+
+        # Use env_var_process to process variables which may need expanding.
+        for key, node in config_tree.node.value[section].value.items():
+            try:
+                config_tree.node.value[
+                    section
+                ].value[key].value = env_var_process(node.value)
+                if section == 'env':
+                    os.environ[key] = node.value
+            except UnboundEnvironmentVariableError as exc:
+                raise ConfigProcessError(['env', key], node.value, exc)
+
+    # For each of the template language sections extract items to a simple
+    # dict to be returned.
     for section in ['jinja2:suite.rc', 'empy:suite.rc', 'env']:
         if section in config_tree.node.value:
             config[section] = dict(
@@ -75,6 +110,20 @@ def get_rose_vars(dir_=None, opts=None):
                     item in config_tree.node.value[section].walk()
                 ]
             )
+
+    # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
+    # access.
+    from ast import literal_eval
+    for section in ['jinja2:suite.rc', 'empy:suite.rc']:
+        if config[section] is not None:
+            for key, value in config[section].items():
+                try:
+                    config[section][key] = literal_eval(value)
+                except (ValueError, SyntaxError):
+                    # An error at this point most likely results in
+                    # attempting to literal_eval('arbitary string').
+                    pass
+            config[section]['ROSE_SUITE_VARIABLES'] = config
 
     return config
 
