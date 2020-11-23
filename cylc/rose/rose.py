@@ -27,8 +27,7 @@ from metomi.rose.config_processor import ConfigProcessError
 from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.rose.resource import ResourceLocator
-from metomi.rose.host_select import HostSelector
-
+from cylc.flow.hostuserutil import get_host
 
 
 def get_rose_vars(dir_=None, opts=None):
@@ -82,9 +81,7 @@ def get_rose_vars(dir_=None, opts=None):
             ['ROSE_SITE'], ResourceLocator().get_conf().get_value(['site'], '')
         )
         config_tree.node[section].set(['ROSE_VERSION'], ROSE_VERSION)
-        config_tree.node[section].set(
-            ['ROSE_ORIG_HOST'], HostSelector().get_local_host()
-        )
+        config_tree.node[section].set(['ROSE_ORIG_HOST'], get_host())
 
         # Use env_var_process to process variables which may need expanding.
         for key, node in config_tree.node.value[section].value.items():
