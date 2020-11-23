@@ -26,8 +26,9 @@ from pathlib import Path
 from metomi.rose.config_processor import ConfigProcessError
 from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
 from metomi.rose import __version__ as ROSE_VERSION
-from cylc.flow import __version__ as CYLC_VERSION
 from metomi.rose.resource import ResourceLocator
+from metomi.rose.host_select import HostSelector
+
 
 
 def get_rose_vars(dir_=None, opts=None):
@@ -53,9 +54,6 @@ def get_rose_vars(dir_=None, opts=None):
             }
 
     TODO:
-        - Once the CLI for the ``rose suite-run`` replacement command is
-          ready plumb in the the equivelent of
-          ``rose suite-run --opt-conf-key=""``.
         - Consider allowing ``[jinja2:flow.conf]`` as an alias for
           consistency with cylc.
     """
@@ -84,9 +82,8 @@ def get_rose_vars(dir_=None, opts=None):
             ['ROSE_SITE'], ResourceLocator().get_conf().get_value(['site'], '')
         )
         config_tree.node[section].set(['ROSE_VERSION'], ROSE_VERSION)
-        config_tree.node[section].set(['CYLC_VERSION'], CYLC_VERSION)
         config_tree.node[section].set(
-            ['ROSE_ORIG_HOST'], os.environ['HOSTNAME']
+            ['ROSE_ORIG_HOST'], HostSelector().get_local_host()
         )
 
         # Use env_var_process to process variables which may need expanding.
