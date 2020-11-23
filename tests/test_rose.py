@@ -193,7 +193,13 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
         "[jinja2:suite.rc]"
     )
     rose_vars = get_rose_vars(tmp_path)
-    assert rose_vars == rose_vars['jinja2:suite.rc']['ROSE_SUITE_VARIABLES']
+    assert list(rose_vars['jinja2:suite.rc'][
+        'ROSE_SUITE_VARIABLES'
+    ].keys()) == [
+        'ROSE_ORIG_HOST',
+        'ROSE_VERSION',
+        'ROSE_SITE'
+    ]
 
 
 @pytest.mark.parametrize(
