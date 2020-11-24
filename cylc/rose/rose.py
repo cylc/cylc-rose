@@ -118,14 +118,21 @@ def get_rose_vars(dir_=None, opts=None):
                     # attempting to literal_eval('arbitary string').
                     pass
 
+    # Flatten the variables from rose-suite.conf for use in
+    # ROSE_SUITE_VARIABLES
     rose_suite_variables = {}
     for section, section_dict in config.items():
         if isinstance(section_dict, dict):
             rose_suite_variables.update(section_dict)
 
+    # Add ROSE_SUITE_VARIABLES to config of templating engines in use.
     for section in ['jinja2:suite.rc', 'empy:suite.rc']:
         if config[section] is not None:
             config[section]['ROSE_SUITE_VARIABLES'] = rose_suite_variables
+
+    # Add environment vars to the environment.
+    for key, val in config['env'].items():
+        os.environ[key] = val
 
     return config
 
