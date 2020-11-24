@@ -68,7 +68,7 @@ def rose_config_template(tmp_path, scope='module'):
                 "Dontwantthis_ENV_VAR=Jelly\n"
                 f"[{section}:suite.rc]\n"
                 "JINJA2_VAR=64\n"
-                "Another_Jinja2_var=Defined in config\n"
+                'Another_Jinja2_var="Defined in config"\n'
             )
 
         opt_dir = tmp_path / 'opt'
@@ -77,14 +77,14 @@ def rose_config_template(tmp_path, scope='module'):
             testfh.write(
                 f"[{section}:suite.rc]\n"
                 "JINJA2_VAR=42\n"
-                "Another_Jinja2_var=Optional config picked from env var\n"
+                "Another_Jinja2_var='Optional config picked from env var'\n"
             )
 
         with open(opt_dir / 'rose-suite-chips.conf', 'w+') as testfh:
             testfh.write(
                 f"[{section}:suite.rc]\n"
                 "JINJA2_VAR=99\n"
-                "Another_Jinja2_var=Optional config picked from CLI\n"
+                "Another_Jinja2_var='Optional config picked from CLI'\n"
             )
         return tmp_path
     return wrapped_function
@@ -132,7 +132,7 @@ def test_get_rose_vars(
         options = SimpleNamespace()
         options.opt_conf_keys = ["chips"]
         options.defines = [
-            f"[{section}:suite.rc]Another_Jinja2_var=Variable overridden"
+            f"[{section}:suite.rc]Another_Jinja2_var='Variable overridden'"
         ]
 
     result = get_rose_vars(
@@ -205,12 +205,12 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
 @pytest.mark.parametrize(
     'override, section, exp_ANOTHER_JINJA2_ENV, exp_JINJA2_VAR',
     [
-        (None, 'jinja2', 'Defined in config', 64),
-        (None, 'empy', 'Defined in config', 64),
-        ('environment', 'jinja2', 'Optional config picked from env var', 42),
-        ('CLI', 'jinja2', 'Optional config picked from CLI', 99),
-        ('environment', 'empy', 'Optional config picked from env var', 42),
-        ('CLI', 'empy', 'Optional config picked from CLI', 99),
+        (None, 'jinja2', '"Defined in config"', 64),
+        (None, 'empy', '"Defined in config"', 64),
+        ('environment', 'jinja2', "'Optional config picked from env var'", 42),
+        ('CLI', 'jinja2', "'Optional config picked from CLI'", 99),
+        ('environment', 'empy', "'Optional config picked from env var'", 42),
+        ('CLI', 'empy', "'Optional config picked from CLI'", 99),
         ('override', 'jinja2', 'Variable overridden', 99),
         ('override', 'empy', 'Variable overridden', 99)
     ]

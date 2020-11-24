@@ -68,20 +68,23 @@ def get_rose_vars(dir_=None, opts=None):
     # Load the raw config tree
     config_tree = rose_config_tree_loader(dir_, opts)
 
-    # Process config_tree for environement variables in
-    # env, jinja2 and empy sections.
+    # Get Values for standard ROSE variables.
+    rose_orig_host = get_host()
+    rose_site = ResourceLocator().get_conf().get_value(['site'], '')
+
+    # Create env section if it doesn't already exist.
+    if 'env' not in config_tree.node.value:
+        config_tree.node.set(['env'])
+
+    # For each section add standard variables and process variables.
     for section in ['env', 'jinja2:suite.rc', 'empy:suite.rc']:
-        # Set standardized rose-variables
         if section not in config_tree.node.value:
-            if section != 'env':
-                continue
-            else:
-                config_tree.node.set([section])
-        config_tree.node[section].set(
-            ['ROSE_SITE'], ResourceLocator().get_conf().get_value(['site'], '')
-        )
+            continue
+
+        # Add standard ROSE_VARIABLES
+        config_tree.node[section].set(['ROSE_SITE'], rose_site)
         config_tree.node[section].set(['ROSE_VERSION'], ROSE_VERSION)
-        config_tree.node[section].set(['ROSE_ORIG_HOST'], get_host())
+        config_tree.node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
 
         # Use env_var_process to process variables which may need expanding.
         for key, node in config_tree.node.value[section].value.items():
@@ -111,12 +114,11 @@ def get_rose_vars(dir_=None, opts=None):
     for section in ['jinja2:suite.rc', 'empy:suite.rc']:
         if config[section] is not None:
             for key, value in config[section].items():
-                try:
+                # The special variables are already Python variables.
+                if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
                     config[section][key] = literal_eval(value)
-                except (ValueError, SyntaxError):
-                    # An error at this point most likely results in
-                    # attempting to literal_eval('arbitary string').
-                    pass
+                else:
+                    config[section][key] = value
 
     # Flatten the variables from rose-suite.conf for use in
     # ROSE_SUITE_VARIABLES
