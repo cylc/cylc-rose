@@ -68,7 +68,7 @@ def get_rose_vars(dir_=None, opts=None):
     # Load the raw config tree
     config_tree = rose_config_tree_loader(dir_, opts)
 
-    # Process config_tree for environement variables in
+    # Process config_tree for environment variables in
     # env, jinja2 and empy sections.
     for section in ['env', 'jinja2:suite.rc', 'empy:suite.rc']:
         # Set standardized rose-variables
