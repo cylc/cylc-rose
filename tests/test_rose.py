@@ -202,6 +202,17 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
     ]
 
 
+def test_get_rose_vars_fail_if_empy_AND_jinja2(tmp_path):
+    # get_rose_vars raises error if both empy and jinja2 sections defined.
+    (tmp_path / 'rose-suite.conf').write_text(
+        "[jinja2:suite.rc]\n"
+        "[empy:suite.rc]\n"
+    )
+    from cylc.rose.rose import MultipleTemplatingEnginesError
+    with pytest.raises(MultipleTemplatingEnginesError):
+        get_rose_vars(tmp_path)
+
+
 @pytest.mark.parametrize(
     'override, section, exp_ANOTHER_JINJA2_ENV, exp_JINJA2_VAR',
     [
