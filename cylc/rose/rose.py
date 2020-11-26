@@ -119,25 +119,30 @@ def get_rose_vars(dir_=None, opts=None):
 
     # For each of the template language sections extract items to a simple
     # dict to be returned.
-    for section in [templating, 'env']:
-        if section in config_tree.node.value:
-            config[section] = dict(
-                [
-                    (item[0][1], item[1].value) for
-                    item in config_tree.node.value[section].walk()
-                ]
-            )
-
+    if 'env' in config_tree.node.value:
+        config['env'] = dict(
+            [
+                (item[0][1], item[1].value) for
+                item in config_tree.node.value['env'].walk()
+            ]
+        )
+    if templating in config_tree.node.value:
+        config['template variables'] = dict(
+            [
+                (item[0][1], item[1].value) for
+                item in config_tree.node.value[templating].walk()
+            ]
+        )
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
     # access.
     from ast import literal_eval
     if templating is not None:
-        for key, value in config[templating].items():
+        for key, value in config['template variables'].items():
             # The special variables are already Python variables.
             if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
-                config[templating][key] = literal_eval(value)
+                config['template variables'][key] = literal_eval(value)
             else:
-                config[templating][key] = value
+                config['template variables'][key] = value
 
     # Flatten the variables from rose-suite.conf for use in
     # ROSE_SUITE_VARIABLES
@@ -148,12 +153,12 @@ def get_rose_vars(dir_=None, opts=None):
 
     # Add ROSE_SUITE_VARIABLES to config of templating engines in use.
     if templating is not None:
-        config[templating]['ROSE_SUITE_VARIABLES'] = rose_suite_variables
+        config['template variables'][
+            'ROSE_SUITE_VARIABLES'] = rose_suite_variables
 
     # Add environment vars to the environment.
     for key, val in config['env'].items():
         os.environ[key] = val
-
     return config
 
 
