@@ -20,6 +20,7 @@ configuration files.
 import os
 import shlex
 
+from ast import literal_eval
 from pathlib import Path
 
 # from cylc.flow import LOG
@@ -61,8 +62,8 @@ def get_rose_vars(dir_=None, opts=None):
           consistency with cylc.
     """
     config = {
-        'env': None,
-        'template variables': None,
+        'env': {},
+        'template variables': {},
         'templating detected': None
     }
     # Return a blank config dict if dir_ does not exist
@@ -121,36 +122,27 @@ def get_rose_vars(dir_=None, opts=None):
     # dict to be returned.
     if 'env' in config_tree.node.value:
         config['env'] = {
-            item[0][1]: item[1].value)
-            for item in config_tree.node.value['env'].walk()
+            item[0][1]: item[1].value for item in
+            config_tree.node.value['env'].walk()
         }
-    if templating in config_tree.node.value:
-        config['template variables'] = dict(
-            [
-                (item[0][1], item[1].value) for
-                item in config_tree.node.value[templating].walk()
-            ]
-        )
+
+    if f"{templating}:suite.rc" in config_tree.node.value:
+        config['template variables'] = {
+            item[0][1]: item[1].value for item in
+            config_tree.node.value[f"{templating}:suite.rc"].walk()
+        }
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
     # access.
-    from ast import literal_eval
     if templating is not None:
         for key, value in config['template variables'].items():
             # The special variables are already Python variables.
             if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
                 config['template variables'][key] = literal_eval(value)
 
-    # Flatten the variables from rose-suite.conf for use in
-    # ROSE_SUITE_VARIABLES
-    rose_suite_variables = {}
-    for section, section_dict in config.items():
-        if isinstance(section_dict, dict):
-            rose_suite_variables.update(section_dict)
-
     # Add ROSE_SUITE_VARIABLES to config of templating engines in use.
     if templating is not None:
         config['template variables'][
-            'ROSE_SUITE_VARIABLES'] = rose_suite_variables
+            'ROSE_SUITE_VARIABLES'] = config['template variables']
 
     # Add environment vars to the environment.
     for key, val in config['env'].items():
