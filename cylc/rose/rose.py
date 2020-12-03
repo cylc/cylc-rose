@@ -82,9 +82,9 @@ def get_rose_vars(dir_=None, opts=None):
             "configuration file."
         )
     elif 'jinja2:suite.rc' in config_tree.node.value:
-        templating = 'jinja2:suite.rc'
+        templating = 'jinja2'
     elif 'empy:suite.rc' in config_tree.node.value:
-        templating = 'empy:suite.rc'
+        templating = 'empy'
     if templating:
         config['templating detected'] = templating
 
@@ -97,7 +97,7 @@ def get_rose_vars(dir_=None, opts=None):
         config_tree.node.set(['env'])
 
     # For each section add standard variables and process variables.
-    for section in ['env', templating]:
+    for section in ['env', f'{templating}:suite.rc']:
         if section not in config_tree.node.value:
             continue
 
@@ -120,12 +120,10 @@ def get_rose_vars(dir_=None, opts=None):
     # For each of the template language sections extract items to a simple
     # dict to be returned.
     if 'env' in config_tree.node.value:
-        config['env'] = dict(
-            [
-                (item[0][1], item[1].value) for
-                item in config_tree.node.value['env'].walk()
-            ]
-        )
+        config['env'] = {
+            item[0][1]: item[1].value)
+            for item in config_tree.node.value['env'].walk()
+        }
     if templating in config_tree.node.value:
         config['template variables'] = dict(
             [
@@ -141,8 +139,6 @@ def get_rose_vars(dir_=None, opts=None):
             # The special variables are already Python variables.
             if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
                 config['template variables'][key] = literal_eval(value)
-            else:
-                config['template variables'][key] = value
 
     # Flatten the variables from rose-suite.conf for use in
     # ROSE_SUITE_VARIABLES
