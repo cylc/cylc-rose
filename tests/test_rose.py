@@ -137,7 +137,7 @@ def test_get_rose_vars(
 
     result = get_rose_vars(
         rose_config_template(section), options
-    )['template variables']
+    )['template_variables']
 
     assert result['Another_Jinja2_var'] == exp_ANOTHER_JINJA2_ENV
     assert result['JINJA2_VAR'] == exp_JINJA2_VAR
@@ -168,12 +168,12 @@ def test_get_rose_vars_expansions(tmp_path):
         'LIST=["a", 1, True]\n'
     )
     rose_vars = get_rose_vars(tmp_path)
-    assert rose_vars['template variables']['LOCAL_ENV'] == 'xyz'
-    assert rose_vars['template variables']['BAR'] == 'ab'
-    assert rose_vars['template variables']['ESCAPED_ENV'] == '$HOME'
-    assert rose_vars['template variables']['INT'] == 42
-    assert rose_vars['template variables']['BOOL'] is True
-    assert rose_vars['template variables']['LIST'] == ["a", 1, True]
+    assert rose_vars['template_variables']['LOCAL_ENV'] == 'xyz'
+    assert rose_vars['template_variables']['BAR'] == 'ab'
+    assert rose_vars['template_variables']['ESCAPED_ENV'] == '$HOME'
+    assert rose_vars['template_variables']['INT'] == 42
+    assert rose_vars['template_variables']['BOOL'] is True
+    assert rose_vars['template_variables']['LIST'] == ["a", 1, True]
 
 
 def test_get_rose_vars_ROSE_VARS(tmp_path):
@@ -193,7 +193,7 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
         "[jinja2:suite.rc]"
     )
     rose_vars = get_rose_vars(tmp_path)
-    assert list(rose_vars['template variables'][
+    assert list(rose_vars['template_variables'][
         'ROSE_SUITE_VARIABLES'
     ].keys()) == [
         'ROSE_ORIG_HOST',

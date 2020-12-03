@@ -63,8 +63,8 @@ def get_rose_vars(dir_=None, opts=None):
     """
     config = {
         'env': {},
-        'template variables': {},
-        'templating detected': None
+        'template_variables': {},
+        'templating_detected': None
     }
     # Return a blank config dict if dir_ does not exist
     if not rose_config_exists(dir_):
@@ -87,7 +87,7 @@ def get_rose_vars(dir_=None, opts=None):
     elif 'empy:suite.rc' in config_tree.node.value:
         templating = 'empy'
     if templating:
-        config['templating detected'] = templating
+        config['templating_detected'] = templating
 
     # Get Values for standard ROSE variables.
     rose_orig_host = get_host()
@@ -127,22 +127,22 @@ def get_rose_vars(dir_=None, opts=None):
         }
 
     if f"{templating}:suite.rc" in config_tree.node.value:
-        config['template variables'] = {
+        config['template_variables'] = {
             item[0][1]: item[1].value for item in
             config_tree.node.value[f"{templating}:suite.rc"].walk()
         }
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
     # access.
     if templating is not None:
-        for key, value in config['template variables'].items():
+        for key, value in config['template_variables'].items():
             # The special variables are already Python variables.
             if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
-                config['template variables'][key] = literal_eval(value)
+                config['template_variables'][key] = literal_eval(value)
 
     # Add ROSE_SUITE_VARIABLES to config of templating engines in use.
     if templating is not None:
-        config['template variables'][
-            'ROSE_SUITE_VARIABLES'] = config['template variables']
+        config['template_variables'][
+            'ROSE_SUITE_VARIABLES'] = config['template_variables']
 
     # Add environment vars to the environment.
     for key, val in config['env'].items():
