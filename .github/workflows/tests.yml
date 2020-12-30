@@ -32,4 +32,8 @@ jobs:
 
       - name: Pytests
         run: |
-          pytest
+          # note: not configuring this via a pytest.ini file
+          # due to strange behaviour when using --doctest-modules
+          # in the tests/ directory
+          pytest cylc/ --doctest-modules
+          pytest tests/
