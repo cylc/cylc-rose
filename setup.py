@@ -28,7 +28,19 @@ INSTALL_REQUIRES = [
 ]
 EXTRAS_REQUIRE = {
 }
-EXTRAS_REQUIRE['all'] = list({y for x in EXTRAS_REQUIRE.values() for y in x})
+TESTS_REQUIRE = [
+    'coverage>=5.0.0',
+    'flake8',
+    'pytest',
+    'pytest_cov',
+]
+EXTRAS_REQUIRE['all'] = list(
+    {
+        y
+        for x in EXTRAS_REQUIRE.values()
+        for y in x
+    }
+) + TESTS_REQUIRE
 
 
 setup(
@@ -38,5 +50,6 @@ setup(
     long_description_content_type="text/markdown",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRE,
+    tests_require=TESTS_REQUIRE,
     packages=find_namespace_packages(include=["cylc.*"]),
 )

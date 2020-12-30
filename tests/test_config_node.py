@@ -66,8 +66,11 @@ def test_get_rose_vars_from_config_node__unbound_env_var(caplog):
 @pytest.mark.parametrize(
     'rose_conf, cli_conf, expect',
     [
+        ({}, {}, '(cylc-install)'),
         # It is not given rose_node with 'opts': adds (cylc-install) to opts:
         ({}, {'opts': ''}, '(cylc-install)'),
+        # opts ignored in the config
+        ({'!opts': ''}, {}, '(cylc-install)'),
         # It is given empty 'opts' rose_node - adds (cylc-install) to opts:
         ({'opts': ''}, {'opts': ''}, '(cylc-install)'),
         # It add (cylc-install) to existing rose_conf keys:
@@ -81,7 +84,11 @@ def test_get_rose_vars_from_config_node__unbound_env_var(caplog):
 def test_add_cylc_install_to_rose_conf_node_opts(rose_conf, cli_conf, expect):
     rose_node = ConfigNode()
     for key, value in rose_conf.items():
-        rose_node.set([key], value)
+        state = ''
+        if key.startswith('!'):
+            key = key[1:]
+            state = '!'
+        rose_node.set([key], value, state=state)
     cli_node = ConfigNode()
     for key, value in cli_conf.items():
         cli_node.set([key], value)
@@ -90,8 +97,14 @@ def test_add_cylc_install_to_rose_conf_node_opts(rose_conf, cli_conf, expect):
         rose_node, cli_node)['opts']
 
     assert result.value == expect
+
+    expect_opt = ''
+    if 'opts' in cli_conf:
+        expect_opt = cli_conf['opts']
+    expect_opt += ' (cylc-install)'
+
     assert result.comments == [(
-        f' Config Options \'{cli_conf["opts"]} (cylc-install)\' from CLI '
+        f' Config Options \'{expect_opt}\' from CLI '
         'appended to options '
         'already in `rose-suite.conf`.'
     )]

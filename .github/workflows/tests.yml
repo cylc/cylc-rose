@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 2  # required by codecov
 
       - name: Configure Python
         uses: actions/setup-python@v1
@@ -20,21 +22,24 @@ jobs:
 
       - name: Install
         run: |
-          pip install flake8
-          pip install pytest
-          pip install empy
-          pip install git+https://github.com/metomi/rose@master
-          pip install git+https://github.com/cylc/cylc-flow@master
-          pip install --no-deps ."[all]"
+          pip install \
+            'cylc-flow[all] @ git+https://github.com/cylc/cylc-flow@master' \
+            'metomi-rose[all] @ git+https://github.com/metomi/rose@master'
+          pip install ."[all]"
       
       - name: Style
         run: |
           flake8
 
-      - name: Pytests
+      - name: Test
         run: |
           # note: not configuring this via a pytest.ini file
           # due to strange behaviour when using --doctest-modules
           # in the tests/ directory
-          pytest cylc/ --doctest-modules
-          pytest tests/
+          pytest --cov --cov-append --doctest-modules cylc/
+          pytest --cov --cov-append tests/
+
+      - name: Coverage
+        run: |
+          coverage report
+          bash <(curl -s https://codecov.io/bash)
