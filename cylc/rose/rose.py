@@ -20,7 +20,6 @@ configuration files.
 import os
 import shlex
 
-from ast import literal_eval
 from pathlib import Path
 
 # from cylc.flow import LOG
@@ -29,6 +28,8 @@ from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.rose.resource import ResourceLocator
 from cylc.flow.hostuserutil import get_host
+
+from cylc.rose.jinja2_parser import Parser
 
 
 class MultipleTemplatingEnginesError(Exception):
@@ -134,10 +135,11 @@ def get_rose_vars(dir_=None, opts=None):
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
     # access.
     if templating is not None:
+        parser = Parser()
         for key, value in config['template_variables'].items():
             # The special variables are already Python variables.
             if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
-                config['template_variables'][key] = literal_eval(value)
+                config['template_variables'][key] = parser.literal_eval(value)
 
     # Add ROSE_SUITE_VARIABLES to config of templating engines in use.
     if templating is not None:
