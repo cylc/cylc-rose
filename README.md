@@ -79,7 +79,7 @@ $ pip install -e cylc-rose[all]
 
 [![License](https://img.shields.io/github/license/cylc/cylc-flow.svg?color=lightgrey)](https://github.com/cylc/cylc-flow/blob/master/COPYING)
 
-Copyright (C) 2008-<span actions:bind='current-year'>2020</span> NIWA &
+Copyright (C) 2008-<span actions:bind='current-year'>2021</span> NIWA &
 British Crown (Met Office) & Contributors.
 
 Cylc is free software: you can redistribute it and/or modify it under the terms
