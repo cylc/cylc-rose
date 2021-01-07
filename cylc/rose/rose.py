@@ -36,18 +36,22 @@ class MultipleTemplatingEnginesError(Exception):
     ...
 
 
-def get_rose_vars(dir_=None, opts=None):
-    """Load Jinja2 Vars from rose-suite.conf in dir_
+def get_rose_vars_from_config_tree(dir_=None, opts=None):
+    """Load template variables from Rose suite configuration.
+
+    This loads the Rose suite configuration tree from the filesystem
+    using the shell environment.
 
     Args:
-        dir_(string or Pathlib.path object):
-            Search for a ``rose-suite.conf`` file in this location.
+        dir_(string | pathlib.Path):
+            Path to the Rose suite configuration
+            (the directory containing the ``rose-suite.conf`` file).
         opts:
             Some sort of options object or string - To be used to allow CLI
             specification of optional configuaration.
 
     Returns:
-        A dictionary of sections of rose-suite.conf.
+        dict - A dictionary of sections of rose-suite.conf.
         For each section either a dictionary or None is returned.
         E.g.
             {
@@ -61,6 +65,7 @@ def get_rose_vars(dir_=None, opts=None):
     TODO:
         - Consider allowing ``[jinja2:flow.conf]`` as an alias for
           consistency with cylc.
+
     """
     config = {
         'env': {},
@@ -74,18 +79,51 @@ def get_rose_vars(dir_=None, opts=None):
     # Load the raw config tree
     config_tree = rose_config_tree_loader(dir_, opts)
 
+    # Extract templatevars from the configuration
+    get_rose_vars_from_config_node(
+        config,
+        config_tree.node,
+        os.environ
+    )
+
+    # Export environment vars
+    for key, val in config['env'].items():
+        os.environ[key] = val
+
+    return config
+
+
+# pre_configure entry point
+get_rose_vars = get_rose_vars_from_config_tree
+
+
+def get_rose_vars_from_config_node(config, config_node, environ):
+    """Load template variables from a Rose config node.
+
+    This uses only the provided config node and environment variables
+    (i.e. no system interaction).
+
+    Args:
+        config (dict):
+            Object which will be populated with the results.
+        config_node (metomi.rose.config.ConfigNode):
+            Configuration node representing the Rose suite configuration.
+        environ (dict):
+            Dictionary of environment variables
+
+    """
     templating = None
     if (
-        'jinja2:suite.rc' in config_tree.node.value and
-        'empy:suite.rc' in config_tree.node.value
+        'jinja2:suite.rc' in config_node.value and
+        'empy:suite.rc' in config_node.value
     ):
         raise MultipleTemplatingEnginesError(
             "You should not define both jinja2 and empy in the same "
             "configuration file."
         )
-    elif 'jinja2:suite.rc' in config_tree.node.value:
+    elif 'jinja2:suite.rc' in config_node.value:
         templating = 'jinja2'
-    elif 'empy:suite.rc' in config_tree.node.value:
+    elif 'empy:suite.rc' in config_node.value:
         templating = 'empy'
     if templating:
         config['templating_detected'] = templating
@@ -95,42 +133,45 @@ def get_rose_vars(dir_=None, opts=None):
     rose_site = ResourceLocator().get_conf().get_value(['site'], '')
 
     # Create env section if it doesn't already exist.
-    if 'env' not in config_tree.node.value:
-        config_tree.node.set(['env'])
+    if 'env' not in config_node.value:
+        config_node.set(['env'])
 
     # For each section add standard variables and process variables.
     for section in ['env', f'{templating}:suite.rc']:
-        if section not in config_tree.node.value:
+        if section not in config_node.value:
             continue
 
         # Add standard ROSE_VARIABLES
-        config_tree.node[section].set(['ROSE_SITE'], rose_site)
-        config_tree.node[section].set(['ROSE_VERSION'], ROSE_VERSION)
-        config_tree.node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
+        config_node[section].set(['ROSE_SITE'], rose_site)
+        config_node[section].set(['ROSE_VERSION'], ROSE_VERSION)
+        config_node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
 
         # Use env_var_process to process variables which may need expanding.
-        for key, node in config_tree.node.value[section].value.items():
+        for key, node in config_node.value[section].value.items():
             try:
-                config_tree.node.value[
+                config_node.value[
                     section
-                ].value[key].value = env_var_process(node.value)
+                ].value[key].value = env_var_process(
+                    node.value,
+                    environ=environ
+                )
                 if section == 'env':
-                    os.environ[key] = node.value
+                    environ[key] = node.value
             except UnboundEnvironmentVariableError as exc:
                 raise ConfigProcessError(['env', key], node.value, exc)
 
     # For each of the template language sections extract items to a simple
     # dict to be returned.
-    if 'env' in config_tree.node.value:
+    if 'env' in config_node.value:
         config['env'] = {
             item[0][1]: item[1].value for item in
-            config_tree.node.value['env'].walk()
+            config_node.value['env'].walk()
         }
 
-    if f"{templating}:suite.rc" in config_tree.node.value:
+    if f"{templating}:suite.rc" in config_node.value:
         config['template_variables'] = {
             item[0][1]: item[1].value for item in
-            config_tree.node.value[f"{templating}:suite.rc"].walk()
+            config_node.value[f"{templating}:suite.rc"].walk()
         }
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
     # access.
@@ -139,17 +180,23 @@ def get_rose_vars(dir_=None, opts=None):
         for key, value in config['template_variables'].items():
             # The special variables are already Python variables.
             if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
-                config['template_variables'][key] = parser.literal_eval(value)
+                try:
+                    config['template_variables'][key] = (
+                        parser.literal_eval(value)
+                    )
+                except Exception:
+                    raise ConfigProcessError(
+                        [f'{templating}:suite.rc', key],
+                        value,
+                        f'Invalid template variable: {value}'
+                        '\nMust be a valid Python or Jinja2 literal'
+                        ' (note strings "must be quoted").'
+                    ) from None
 
     # Add ROSE_SUITE_VARIABLES to config of templating engines in use.
     if templating is not None:
         config['template_variables'][
             'ROSE_SUITE_VARIABLES'] = config['template_variables']
-
-    # Add environment vars to the environment.
-    for key, val in config['env'].items():
-        os.environ[key] = val
-    return config
 
 
 def rose_fileinstall(dir_=None, opts=None, dest_root=None):

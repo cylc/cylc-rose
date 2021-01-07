@@ -49,7 +49,8 @@ class Parser(NativeEnvironment):
 
         Parses and returns valid literals.
 
-        Raises exceptions for expressions.
+        Raises:
+            ValueError: When it encounters expressions.
 
         Examples:
             >>> parser = Parser()
@@ -88,15 +89,15 @@ class Parser(NativeEnvironment):
             # invalid examples
             >>> parser.literal_eval('1 + 1')
             Traceback (most recent call last):
-            Exception: Invalid literal: 1 + 1
+            ValueError: Invalid literal: 1 + 1
             <class 'jinja2.nodes.Add'>
             >>> parser.literal_eval('range(5)')
             Traceback (most recent call last):
-            Exception: Invalid literal: range(5)
+            ValueError: Invalid literal: range(5)
             <class 'jinja2.nodes.Call'>
             >>> parser.literal_eval('1 if True else 0')
             Traceback (most recent call last):
-            Exception: Invalid literal: 1 if True else 0
+            ValueError: Invalid literal: 1 if True else 0
             <class 'jinja2.nodes.CondExpr'>
 
             # quirks
@@ -118,7 +119,7 @@ class Parser(NativeEnvironment):
         while stack:
             node = stack.pop()
             if not isinstance(node, self._LITERAL_NODES):
-                raise Exception(
+                raise ValueError(
                     f'Invalid literal: {value}'
                     f'\n{type(node)}'
                 )

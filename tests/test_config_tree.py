@@ -13,6 +13,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Tests the plugin with Rose suite configurations on the filesystem.
+
+Warning:
+   These tests share the same os.environ so may interact.
+
+"""
 
 import os
 import pytest
@@ -20,8 +26,8 @@ import pytest
 from types import SimpleNamespace
 
 from cylc.rose.rose import (
+    get_rose_vars_from_config_tree,
     rose_config_exists,
-    get_rose_vars,
     rose_config_tree_loader,
     rose_fileinstall
 )
@@ -103,7 +109,7 @@ def rose_config_template(tmp_path, scope='module'):
         ('override', 'empy', 'Variable overridden', 99)
     ]
 )
-def test_get_rose_vars(
+def test_get_rose_vars_from_config_tree(
     rose_config_template,
     override,
     section,
@@ -135,7 +141,7 @@ def test_get_rose_vars(
             f"[{section}:suite.rc]Another_Jinja2_var='Variable overridden'"
         ]
 
-    result = get_rose_vars(
+    result = get_rose_vars_from_config_tree(
         rose_config_template(section), options
     )['template_variables']
 
@@ -143,18 +149,20 @@ def test_get_rose_vars(
     assert result['JINJA2_VAR'] == exp_JINJA2_VAR
 
 
-def test_get_rose_vars_env_section(tmp_path):
+def test_get_rose_vars_from_config_tree_env_section(tmp_path):
     with open(tmp_path / 'rose-suite.conf', 'w+') as testfh:
         testfh.write(
             "[env]\n"
             "DOG_TYPE = Spaniel \n"
         )
 
-    assert get_rose_vars(tmp_path)['env']['DOG_TYPE'] == 'Spaniel'
+    assert (
+        get_rose_vars_from_config_tree(tmp_path)['env']['DOG_TYPE']
+    ) == 'Spaniel'
 
 
-def test_get_rose_vars_expansions(tmp_path):
-    # Check that variables are expanded correctly.
+def test_get_rose_vars_from_config_tree_expansions(tmp_path):
+    """Check that variables are expanded correctly."""
     os.environ['XYZ'] = "xyz"
     (tmp_path / "rose-suite.conf").write_text(
         "[env]\n"
@@ -167,7 +175,7 @@ def test_get_rose_vars_expansions(tmp_path):
         "BOOL=True\n"
         'LIST=["a", 1, True]\n'
     )
-    rose_vars = get_rose_vars(tmp_path)
+    rose_vars = get_rose_vars_from_config_tree(tmp_path)
     assert rose_vars['template_variables']['LOCAL_ENV'] == 'xyz'
     assert rose_vars['template_variables']['BAR'] == 'ab'
     assert rose_vars['template_variables']['ESCAPED_ENV'] == '$HOME'
@@ -176,10 +184,10 @@ def test_get_rose_vars_expansions(tmp_path):
     assert rose_vars['template_variables']['LIST'] == ["a", 1, True]
 
 
-def test_get_rose_vars_ROSE_VARS(tmp_path):
-    # Test that rose variables are available in the environment section.
+def test_get_rose_vars_from_config_tree_ROSE_VARS(tmp_path):
+    """Test that rose variables are available in the environment section.."""
     (tmp_path / "rose-suite.conf").touch()
-    rose_vars = get_rose_vars(tmp_path)
+    rose_vars = get_rose_vars_from_config_tree(tmp_path)
     assert list(rose_vars['env'].keys()) == [
         'ROSE_ORIG_HOST',
         'ROSE_VERSION',
@@ -187,12 +195,12 @@ def test_get_rose_vars_ROSE_VARS(tmp_path):
     ]
 
 
-def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
-    # Test that ROSE_SUITE_VARIABLES are available to jinja2.
+def test_get_rose_vars_from_config_tree_jinja2_ROSE_VARS(tmp_path):
+    """Test that ROSE_SUITE_VARIABLES are available to jinja2."""
     (tmp_path / "rose-suite.conf").write_text(
         "[jinja2:suite.rc]"
     )
-    rose_vars = get_rose_vars(tmp_path)
+    rose_vars = get_rose_vars_from_config_tree(tmp_path)
     assert list(rose_vars['template_variables'][
         'ROSE_SUITE_VARIABLES'
     ].keys()) == [
@@ -203,15 +211,15 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
     ]
 
 
-def test_get_rose_vars_fail_if_empy_AND_jinja2(tmp_path):
-    # get_rose_vars raises error if both empy and jinja2 sections defined.
+def test_get_rose_vars_from_config_tree_fail_if_empy_AND_jinja2(tmp_path):
+    """It should raise an error if both empy and jinja2 sections defined."""
     (tmp_path / 'rose-suite.conf').write_text(
         "[jinja2:suite.rc]\n"
         "[empy:suite.rc]\n"
     )
     from cylc.rose.rose import MultipleTemplatingEnginesError
     with pytest.raises(MultipleTemplatingEnginesError):
-        get_rose_vars(tmp_path)
+        get_rose_vars_from_config_tree(tmp_path)
 
 
 @pytest.mark.parametrize(
@@ -304,9 +312,7 @@ def rose_fileinstall_config_template(tmp_path, scope='module'):
 
 
 def test_rose_fileinstall(tmp_path):
-    """Check that we can install files specified in a rose-suite.conf.
-
-    """
+    """Check that we can install files specified in a rose-suite.conf."""
     othersource_dir = tmp_path / "sources"
     workflow_dir = tmp_path / "workflow"
     destination_dir = tmp_path / "destination"
