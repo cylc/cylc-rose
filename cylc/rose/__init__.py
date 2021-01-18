@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # THIS FILE IS PART OF THE CYLC SUITE ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
@@ -14,29 +13,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Cylc Rose is the bridge between Rose suite configurations and Cylc workflows.
 
-from setuptools import setup, find_namespace_packages
-
-
-with open("README.md", "r") as fh:
-    long_description = fh.read()
-
-
-INSTALL_REQUIRES = [
-    'metomi-rose>=2.0a1',
-    'cylc-flow>=8.0a3.dev',
-]
-EXTRAS_REQUIRE = {
-}
-EXTRAS_REQUIRE['all'] = list({y for x in EXTRAS_REQUIRE.values() for y in x})
-
-
-setup(
-    name='cylc-rose',
-    version='1.0.0',
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    install_requires=INSTALL_REQUIRES,
-    extras_require=EXTRAS_REQUIRE,
-    packages=find_namespace_packages(include=["cylc.*"]),
-)
+Cylc Rose is a replacement for the ``rose suite-run`` command (present in Rose
+versions 2019.01 and earlier). It reads the ``rose-suite.conf`` file and
+performs the required actions.
+"""
