@@ -346,9 +346,12 @@ def add_cylc_install_to_rose_conf_node_opts(rose_conf, cli_conf):
         f' Config Options \'{cli_opts} (cylc-install)\' from CLI appended to '
         'options already in `rose-suite.conf`.'
     )]
-    rose_conf_opts_str = ' '.join(
-        f'{rose_conf["opts"].value} {cli_opts} (cylc-install)'.split()
-    )
+    if rose_conf['opts'].state in ['!', '!!']:
+        rose_conf_opts_str = cli_opts.split() + ['(cylc-install)']
+    else:
+        rose_conf_opts_str = ' '.join(
+            f'{rose_conf["opts"].value} {cli_opts} (cylc-install)'.split()
+        )
     rose_conf['opts'].value = rose_conf_opts_str
     rose_conf['opts'].state = ''
     return rose_conf
