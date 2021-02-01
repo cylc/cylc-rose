@@ -118,8 +118,6 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
         )
 
         # Artificially set rose to verbose.
-        # TODO - either use Cylc Log as event handler, or get Cylc Verbosity
-        # settings to pass to Rose Reporter.
         event_handler = Reporter(3)
         fs_util = FileSystemUtil(event_handler)
         popen = RosePopener(event_handler)
