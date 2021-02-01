@@ -103,7 +103,7 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
 
     # Load the config tree
     config_tree = rose_config_tree_loader(dir_, opts)
-    if any(['file' in i for i in config_tree.node.value]):
+    if any(i.startswith('file') for i in config_tree.node.value):
 
         # Carry out imports.
         from metomi.rose.config_processor import ConfigProcessorsManager
