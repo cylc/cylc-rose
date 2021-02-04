@@ -199,3 +199,39 @@ def test_functional_record_cylc_install_options(
                 loader.load(str(reference)),
                 no_ignore=False
             )
+
+
+def test_functional_rose_database_dumped_correctly(tmp_path):
+    srcdir = (tmp_path / 'srcdir')
+    destdir = (tmp_path / 'destdir')
+    for dir_ in [srcdir, destdir]:
+        dir_.mkdir()
+    (srcdir / 'nicest_work_of.nature').touch()
+    (srcdir / 'rose-suite.conf').write_text(
+        "[file:Gnu]\nsrc=nicest_work_of.nature\n"
+    )
+    (srcdir / 'cylc.flow').touch()
+    rose_fileinstall(dir_=srcdir, dest_root=destdir)
+
+    assert (destdir / '.rose-config_processors-file.db').is_file()
+
+
+@pytest.mark.parametrize(
+    'input_, err',
+    [
+        # Plausible but non-existant path:
+        ('/this/path/goes/nowhere', FileNotFoundError),
+        # Left None, default value for dest_root:
+        (None, TypeError)
+    ]
+)
+def test_functional_rose_database_dumped_errors(tmp_path, input_, err):
+    srcdir = (tmp_path / 'srcdir')
+    srcdir.mkdir()
+    (srcdir / 'nicest_work_of.nature').touch()
+    (srcdir / 'rose-suite.conf').write_text(
+        "[file:Gnu]\nsrc=nicest_work_of.nature\n"
+    )
+    (srcdir / 'cylc.flow').touch()
+    with pytest.raises(err):
+        rose_fileinstall(dir_=srcdir, dest_root=input_)
