@@ -131,6 +131,7 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
             # Process files
             config_pm = ConfigProcessorsManager(event_handler, popen, fs_util)
             config_pm(config_tree, "file")
+        finally:
             os.chdir(startpoint)
 
     return True
