@@ -1,4 +1,4 @@
-# THIS FILE IS PART OF THE CYLC SUITE ENGINE.
+# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC SUITE ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -22,8 +22,9 @@ from metomi.rose.config import (
 )
 from metomi.rose.config_processor import ConfigProcessError
 
-from cylc.rose.rose import (
+from cylc.rose.utilities import (
     get_rose_vars_from_config_node,
+    add_cylc_install_to_rose_conf_node_opts
 )
 
 
@@ -47,3 +48,49 @@ def test_invalid_templatevar():
     node.set(['jinja2:suite.rc', 'X'], 'Y')
     with pytest.raises(ConfigProcessError):
         get_rose_vars_from_config_node(ret, node, {})
+
+
+def test_get_rose_vars_from_config_node__unbound_env_var(caplog):
+    """It should fail if variable unset in environment.
+    """
+    ret = {}
+    node = ConfigNode()
+    node.set(['env', 'X'], '${MYVAR}')
+    with pytest.raises(ConfigProcessError) as exc:
+        get_rose_vars_from_config_node(ret, node, {})
+    assert exc.match('env=X: MYVAR: unbound variable')
+
+
+@pytest.mark.parametrize(
+    'rose_conf, cli_conf, expect',
+    [
+        # It is not given rose_node with 'opts': adds (cylc-install) to opts:
+        ({}, {'opts': ''}, '(cylc-install)'),
+        # It is given empty 'opts' rose_node - adds (cylc-install) to opts:
+        ({'opts': ''}, {'opts': ''}, '(cylc-install)'),
+        # It add (cylc-install) to existing rose_conf keys:
+        ({'opts': 'foo bar'}, {'opts': ''}, 'foo bar (cylc-install)'),
+        # It add (cylc-install) to CLI set keys:
+        ({'opts': ''}, {'opts': 'baz qux'}, 'baz qux (cylc-install)'),
+        # It add (cylc-install) to existing rose_conf keys & CLI set keys:
+        ({'opts': 'a b'}, {'opts': 'c d'}, 'a b c d (cylc-install)'),
+    ]
+)
+def test_add_cylc_install_to_rose_conf_node_opts(rose_conf, cli_conf, expect):
+    rose_node = ConfigNode()
+    for key, value in rose_conf.items():
+        rose_node.set([key], value)
+    cli_node = ConfigNode()
+    for key, value in cli_conf.items():
+        cli_node.set([key], value)
+
+    result = add_cylc_install_to_rose_conf_node_opts(
+        rose_node, cli_node)['opts']
+
+    assert result.value == expect
+    assert result.comments == [(
+        f' Config Options \'{cli_conf["opts"]} (cylc-install)\' from CLI '
+        'appended to options '
+        'already in `rose-suite.conf`.'
+    )]
+    assert result.state == ''
