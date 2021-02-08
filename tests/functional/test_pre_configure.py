@@ -30,8 +30,22 @@ def envar_exporter(dict_):
 @pytest.mark.parametrize(
     'srcdir, expect',
     [
-        ('07_cli_override', None),
-        ('08_template_engine_conflict', None)
+        (
+            '07_cli_override',
+            (
+                b'Jinja2Error: Jinja2 Assertion Error: failed 1.1\nContext '
+                b'lines:\n\n# 1. This should fail unless cylc validate --set '
+                b'CLI_VAR=42\n{{ assert(CLI_VAR=="Wobble", "failed 1.1") }}\t'
+                b'<-- Exception\n'
+            ),
+        ),
+        (
+            '08_template_engine_conflict',
+            (
+                b'FileParseError: Plugins set templating engine = empy which '
+                b'does not match #!jinja2 set in flow.cylc.\n'
+            )
+        )
     ]
 )
 def test_validate_fail(srcdir, expect):
@@ -39,13 +53,9 @@ def test_validate_fail(srcdir, expect):
     sub = subprocess.run(
         ['cylc', 'validate', str(srcdir)], capture_output=True
     )
-
     assert sub.returncode != 0
     if expect:
-        assert sub.stderr == (
-                "FileParseError: Plugins set templating engine = empy which "
-                "does not match #!jinja2 set in flow.cylc."
-            )
+        assert sub.stderr == expect
 
 
 @pytest.mark.parametrize(
