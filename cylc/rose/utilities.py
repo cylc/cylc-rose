@@ -91,6 +91,24 @@ def get_rose_vars_from_config_node(config, config_node, environ):
         if rose_orig_host:
             config_node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
 
+        # Remove CYLC_VERSION to prevent conflict with Cylc 8.
+        if 'CYLC_VERSION' in config_node[section]:
+            LOG.warning(
+                f'CYLC_VERSION={config_node[section]["CYLC_VERSION"].value} '
+                'in rose-suite.conf will be ignored '
+                'to prevent conflict with Cylc 8 settings.'
+            )
+            del config_node[section]['CYLC_VERSION']
+        # If ROSE_VERSION is not the version we are using warn and replace.
+        if 'ROSE_VERSION' in config_node[section]:
+            LOG.warning(
+                'ROSE_VERSION='
+                f'{config_node[section]["ROSE_VERSION"].value} '
+                'in rose-suite.conf will be ignored. You are '
+                f'using version {ROSE_VERSION}.'
+            )
+        config_node[section].set(['ROSE_VERSION'], ROSE_VERSION)
+
         # Use env_var_process to process variables which may need expanding.
         for key, node in config_node.value[section].value.items():
             try:

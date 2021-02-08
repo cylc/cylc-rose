@@ -39,6 +39,7 @@ from cylc.rose.entry_points import (
     get_rose_vars,
 )
 from metomi.rose.config import ConfigLoader
+from metomi.rose import __version__ as ROSE_VERSION
 
 
 HOST = get_host()
@@ -224,14 +225,31 @@ def test_get_rose_vars_expansions(tmp_path):
     assert rose_vars['template_variables']['LIST'] == ["a", 1, True]
 
 
+def test_get_rose_vars_but_not_VERSION_vars(tmp_path, caplog):
+    """Check that variables are expanded correctly."""
+    os.environ['XYZ'] = "xyz"
+    (tmp_path / "rose-suite.conf").write_text(
+        "[env]\n"
+        "ROSE_VERSION=99.99\n"
+        "CYLC_VERSION=999.99\n"
+    )
+    rose_vars = get_rose_vars(tmp_path)
+    # Check that the variables have been removed/altered.
+    assert 'CYLC_VERSION' not in rose_vars['env']
+    assert rose_vars['env']['ROSE_VERSION'] == ROSE_VERSION
+    warnings = [r.message for r in caplog.records]
+    assert 'CYLC_VERSION=999.99' in warnings[0]
+    assert 'ROSE_VERSION=99.99' in warnings[1]
+
+
 def test_get_rose_vars_ROSE_VARS(tmp_path):
     """Test that rose variables are available in the environment section.."""
     (tmp_path / "rose-suite.conf").touch()
     rose_vars = get_rose_vars(tmp_path)
-    assert list(rose_vars['env'].keys()) == [
+    assert sorted(list(rose_vars['env'].keys())) == [
         'ROSE_ORIG_HOST',
+        'ROSE_SITE',
         'ROSE_VERSION',
-        'ROSE_SITE'
     ]
 
 
@@ -241,13 +259,13 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
         "[jinja2:suite.rc]"
     )
     rose_vars = get_rose_vars(tmp_path)
-    assert list(rose_vars['template_variables'][
+    assert sorted(list(rose_vars['template_variables'][
         'ROSE_SUITE_VARIABLES'
-    ].keys()) == [
+    ].keys())) == [
         'ROSE_ORIG_HOST',
-        'ROSE_VERSION',
         'ROSE_SITE',
-        'ROSE_SUITE_VARIABLES'
+        'ROSE_SUITE_VARIABLES',
+        'ROSE_VERSION',
     ]
 
 
