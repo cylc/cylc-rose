@@ -22,6 +22,7 @@ jobs:
         run: |
           pip install flake8
           pip install pytest
+          pip install empy
           pip install git+https://github.com/metomi/rose@master
           pip install git+https://github.com/cylc/cylc-flow@master
           pip install --no-deps ."[all]"
