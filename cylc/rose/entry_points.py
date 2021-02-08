@@ -103,30 +103,36 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
 
     # Load the config tree
     config_tree = rose_config_tree_loader(dir_, opts)
-    if any(['file' in i for i in config_tree.node.value]):
 
-        # Carry out imports.
-        from metomi.rose.config_processor import ConfigProcessorsManager
-        from metomi.rose.popen import RosePopener
-        from metomi.rose.reporter import Reporter
-        from metomi.rose.fs_util import FileSystemUtil
+    if any(i.startswith('file') for i in config_tree.node.value):
+        try:
+            startpoint = os.getcwd()
+            os.chdir(dest_root)
+        except (FileNotFoundError, TypeError) as exc:
+            raise exc
+        else:
+            # Carry out imports.
+            from metomi.rose.config_processor import ConfigProcessorsManager
+            from metomi.rose.popen import RosePopener
+            from metomi.rose.reporter import Reporter
+            from metomi.rose.fs_util import FileSystemUtil
 
-        # Update config tree with install location
-        # NOTE-TO-SELF: value=os.environ["CYLC_SUITE_RUN_DIR"]
-        config_tree.node = config_tree.node.set(
-            keys=["file-install-root"], value=str(dest_root)
-        )
+            # Update config tree with install location
+            # NOTE-TO-SELF: value=os.environ["CYLC_SUITE_RUN_DIR"]
+            config_tree.node = config_tree.node.set(
+                keys=["file-install-root"], value=str(dest_root)
+            )
 
-        # Artificially set rose to verbose.
-        # TODO - either use Cylc Log as event handler, or get Cylc Verbosity
-        # settings to pass to Rose Reporter.
-        event_handler = Reporter(3)
-        fs_util = FileSystemUtil(event_handler)
-        popen = RosePopener(event_handler)
+            # Artificially set rose to verbose.
+            event_handler = Reporter(3)
+            fs_util = FileSystemUtil(event_handler)
+            popen = RosePopener(event_handler)
 
-        # Process files
-        config_pm = ConfigProcessorsManager(event_handler, popen, fs_util)
-        config_pm(config_tree, "file")
+            # Process files
+            config_pm = ConfigProcessorsManager(event_handler, popen, fs_util)
+            config_pm(config_tree, "file")
+        finally:
+            os.chdir(startpoint)
 
     return True
 
