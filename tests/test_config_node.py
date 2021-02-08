@@ -17,6 +17,7 @@
 
 import pytest
 
+from metomi.isodatetime.datetimeoper import DateTimeOperator
 from metomi.rose.config import (
     ConfigNode,
 )
@@ -24,7 +25,8 @@ from metomi.rose.config_processor import ConfigProcessError
 
 from cylc.rose.utilities import (
     get_rose_vars_from_config_node,
-    add_cylc_install_to_rose_conf_node_opts
+    add_cylc_install_to_rose_conf_node_opts,
+    dump_rose_log
 )
 
 
@@ -94,3 +96,20 @@ def test_add_cylc_install_to_rose_conf_node_opts(rose_conf, cli_conf, expect):
         'already in `rose-suite.conf`.'
     )]
     assert result.state == ''
+
+
+def test_dump_rose_log(monkeypatch, tmp_path):
+    # Pin down the results of the function used to provide a timestamp.
+    def fake(*arg, **kwargs):
+        return '18151210T0000Z'
+    monkeypatch.setattr(
+        DateTimeOperator, 'process_time_point_str', fake
+    )
+
+    node = ConfigNode()
+    node.set(['opts'], 'A B C')
+
+    dump_rose_log(tmp_path, node)
+
+    assert (tmp_path / 'log/18151210T0000Z-rose-suite.conf').read_text() == \
+        'opts=A B C\n'

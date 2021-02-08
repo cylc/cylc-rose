@@ -31,11 +31,8 @@ from cylc.rose.utilities import (
     merge_rose_cylc_suite_install_conf,
     get_cli_opts_node,
     add_cylc_install_to_rose_conf_node_opts,
+    pathchecker
 )
-
-
-class MultipleTemplatingEnginesError(Exception):
-    ...
 
 
 def get_rose_vars(dir_=None, opts=None):
@@ -98,6 +95,9 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
         dest_root (string or pathlib.Path)
 
     """
+    dir_ = pathchecker(dir_)
+    dest_root = pathchecker(dest_root)
+
     if not rose_config_exists(dir_, opts):
         return False
 
@@ -133,6 +133,9 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
             config_pm(config_tree, "file")
         finally:
             os.chdir(startpoint)
+
+    from cylc.rose.utilities import dump_rose_log
+    dump_rose_log(dest_root=dest_root, node=config_tree.node)
 
     return True
 

@@ -442,3 +442,31 @@ def simplify_opts_strings(opts):
             seen_once.append(item)
 
     return ' '.join(reversed(seen_once))
+
+
+def dump_rose_log(dest_root, node):
+    from metomi.rose.config import ConfigDumper
+    from metomi.isodatetime.datetimeoper import DateTimeOperator
+    dumper = ConfigDumper()
+    timestamp = DateTimeOperator().process_time_point_str(
+        print_format='%Y%m%dT%H%M%S%Z'
+    )
+    fname = f'log/{timestamp}-rose-suite.conf'
+    dumper.dump(node, str(
+        dest_root / fname
+    ))
+    return fname
+
+
+def pathchecker(path):
+    """If path is str return Pathlib.path. Elif path is Path return. Else Fail.
+    """
+    if isinstance(path, str):
+        return Path(path)
+    elif isinstance(path, Path) or path is None:
+        return path
+    else:
+        raise TypeError((
+            f'Path \'{path}\' is a {type(path)}. It must be a str or '
+            'pathlib.Path'
+        ))
