@@ -107,9 +107,9 @@ def test_dump_rose_log(monkeypatch, tmp_path):
     )
 
     node = ConfigNode()
-    node.set(['opts'], 'A B C')
+    node.set(['env', 'FOO'], '"The finger writes."')
 
     dump_rose_log(tmp_path, node)
 
     assert (tmp_path / 'log/18151210T0000Z-rose-suite.conf').read_text() == \
-        'opts=A B C\n'
+        '[env]\nFOO="The finger writes."\n'

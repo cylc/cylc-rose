@@ -23,18 +23,15 @@ import shlex
 
 from pathlib import Path
 
-from metomi.rose.config import (
-    ConfigNodeDiff, ConfigNode
-)
-# from cylc.flow import LOG
-from metomi.rose.config_processor import ConfigProcessError
-from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
-from metomi.rose import __version__ as ROSE_VERSION
-from metomi.rose.resource import ResourceLocator
-
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
 from cylc.rose.jinja2_parser import Parser
+from metomi.rose import __version__ as ROSE_VERSION
+from metomi.isodatetime.datetimeoper import DateTimeOperator
+from metomi.rose.config import ConfigDumper, ConfigNodeDiff, ConfigNode
+from metomi.rose.config_processor import ConfigProcessError
+from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
+from metomi.rose.resource import ResourceLocator
 
 
 class MultipleTemplatingEnginesError(Exception):
@@ -445,8 +442,6 @@ def simplify_opts_strings(opts):
 
 
 def dump_rose_log(dest_root, node):
-    from metomi.rose.config import ConfigDumper
-    from metomi.isodatetime.datetimeoper import DateTimeOperator
     dumper = ConfigDumper()
     timestamp = DateTimeOperator().process_time_point_str(
         print_format='%Y%m%dT%H%M%S%Z'
@@ -456,17 +451,3 @@ def dump_rose_log(dest_root, node):
         dest_root / fname
     ))
     return fname
-
-
-def pathchecker(path):
-    """If path is str return Pathlib.path. Elif path is Path return. Else Fail.
-    """
-    if isinstance(path, str):
-        return Path(path)
-    elif isinstance(path, Path) or path is None:
-        return path
-    else:
-        raise TypeError((
-            f'Path \'{path}\' is a {type(path)}. It must be a str or '
-            'pathlib.Path'
-        ))

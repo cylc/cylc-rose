@@ -31,7 +31,6 @@ from cylc.rose.utilities import (
     merge_rose_cylc_suite_install_conf,
     get_cli_opts_node,
     add_cylc_install_to_rose_conf_node_opts,
-    pathchecker
 )
 
 
@@ -95,8 +94,10 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
         dest_root (string or pathlib.Path)
 
     """
-    dir_ = pathchecker(dir_)
-    dest_root = pathchecker(dest_root)
+    if dir_ is not None:
+        dir_ = Path(dir_)
+    if dest_root is not None:
+        dest_root = Path(dest_root)
 
     if not rose_config_exists(dir_, opts):
         return False
