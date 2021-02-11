@@ -42,8 +42,8 @@ def envar_exporter(dict_):
         (
             '08_template_engine_conflict',
             (
-                b'FileParseError: Plugins set templating engine = empy which '
-                b'does not match #!jinja2 set in flow.cylc.\n'
+                b'FileParseError: Plugins set templating engine = empy:'
+                b'suite.rc which does not match #!jinja2 set in flow.cylc.\n'
             )
         )
     ]
@@ -76,6 +76,7 @@ def test_validate_fail(srcdir, expect):
         ),
         ('06_jinja2_thorough', {'XYZ': 'xyz'}, None),
         ('07_cli_override', {'XYZ': ''}, ["--set=CLI_VAR='Wobble'"]),
+        ('09_template_vars_vanilla', {'XYZ': 'xyz'}, None),
     ],
 )
 def test_validate(tmp_path, srcdir, envvars, args):
