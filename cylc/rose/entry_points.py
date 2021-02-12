@@ -25,6 +25,7 @@ from pathlib import Path
 
 from metomi.rose.config import ConfigLoader, ConfigDumper
 from cylc.rose.utilities import (
+    dump_rose_log,
     get_rose_vars_from_config_node,
     rose_config_exists,
     rose_config_tree_loader,
@@ -135,7 +136,6 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
         finally:
             os.chdir(startpoint)
 
-    from cylc.rose.utilities import dump_rose_log
     dump_rose_log(dest_root=dest_root, node=config_tree.node)
 
     return True

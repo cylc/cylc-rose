@@ -97,7 +97,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 ),
                 'ref/rose-suite.conf': '!opts=foo (cylc-install)',
                 'ref/opt/rose-suite-foo.conf': '',
-                'ref/log/18151210T0000Z-rose-suite.conf': (
+                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
                     '!opts=\n\n[env]\nFOO=1\n\n[jinja2:suite.rc]\nX=Y\n'
                 ),
                 'ref/rose-suite.conf': '!opts=foo (cylc-install)'
@@ -126,7 +126,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'ref/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-bar.conf': '',
                 'ref/opt/rose-suite-baz.conf': '',
-                'ref/log/18151210T0000Z-rose-suite.conf': (
+                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
                     '!opts=bar baz\n\n[env]\nBAR=2\n'
                 ),
                 'ref/rose-suite.conf': '!opts=foo bar baz (cylc-install)'
@@ -152,11 +152,9 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'ref/opt/rose-suite-a.conf': '',
                 'ref/opt/rose-suite-b.conf': '',
                 'ref/opt/rose-suite-c.conf': '',
-                'ref/log/18151210T0000Z-rose-suite.conf': (
+                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
                     '!opts=b c\n\n'
-                ),
-                'ref/opt/rose-suite-cylc-install.conf': '!opts=b c\n',
-                'ref/rose-suite.conf': '!opts=a b c (cylc-install)'
+                )
             },
             # ENVIRONMENT VARS
             {'ROSE_SUITE_OPT_CONF_KEYS': 'b'},
@@ -182,7 +180,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 ),
                 'ref/opt/rose-suite-foo.conf': '[jinja2:suite.rc]\ny="f"\n',
                 'ref/opt/rose-suite-bar.conf': '[jinja2:suite.rc]\ny="b"\n',
-                'ref/log/18151210T0000Z-rose-suite.conf': (
+                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
                     '!opts=foo bar\n\n[env]\na=b'
                     '\n\n[jinja2:suite.rc]\na="b"\ny="b"\n'
                 )

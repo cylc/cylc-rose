@@ -100,16 +100,13 @@ def test_add_cylc_install_to_rose_conf_node_opts(rose_conf, cli_conf, expect):
 
 def test_dump_rose_log(monkeypatch, tmp_path):
     # Pin down the results of the function used to provide a timestamp.
-    def fake(*arg, **kwargs):
-        return '18151210T0000Z'
     monkeypatch.setattr(
-        DateTimeOperator, 'process_time_point_str', fake
+        DateTimeOperator,
+        'process_time_point_str',
+        lambda *a, **k: '18151210T0000Z'
     )
-
     node = ConfigNode()
     node.set(['env', 'FOO'], '"The finger writes."')
-
     dump_rose_log(tmp_path, node)
-
-    assert (tmp_path / 'log/18151210T0000Z-rose-suite.conf').read_text() == \
-        '[env]\nFOO="The finger writes."\n'
+    result = (tmp_path / 'log/conf/18151210T0000Z-rose-suite.conf').read_text()
+    assert '[env]\nFOO="The finger writes."\n' == result
