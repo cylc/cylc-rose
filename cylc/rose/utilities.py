@@ -23,18 +23,15 @@ import shlex
 
 from pathlib import Path
 
-from metomi.rose.config import (
-    ConfigNodeDiff, ConfigNode
-)
-# from cylc.flow import LOG
-from metomi.rose.config_processor import ConfigProcessError
-from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
-from metomi.rose import __version__ as ROSE_VERSION
-from metomi.rose.resource import ResourceLocator
-
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
 from cylc.rose.jinja2_parser import Parser
+from metomi.rose import __version__ as ROSE_VERSION
+from metomi.isodatetime.datetimeoper import DateTimeOperator
+from metomi.rose.config import ConfigDumper, ConfigNodeDiff, ConfigNode
+from metomi.rose.config_processor import ConfigProcessError
+from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
+from metomi.rose.resource import ResourceLocator
 
 
 class MultipleTemplatingEnginesError(Exception):
@@ -442,3 +439,26 @@ def simplify_opts_strings(opts):
             seen_once.append(item)
 
     return ' '.join(reversed(seen_once))
+
+
+def dump_rose_log(dest_root, node):
+    """Dump a config node to a timestamped file in the ``log`` sub-directory.
+
+    Args:
+        dest_root (pathlib.Path):
+            Installed location of a flow.
+        node (Rose Config node):
+            Node to be dumped to file.
+
+    Returns:
+        String filepath of the dump file relative to the install directory.
+    """
+    dumper = ConfigDumper()
+    timestamp = DateTimeOperator().process_time_point_str(
+        print_format='%Y%m%dT%H%M%S%Z'
+    )
+    rel_path = f'log/conf/{timestamp}-rose-suite.conf'
+    fpath = dest_root / rel_path
+    fpath.parent.mkdir(exist_ok=True, parents=True)
+    dumper.dump(node, str(fpath))
+    return rel_path

@@ -25,6 +25,7 @@ from pathlib import Path
 
 from metomi.rose.config import ConfigLoader, ConfigDumper
 from cylc.rose.utilities import (
+    dump_rose_log,
     get_rose_vars_from_config_node,
     rose_config_exists,
     rose_config_tree_loader,
@@ -32,10 +33,6 @@ from cylc.rose.utilities import (
     get_cli_opts_node,
     add_cylc_install_to_rose_conf_node_opts,
 )
-
-
-class MultipleTemplatingEnginesError(Exception):
-    ...
 
 
 def get_rose_vars(dir_=None, opts=None):
@@ -98,6 +95,11 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
         dest_root (string or pathlib.Path)
 
     """
+    if dir_ is not None:
+        dir_ = Path(dir_)
+    if dest_root is not None:
+        dest_root = Path(dest_root)
+
     if not rose_config_exists(dir_, opts):
         return False
 
@@ -133,6 +135,8 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
             config_pm(config_tree, "file")
         finally:
             os.chdir(startpoint)
+
+    dump_rose_log(dest_root=dest_root, node=config_tree.node)
 
     return True
 
