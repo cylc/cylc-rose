@@ -457,7 +457,8 @@ def dump_rose_log(dest_root, node):
     timestamp = DateTimeOperator().process_time_point_str(
         print_format='%Y%m%dT%H%M%S%Z'
     )
-    fpath = dest_root / f'log/conf/{timestamp}-rose-suite.conf'
+    rel_path = f'log/conf/{timestamp}-rose-suite.conf'
+    fpath = dest_root / rel_path
     fpath.parent.mkdir(exist_ok=True, parents=True)
     dumper.dump(node, str(fpath))
-    return f'log/conf/{timestamp}-rose-suite.conf'
+    return rel_path
