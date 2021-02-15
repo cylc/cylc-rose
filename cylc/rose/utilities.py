@@ -65,9 +65,9 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             f"You defined:\n\t{'; '.join(defined_sections)}"
         )
     elif len(defined_sections) == 1:
-        templating, = list(defined_sections)
-    if templating is not None:
-        config['templating_detected'] = templating
+        templating, = defined_sections
+        if templating != 'template variables':
+            config['templating_detected'] = templating.replace(':suite.rc', '')
 
     # Get Values for standard ROSE variables.
     rose_orig_host = get_host()
