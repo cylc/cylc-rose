@@ -24,6 +24,7 @@ import pytest
 
 from types import SimpleNamespace
 
+from metomi.isodatetime.datetimeoper import DateTimeOperator
 
 from cylc.rose.entry_points import (
     record_cylc_install_options, rose_fileinstall
@@ -89,9 +90,15 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
             {
                 'test/rose-suite.conf': 'opts=foo',
                 'test/opt/rose-suite-cylc-install.conf': '',
+                'test/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-cylc-install.conf': (
                     'opts=\n[env]\nFOO=1'
                     '\n[jinja2:suite.rc]\nX=Y\n'
+                ),
+                'ref/rose-suite.conf': '!opts=foo (cylc-install)',
+                'ref/opt/rose-suite-foo.conf': '',
+                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
+                    '!opts=\n\n[env]\nFOO=1\n\n[jinja2:suite.rc]\nX=Y\n'
                 ),
                 'ref/rose-suite.conf': '!opts=foo (cylc-install)'
             },
@@ -108,10 +115,20 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
             # {file: content}
             {
                 'test/rose-suite.conf': 'opts=foo',
+                'test/opt/rose-suite-foo.conf': '',
+                'test/opt/rose-suite-bar.conf': '',
+                'test/opt/rose-suite-baz.conf': '',
                 'test/opt/rose-suite-cylc-install.conf':
                     '!opts=bar\n[env]\nBAR=1',
                 'ref/opt/rose-suite-cylc-install.conf':
                     '!opts=bar baz\n[env]\nBAR=2',
+                'ref/rose-suite.conf': '!opts=foo bar baz (cylc-install)',
+                'ref/opt/rose-suite-foo.conf': '',
+                'ref/opt/rose-suite-bar.conf': '',
+                'ref/opt/rose-suite-baz.conf': '',
+                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
+                    '!opts=bar baz\n\n[env]\nBAR=2\n'
+                ),
                 'ref/rose-suite.conf': '!opts=foo bar baz (cylc-install)'
             },
             # ENVIRONMENT VARS
@@ -127,8 +144,17 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
             {
                 'test/rose-suite.conf': 'opts=a',
                 'test/opt/rose-suite-cylc-install.conf': '',
+                'test/opt/rose-suite-a.conf': '',
+                'test/opt/rose-suite-b.conf': '',
+                'test/opt/rose-suite-c.conf': '',
                 'ref/opt/rose-suite-cylc-install.conf': '!opts=b c\n',
-                'ref/rose-suite.conf': '!opts=a b c (cylc-install)'
+                'ref/rose-suite.conf': '!opts=a b c (cylc-install)',
+                'ref/opt/rose-suite-a.conf': '',
+                'ref/opt/rose-suite-b.conf': '',
+                'ref/opt/rose-suite-c.conf': '',
+                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
+                    '!opts=b c\n\n'
+                )
             },
             # ENVIRONMENT VARS
             {'ROSE_SUITE_OPT_CONF_KEYS': 'b'},
@@ -143,18 +169,21 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
             ),
             # {file: content}
             {
-                'test/rose-suite.conf': 'opts=\n[jinja2:suite.rc]\nY="base"',
+                'test/rose-suite.conf': 'opts=\n[jinja2:suite.rc]\ny="base"',
                 'test/opt/rose-suite-foo.conf': '[jinja2:suite.rc]\ny="f"\n',
                 'test/opt/rose-suite-bar.conf': '[jinja2:suite.rc]\ny="b"\n',
-                'test/opt/rose-suite-cylc-install.conf': '',
                 'ref/opt/rose-suite-cylc-install.conf': (
                     '!opts=foo bar\n[env]\na=b\n[jinja2:suite.rc]\na="b"'
                 ),
                 'ref/rose-suite.conf': (
-                    '!opts=foo bar (cylc-install)\n[jinja2:suite.rc]\nY="base"'
+                    '!opts=foo bar (cylc-install)\n[jinja2:suite.rc]\ny="base"'
                 ),
                 'ref/opt/rose-suite-foo.conf': '[jinja2:suite.rc]\ny="f"\n',
                 'ref/opt/rose-suite-bar.conf': '[jinja2:suite.rc]\ny="b"\n',
+                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
+                    '!opts=foo bar\n\n[env]\na=b'
+                    '\n\n[jinja2:suite.rc]\na="b"\ny="b"\n'
+                )
             },
             # ENVIRONMENT VARS
             {'ROSE_SUITE_OPT_CONF_KEYS': 'foo'},
@@ -169,6 +198,13 @@ def test_functional_record_cylc_install_options(
     TODO: Once the the dump of the final rose-suite.conf is done then this
     should be expanded to test that too.
     """
+    # Pin down the results of the function used to provide a timestamp.
+    def fake(*arg, **kwargs):
+        return '18151210T0000Z'
+    monkeypatch.setattr(
+        DateTimeOperator, 'process_time_point_str', fake
+    )
+
     testdir = tmp_path / 'test'
     refdir = tmp_path / 'ref'
     # Set up existing files, should these exist:
@@ -187,6 +223,9 @@ def test_functional_record_cylc_install_options(
         record_cylc_install_options(
             dest_root=testdir, opts=opts, dir_=testdir
         )
+    rose_fileinstall(
+        dest_root=testdir, opts=opts, dir_=testdir
+    )
     ritems = sorted([i.relative_to(refdir) for i in refdir.rglob('*')])
     titems = sorted([i.relative_to(testdir) for i in testdir.rglob('*')])
     assert titems == ritems
