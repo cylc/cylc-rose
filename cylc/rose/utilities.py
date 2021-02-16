@@ -68,6 +68,8 @@ def get_rose_vars_from_config_node(config, config_node, environ):
         templating, = defined_sections
         if templating != 'template variables':
             config['templating_detected'] = templating.replace(':suite.rc', '')
+        else:
+            config['templating_detected'] = templating
 
     # Get Values for standard ROSE variables.
     rose_orig_host = get_host()
@@ -108,12 +110,17 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             item[0][1]: item[1].value for item in
             config_node.value['env'].walk()
         }
-
     if templating in config_node.value:
         config['template_variables'] = {
             item[0][1]: item[1].value for item in
             config_node.value[templating].walk()
         }
+    elif 'template variables' in config_node.value:
+        config['template_variables'] = {
+            item[0][1]: item[1].value for item in
+            config_node.value['template variables'].walk()
+        }
+
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
     # access.
     if templating is not None:
