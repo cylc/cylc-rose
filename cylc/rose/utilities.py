@@ -54,20 +54,19 @@ def get_rose_vars_from_config_node(config, config_node, environ):
 
     """
     templating = None
-    if (
-        'jinja2:suite.rc' in config_node.value and
-        'empy:suite.rc' in config_node.value
-    ):
+    sections = {'jinja2:suite.rc', 'empy:suite.rc', 'template variables'}
+    defined_sections = sections.intersection(set(config_node.value))
+    if len(defined_sections) > 1:
         raise MultipleTemplatingEnginesError(
-            "You should not define both jinja2 and empy in the same "
-            "configuration file."
+            "You should not define more than one templating section. "
+            f"You defined:\n\t{'; '.join(defined_sections)}"
         )
-    elif 'jinja2:suite.rc' in config_node.value:
-        templating = 'jinja2'
-    elif 'empy:suite.rc' in config_node.value:
-        templating = 'empy'
-    if templating:
-        config['templating_detected'] = templating
+    elif len(defined_sections) == 1:
+        templating, = defined_sections
+        if templating != 'template variables':
+            config['templating_detected'] = templating.replace(':suite.rc', '')
+        else:
+            config['templating_detected'] = templating
 
     # Get Values for standard ROSE variables.
     rose_orig_host = get_host()
@@ -78,7 +77,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
         config_node.set(['env'])
 
     # For each section add standard variables and process variables.
-    for section in ['env', f'{templating}:suite.rc']:
+    for section in ['env', templating]:
         if section not in config_node.value:
             continue
 
@@ -108,12 +107,17 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             item[0][1]: item[1].value for item in
             config_node.value['env'].walk()
         }
-
-    if f"{templating}:suite.rc" in config_node.value:
+    if templating in config_node.value:
         config['template_variables'] = {
             item[0][1]: item[1].value for item in
-            config_node.value[f"{templating}:suite.rc"].walk()
+            config_node.value[templating].walk()
         }
+    elif 'template variables' in config_node.value:
+        config['template_variables'] = {
+            item[0][1]: item[1].value for item in
+            config_node.value['template variables'].walk()
+        }
+
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
     # access.
     if templating is not None:
@@ -127,7 +131,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
                     )
                 except Exception:
                     raise ConfigProcessError(
-                        [f'{templating}:suite.rc', key],
+                        [templating, key],
                         value,
                         f'Invalid template variable: {value}'
                         '\nMust be a valid Python or Jinja2 literal'
