@@ -48,6 +48,11 @@ def assert_rose_conf_full_equal(left, right, no_ignore=True):
         assert left.get(keys_2, no_ignore=no_ignore) is not None
 
 
+def test_no_rose_suite_conf_in_devdir(tmp_path):
+    result = record_cylc_install_options(dir_=tmp_path)
+    assert result is False
+
+
 def test_rose_fileinstall_no_config_in_folder():
     # It returns false if no rose-suite.conf
     assert rose_fileinstall('/dev/null') is False
@@ -58,6 +63,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
     srcdir = tmp_path / 'source'
     destdir = tmp_path / 'dest'
     [dir_.mkdir() for dir_ in [srcdir, destdir]]
+    (destdir / 'rose-suite.conf').touch()
     (srcdir / 'rose-suite.conf').touch()
     (srcdir / 'installme').write_text('Galileo No! We will not let you go.')
 
@@ -245,26 +251,18 @@ def test_functional_rose_database_dumped_correctly(tmp_path):
     destdir = (tmp_path / 'destdir')
     for dir_ in [srcdir, destdir]:
         dir_.mkdir()
-    (srcdir / 'nicest_work_of.nature').touch()
-    (srcdir / 'rose-suite.conf').write_text(
+    (srcdir / 'rose-suite.conf').touch()  # sidestep test for conf existance
+    (destdir / 'nicest_work_of.nature').touch()
+    (destdir / 'rose-suite.conf').write_text(
         "[file:Gnu]\nsrc=nicest_work_of.nature\n"
     )
-    (srcdir / 'cylc.flow').touch()
+    (destdir / 'cylc.flow').touch()
     rose_fileinstall(dir_=srcdir, dest_root=destdir)
 
     assert (destdir / '.rose-config_processors-file.db').is_file()
 
 
-@pytest.mark.parametrize(
-    'input_, err',
-    [
-        # Plausible but non-existant path:
-        ('/this/path/goes/nowhere', FileNotFoundError),
-        # Left None, default value for dest_root:
-        (None, TypeError)
-    ]
-)
-def test_functional_rose_database_dumped_errors(tmp_path, input_, err):
+def test_functional_rose_database_dumped_errors(tmp_path):
     srcdir = (tmp_path / 'srcdir')
     srcdir.mkdir()
     (srcdir / 'nicest_work_of.nature').touch()
@@ -272,5 +270,14 @@ def test_functional_rose_database_dumped_errors(tmp_path, input_, err):
         "[file:Gnu]\nsrc=nicest_work_of.nature\n"
     )
     (srcdir / 'cylc.flow').touch()
-    with pytest.raises(err):
-        rose_fileinstall(dir_=srcdir, dest_root=input_)
+    assert rose_fileinstall(dir_='/this/path/goes/nowhere') is False
+
+
+def test_rose_fileinstall_exception(tmp_path, monkeypatch):
+    def broken():
+        raise FileNotFoundError('Any Old Error')
+    import os
+    monkeypatch.setattr(os, 'getcwd', broken)
+    (tmp_path / 'rose-suite.conf').touch()
+    with pytest.raises(FileNotFoundError):
+        rose_fileinstall(dir_=tmp_path, dest_root=tmp_path)

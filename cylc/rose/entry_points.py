@@ -100,17 +100,20 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
     if dest_root is not None:
         dest_root = Path(dest_root)
 
-    if not rose_config_exists(dir_, opts):
+    if (
+        not rose_config_exists(dir_, opts) or
+        not rose_config_exists(dest_root, opts)
+    ):
         return False
 
     # Load the config tree
-    config_tree = rose_config_tree_loader(dir_, opts)
+    config_tree = rose_config_tree_loader(dest_root, opts)
 
     if any(i.startswith('file') for i in config_tree.node.value):
         try:
             startpoint = os.getcwd()
             os.chdir(dest_root)
-        except (FileNotFoundError, TypeError) as exc:
+        except FileNotFoundError as exc:
             raise exc
         else:
             # Carry out imports.
@@ -177,6 +180,8 @@ def record_cylc_install_options(
         rose_suite_conf['opts'] - Opts section of the config node dumped to
         installed ``rose-suite.conf``.
     """
+    if not rose_config_exists(dir_, opts):
+        return False
     # Create a config based on command line options:
     cli_config = get_cli_opts_node(opts)
     # Leave now if there is nothing to do:
