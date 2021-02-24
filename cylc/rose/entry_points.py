@@ -184,9 +184,6 @@ def record_cylc_install_options(
         return False
     # Create a config based on command line options:
     cli_config = get_cli_opts_node(opts)
-    # Leave now if there is nothing to do:
-    if not cli_config:
-        return False
     # Construct a path objects representing our target files.
     (Path(dest_root) / 'opt').mkdir(exist_ok=True)
     conf_filepath = Path(dest_root) / 'opt/rose-suite-cylc-install.conf'
