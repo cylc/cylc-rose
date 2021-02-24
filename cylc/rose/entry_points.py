@@ -33,6 +33,7 @@ from cylc.rose.utilities import (
     get_cli_opts_node,
     add_cylc_install_to_rose_conf_node_opts,
 )
+from cylc.flow import LOG
 
 
 def get_rose_vars(dir_=None, opts=None):
@@ -71,6 +72,13 @@ def get_rose_vars(dir_=None, opts=None):
         return config
     # Load the raw config tree
     config_tree = rose_config_tree_loader(dir_, opts)
+
+    # Warn if root-dir set in config:
+    if 'root-dir' in config_tree.node:
+        LOG.warning(
+            'You have set "root-dir", which at Cylc 8 does nothing. '
+            'See Cylc Install documentation.'
+        )
 
     # Extract templatevars from the configuration
     get_rose_vars_from_config_node(
