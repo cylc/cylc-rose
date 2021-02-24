@@ -30,24 +30,45 @@ from cylc.rose.utilities import (
     rose_config_exists,
     rose_config_tree_loader,
     merge_rose_cylc_suite_install_conf,
+    paths_to_pathlib,
     get_cli_opts_node,
     add_cylc_install_to_rose_conf_node_opts,
 )
 
 
-def get_rose_vars(dir_=None, opts=None):
+def pre_configure(srcdir=None, opts=None, destdir=None):
+    srcdir, destdir = paths_to_pathlib([srcdir, destdir])
+    return get_rose_vars(srcdir=srcdir, opts=opts)
+
+
+def post_install(srcdir=None, opts=None, destdir=None):
+    srcdir, destdir = paths_to_pathlib([srcdir, destdir])
+    results = {}
+    results['record_install'] = record_cylc_install_options(
+        srcdir=srcdir, opts=opts, destdir=destdir
+    )
+    results['fileinstall'] = rose_fileinstall(
+        srcdir=srcdir, opts=opts, destdir=destdir
+    )
+    # Finally dump a log of the rose-conf in its final state.
+    dump_rose_log(destdir=destdir, node=results['fileinstall'])
+
+    return results
+
+
+def get_rose_vars(srcdir=None, opts=None):
     """Load template variables from Rose suite configuration.
 
-    This loads the Rose suite configuration tree from the filesystem
+    Loads the Rose suite configuration tree from the filesystem
     using the shell environment.
 
     Args:
-        dir_(string | pathlib.Path):
+        srcdir(pathlib.Path):
             Path to the Rose suite configuration
             (the directory containing the ``rose-suite.conf`` file).
         opts:
-            Some sort of options object or string - To be used to allow CLI
-            specification of optional configuaration.
+            Options object containing specification of optional
+            configuarations set by the CLI.
 
     Returns:
         dict - A dictionary of sections of rose-suite.conf.
@@ -61,16 +82,19 @@ def get_rose_vars(dir_=None, opts=None):
                 }
             }
     """
+    # Set up blank page for returns.
     config = {
         'env': {},
         'template_variables': {},
         'templating_detected': None
     }
-    # Return a blank config dict if dir_ does not exist
-    if not rose_config_exists(dir_, opts):
+
+    # Return a blank config dict if srcdir does not exist
+    if not rose_config_exists(srcdir, opts):
         return config
+
     # Load the raw config tree
-    config_tree = rose_config_tree_loader(dir_, opts)
+    config_tree = rose_config_tree_loader(srcdir, opts)
 
     # Extract templatevars from the configuration
     get_rose_vars_from_config_node(
@@ -86,33 +110,104 @@ def get_rose_vars(dir_=None, opts=None):
     return config
 
 
-def rose_fileinstall(dir_=None, opts=None, dest_root=None):
+def record_cylc_install_options(
+    destdir=None,
+    opts=None,
+    srcdir=None,
+):
+    """Create/modify files recording Cylc install config options.
+
+    Creates a new config based on CLI options and writes it to the workflow
+    install location as ``rose-suite-cylc-install.conf``.
+
+    If ``rose-suite-cylc-install.conf`` already exists over-writes changed
+    items, except for ``!opts=`` which is merged and simplified.
+
+    If ``!opts=`` have been changed these are appended to those that have
+    been written in the installed ``rose-suite.conf``.
+
+    Args:
+        srcdir (pathlib.Path):
+            Used to check whether the source directory contains a rose config.
+        opts:
+            Cylc option parser object - we want to extract the following
+            values:
+            - opt_conf_keys (list or str):
+                Equivelent of ``rose suite-run --option KEY``
+            - defines (list of str):
+                Equivelent of ``rose suite-run --define KEY=VAL``
+            - suite_defines (list of str):
+                Equivelent of ``rose suite-run --define-suite KEY=VAL``
+        destdir (pathlib.Path):
+            Path to dump the rose-suite-cylc-conf
+
+    Returns:
+        cli_config - Config Node which has been dumped to
+        ``rose-suite-cylc-install.conf``.
+        rose_suite_conf['opts'] - Opts section of the config node dumped to
+        installed ``rose-suite.conf``.
+    """
+    if not rose_config_exists(srcdir, opts):
+        return False
+
+    # Create a config based on command line options:
+    cli_config = get_cli_opts_node(opts)
+
+    # Leave now if there is nothing to do:
+    if not cli_config:
+        return False
+
+    # Construct path objects representing our target files.
+    (Path(destdir) / 'opt').mkdir(exist_ok=True)
+    conf_filepath = Path(destdir) / 'opt/rose-suite-cylc-install.conf'
+    rose_conf_filepath = Path(destdir) / 'rose-suite.conf'
+    dumper = ConfigDumper()
+    loader = ConfigLoader()
+
+    # Create rose-suite-cylc-install.conf. Merge with existing file if present.
+    if conf_filepath.is_file():
+        oldconfig = loader.load(str(conf_filepath))
+        cli_config = merge_rose_cylc_suite_install_conf(oldconfig, cli_config)
+    # Add an explanatory note to rose-suite-cylc-install.conf:
+    cli_config.comments = [
+        ' This file records CLI Options.'
+    ]
+    dumper.dump(cli_config, str(conf_filepath))
+
+    # Merge the opts section of the rose-suite.conf with those set by CLI:
+    if not rose_conf_filepath.is_file():
+        rose_conf_filepath.touch()
+    rose_suite_conf = loader.load(str(rose_conf_filepath))
+    rose_suite_conf = add_cylc_install_to_rose_conf_node_opts(
+        rose_suite_conf, cli_config
+    )
+    dumper(rose_suite_conf, rose_conf_filepath)
+
+    return cli_config, rose_suite_conf
+
+
+def rose_fileinstall(srcdir=None, opts=None, destdir=None):
     """Call Rose Fileinstall.
 
     Args:
-        dir_(string or pathlib.Path):
+        srcdir(pathlib.Path):
             Search for a ``rose-suite.conf`` file in this location.
-        dest_root (string or pathlib.Path)
+        destdir (pathlib.Path)
 
     """
-    if dir_ is not None:
-        dir_ = Path(dir_)
-    if dest_root is not None:
-        dest_root = Path(dest_root)
-
     if (
-        not rose_config_exists(dir_, opts) or
-        not rose_config_exists(dest_root, opts)
+        not rose_config_exists(srcdir, opts) or
+        not rose_config_exists(destdir, opts)
     ):
         return False
 
     # Load the config tree
-    config_tree = rose_config_tree_loader(dest_root, opts)
+    config_tree = rose_config_tree_loader(destdir, opts)
 
     if any(i.startswith('file') for i in config_tree.node.value):
         try:
             startpoint = os.getcwd()
-            os.chdir(dest_root)
+            os.chdir(destdir)
         except FileNotFoundError as exc:
             raise exc
         else:
@@ -125,7 +220,7 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
             # Update config tree with install location
             # NOTE-TO-SELF: value=os.environ["CYLC_SUITE_RUN_DIR"]
             config_tree.node = config_tree.node.set(
-                keys=["file-install-root"], value=str(dest_root)
+                keys=["file-install-root"], value=str(destdir)
             )
 
             # Artificially set rose to verbose.
@@ -139,78 +234,4 @@ def rose_fileinstall(dir_=None, opts=None, dest_root=None):
         finally:
             os.chdir(startpoint)
 
-    dump_rose_log(dest_root=dest_root, node=config_tree.node)
-
-    return True
-
-
-def record_cylc_install_options(
-    dest_root=None,
-    opts=None,
-    dir_=None,
-):
-    """Create/modify files recording Cylc install config options.
-
-    Creates a new config based on CLI options and writes it to the workflow
-    install location as ``rose-suite-cylc-install.conf``. If
-    ``rose-suite-cylc-install.conf`` already exists over-writes changed items,
-    except for ``!opts=`` which is merged and simplified.
-
-    If ``!opts=`` have been changed these are appended to those that have
-    been written in the installed ``rose-suite.conf``.
-
-    Args:
-        _ (pathlib.Path | or str):
-            Not used in this function, but requried for consistent entry point.
-        opts:
-            Cylc option parser object - we want to extract the following
-            values:
-            - opt_conf_keys (list or str):
-                Equivelent of ``rose suite-run --option KEY``
-            - defines (list of str):
-                Equivelent of ``rose suite-run --define KEY=VAL``
-            - suite_defines (list of str):
-                Equivelent of ``rose suite-run --define-suite KEY=VAL``
-        dest_root (pathlib.Path | or str):
-            Path to dump the rose-suite-cylc-conf
-
-    Returns:
-        cli_config - Config Node which has been dumped to
-        ``rose-suite-cylc-install.conf``.
-        rose_suite_conf['opts'] - Opts section of the config node dumped to
-        installed ``rose-suite.conf``.
-    """
-    if not rose_config_exists(dir_, opts):
-        return False
-    # Create a config based on command line options:
-    cli_config = get_cli_opts_node(opts)
-    # Construct a path objects representing our target files.
-    (Path(dest_root) / 'opt').mkdir(exist_ok=True)
-    conf_filepath = Path(dest_root) / 'opt/rose-suite-cylc-install.conf'
-    rose_conf_filepath = Path(dest_root) / 'rose-suite.conf'
-    dumper = ConfigDumper()
-    loader = ConfigLoader()
-
-    # If file exists we need to merge with our new config, over-writing with
-    # new items where there are duplicates.
-
-    if conf_filepath.is_file():
-        oldconfig = loader.load(str(conf_filepath))
-        cli_config = merge_rose_cylc_suite_install_conf(oldconfig, cli_config)
-
-    cli_config.comments = [
-        ' This file records CLI Options.'
-    ]
-    dumper.dump(cli_config, str(conf_filepath))
-
-    # Replace the opts section of the rose-suite.conf in the install location.
-    # If we have not a rose-suite.conf but we use one of the Rose-style
-    # options we still want to record those options.
-    if not rose_conf_filepath.is_file():
-        rose_conf_filepath.touch()
-    rose_suite_conf = loader.load(str(rose_conf_filepath))
-    rose_suite_conf = add_cylc_install_to_rose_conf_node_opts(
-        rose_suite_conf, cli_config
-    )
-    dumper(rose_suite_conf, rose_conf_filepath)
-    return cli_config, rose_suite_conf
+    return config_tree.node
