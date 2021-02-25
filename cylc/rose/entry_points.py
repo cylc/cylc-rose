@@ -36,22 +36,22 @@ from cylc.rose.utilities import (
 )
 
 
-def pre_configure(srcdir=None, opts=None, destdir=None):
-    srcdir, destdir = paths_to_pathlib([srcdir, destdir])
+def pre_configure(srcdir=None, opts=None, rundir=None):
+    srcdir, rundir = paths_to_pathlib([srcdir, rundir])
     return get_rose_vars(srcdir=srcdir, opts=opts)
 
 
-def post_install(srcdir=None, opts=None, destdir=None):
-    srcdir, destdir = paths_to_pathlib([srcdir, destdir])
+def post_install(srcdir=None, opts=None, rundir=None):
+    srcdir, rundir = paths_to_pathlib([srcdir, rundir])
     results = {}
     results['record_install'] = record_cylc_install_options(
-        srcdir=srcdir, opts=opts, destdir=destdir
+        srcdir=srcdir, opts=opts, rundir=rundir
     )
     results['fileinstall'] = rose_fileinstall(
-        srcdir=srcdir, opts=opts, destdir=destdir
+        srcdir=srcdir, opts=opts, rundir=rundir
     )
     # Finally dump a log of the rose-conf in its final state.
-    dump_rose_log(destdir=destdir, node=results['fileinstall'])
+    dump_rose_log(rundir=rundir, node=results['fileinstall'])
 
     return results
 
@@ -111,7 +111,7 @@ def get_rose_vars(srcdir=None, opts=None):
 
 
 def record_cylc_install_options(
-    destdir=None,
+    rundir=None,
     opts=None,
     srcdir=None,
 ):
@@ -138,7 +138,7 @@ def record_cylc_install_options(
                 Equivelent of ``rose suite-run --define KEY=VAL``
             - suite_defines (list of str):
                 Equivelent of ``rose suite-run --define-suite KEY=VAL``
-        destdir (pathlib.Path):
+        rundir (pathlib.Path):
             Path to dump the rose-suite-cylc-conf
 
     Returns:
@@ -158,9 +158,9 @@ def record_cylc_install_options(
         return False
 
     # Construct path objects representing our target files.
-    (Path(destdir) / 'opt').mkdir(exist_ok=True)
-    conf_filepath = Path(destdir) / 'opt/rose-suite-cylc-install.conf'
-    rose_conf_filepath = Path(destdir) / 'rose-suite.conf'
+    (Path(rundir) / 'opt').mkdir(exist_ok=True)
+    conf_filepath = Path(rundir) / 'opt/rose-suite-cylc-install.conf'
+    rose_conf_filepath = Path(rundir) / 'rose-suite.conf'
     dumper = ConfigDumper()
     loader = ConfigLoader()
 
@@ -186,28 +186,28 @@ def record_cylc_install_options(
     return cli_config, rose_suite_conf
 
 
-def rose_fileinstall(srcdir=None, opts=None, destdir=None):
+def rose_fileinstall(srcdir=None, opts=None, rundir=None):
     """Call Rose Fileinstall.
 
     Args:
         srcdir(pathlib.Path):
             Search for a ``rose-suite.conf`` file in this location.
-        destdir (pathlib.Path)
+        rundir (pathlib.Path)
 
     """
     if (
         not rose_config_exists(srcdir, opts) or
-        not rose_config_exists(destdir, opts)
+        not rose_config_exists(rundir, opts)
     ):
         return False
 
     # Load the config tree
-    config_tree = rose_config_tree_loader(destdir, opts)
+    config_tree = rose_config_tree_loader(rundir, opts)
 
     if any(i.startswith('file') for i in config_tree.node.value):
         try:
             startpoint = os.getcwd()
-            os.chdir(destdir)
+            os.chdir(rundir)
         except FileNotFoundError as exc:
             raise exc
         else:
@@ -220,7 +220,7 @@ def rose_fileinstall(srcdir=None, opts=None, destdir=None):
             # Update config tree with install location
             # NOTE-TO-SELF: value=os.environ["CYLC_SUITE_RUN_DIR"]
             config_tree.node = config_tree.node.set(
-                keys=["file-install-root"], value=str(destdir)
+                keys=["file-install-root"], value=str(rundir)
             )
 
             # Artificially set rose to verbose.

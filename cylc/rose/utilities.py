@@ -454,11 +454,11 @@ def simplify_opts_strings(opts):
     return ' '.join(reversed(seen_once))
 
 
-def dump_rose_log(destdir, node):
+def dump_rose_log(rundir, node):
     """Dump a config node to a timestamped file in the ``log`` sub-directory.
 
     Args:
-        destdir (pathlib.Path):
+        rundir (pathlib.Path):
             Installed location of a flow.
         node (Rose Config node):
             Node to be dumped to file.
@@ -471,7 +471,7 @@ def dump_rose_log(destdir, node):
         print_format='%Y%m%dT%H%M%S%Z'
     )
     rel_path = f'log/conf/{timestamp}-rose-suite.conf'
-    fpath = destdir / rel_path
+    fpath = rundir / rel_path
     fpath.parent.mkdir(exist_ok=True, parents=True)
     dumper.dump(node, str(fpath))
     return rel_path

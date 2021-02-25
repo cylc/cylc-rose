@@ -62,9 +62,9 @@ def test_rose_fileinstall_no_config_in_folder():
 def test_rose_fileinstall_uses_suite_defines(tmp_path):
     # Setup source and destination dirs, including the file ``installme``:
     srcdir = tmp_path / 'source'
-    destdir = tmp_path / 'dest'
-    [srcdir.mkdir() for srcdir in [srcdir, destdir]]
-    (destdir / 'rose-suite.conf').touch()
+    rundir = tmp_path / 'dest'
+    [srcdir.mkdir() for srcdir in [srcdir, rundir]]
+    (rundir / 'rose-suite.conf').touch()
     (srcdir / 'rose-suite.conf').touch()
     (srcdir / 'installme').write_text('Galileo No! We will not let you go.')
 
@@ -76,9 +76,9 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
     )
 
     # Run both record_cylc_install options and fileinstall.
-    record_cylc_install_options(opts=opts, destdir=destdir)
-    rose_fileinstall(srcdir, opts, destdir)
-    assert (destdir / 'installedme').read_text() == \
+    record_cylc_install_options(opts=opts, rundir=rundir)
+    rose_fileinstall(srcdir, opts, rundir)
+    assert (rundir / 'installedme').read_text() == \
         'Galileo No! We will not let you go.'
 
 
@@ -215,10 +215,10 @@ def test_functional_record_cylc_install_options(
     # Run the entry point top-level function:
     rose_suite_cylc_install_node, rose_suite_opts_node = \
         record_cylc_install_options(
-            destdir=testdir, opts=opts, srcdir=testdir
+            rundir=testdir, opts=opts, srcdir=testdir
         )
     rose_fileinstall(
-        destdir=testdir, opts=opts, srcdir=testdir
+        rundir=testdir, opts=opts, srcdir=testdir
     )
     ritems = sorted([i.relative_to(refdir) for i in refdir.rglob('*')])
     titems = sorted([i.relative_to(testdir) for i in testdir.rglob('*')])
@@ -236,18 +236,18 @@ def test_functional_record_cylc_install_options(
 
 def test_functional_rose_database_dumped_correctly(tmp_path):
     srcdir = (tmp_path / 'srcdir')
-    destdir = (tmp_path / 'destdir')
-    for srcdir in [srcdir, destdir]:
+    rundir = (tmp_path / 'rundir')
+    for srcdir in [srcdir, rundir]:
         srcdir.mkdir()
     (srcdir / 'rose-suite.conf').touch()  # sidestep test for conf existance
-    (destdir / 'nicest_work_of.nature').touch()
-    (destdir / 'rose-suite.conf').write_text(
+    (rundir / 'nicest_work_of.nature').touch()
+    (rundir / 'rose-suite.conf').write_text(
         "[file:Gnu]\nsrc=nicest_work_of.nature\n"
     )
-    (destdir / 'cylc.flow').touch()
-    rose_fileinstall(srcdir=srcdir, destdir=destdir)
+    (rundir / 'cylc.flow').touch()
+    rose_fileinstall(srcdir=srcdir, rundir=rundir)
 
-    assert (destdir / '.rose-config_processors-file.db').is_file()
+    assert (rundir / '.rose-config_processors-file.db').is_file()
 
 
 def test_functional_rose_database_dumped_errors(tmp_path):
@@ -268,4 +268,4 @@ def test_rose_fileinstall_exception(tmp_path, monkeypatch):
     monkeypatch.setattr(os, 'getcwd', broken)
     (tmp_path / 'rose-suite.conf').touch()
     with pytest.raises(FileNotFoundError):
-        rose_fileinstall(srcdir=tmp_path, destdir=tmp_path)
+        rose_fileinstall(srcdir=tmp_path, rundir=tmp_path)
