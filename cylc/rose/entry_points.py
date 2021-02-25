@@ -201,8 +201,9 @@ def record_cylc_install_options(
 
     # If file exists we need to merge with our new config, over-writing with
     # new items where there are duplicates.
-
     if conf_filepath.is_file():
+        if opts.clear_rose_install_opts:
+            conf_filepath.unlink()
         oldconfig = loader.load(str(conf_filepath))
         cli_config = merge_rose_cylc_suite_install_conf(oldconfig, cli_config)
 
