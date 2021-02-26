@@ -57,6 +57,9 @@ def fixture_provide_flow(tmp_path_factory):
     srcpath = (tmp_path_factory.getbasetemp() / test_flow_name)
     flowpath = Path(get_workflow_run_dir(test_flow_name))
     shutil.copytree(workflow_src, srcpath)
+    (srcpath / 'opt').mkdir(exist_ok=True)
+    for opt in ['foo', 'bar', 'baz']:
+        (srcpath / f'opt/rose-suite-{opt}.conf').touch()
     yield {
         'test_flow_name': test_flow_name,
         'flowpath': flowpath,
