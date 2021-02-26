@@ -20,6 +20,7 @@ Top level module providing entry point functions.
 """
 
 import os
+import shutil
 
 from pathlib import Path
 
@@ -190,6 +191,7 @@ def record_cylc_install_options(
     """
     if not rose_config_exists(dir_, opts):
         return False
+
     # Create a config based on command line options:
     cli_config = get_cli_opts_node(opts)
     # Construct a path objects representing our target files.
@@ -222,3 +224,42 @@ def record_cylc_install_options(
     )
     dumper(rose_suite_conf, rose_conf_filepath)
     return cli_config, rose_suite_conf
+
+
+def copy_config_file(
+    dir_=None,
+    opts=None,
+    dest_root=None,
+):
+    """Copy the ``rose-suite.conf`` from a workflow source to run directory.
+
+    Args:
+        dir_ (pathlib.Path | or str):
+            Source Path of Cylc install.
+        opts:
+            Not used in this function, but requried for consistent entry point.
+        dest_root (pathlib.Path | or str):
+            Destination path of Cylc install - the workflow rundir.
+
+    Return:
+        True if ``rose-suite.conf`` has been installed.
+        False if insufficiant information to install file given.
+    """
+    if (
+        dest_root is None or
+        dir_ is None
+    ):
+        return False
+
+    rundir = Path(dest_root)
+    srcdir = Path(dir_)
+    srcdir_rose_conf = srcdir / 'rose-suite.conf'
+    rundir_rose_conf = rundir / 'rose-suite.conf'
+
+    if not srcdir_rose_conf.is_file():
+        return False
+    elif rundir_rose_conf.is_file():
+        rundir_rose_conf.unlink()
+    shutil.copy2(srcdir_rose_conf, rundir_rose_conf)
+
+    return True

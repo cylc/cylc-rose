@@ -27,10 +27,10 @@ from uuid import uuid4
 from cylc.flow.pathutil import get_workflow_run_dir
 
 
-@pytest.fixture
-def fixture_provide_flow(tmp_path):
+@pytest.fixture(scope='module')
+def fixture_provide_flow(tmp_path_factory):
     # Set up paths for test:
-    srcpath = tmp_path / 'src'
+    srcpath = tmp_path_factory.getbasetemp() / 'src'
     datapath = Path(__file__).parent / 'fileinstall_data'
     for path in [srcpath]:
         path.mkdir()
@@ -52,11 +52,10 @@ def fixture_provide_flow(tmp_path):
     (srcpath / 'opt').mkdir()
     (srcpath / 'opt/rose-suite-A.conf').touch()
     (srcpath / 'opt/rose-suite-B.conf').touch()
-
     yield srcpath, datapath, flow_name
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def fixture_install_flow(fixture_provide_flow):
     srcpath, datapath, flow_name = fixture_provide_flow
     cmd = shlex.split(
