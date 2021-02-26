@@ -204,8 +204,11 @@ def record_cylc_install_options(
     if conf_filepath.is_file():
         if opts.clear_rose_install_opts:
             conf_filepath.unlink()
-        oldconfig = loader.load(str(conf_filepath))
-        cli_config = merge_rose_cylc_suite_install_conf(oldconfig, cli_config)
+        else:
+            oldconfig = loader.load(str(conf_filepath))
+            cli_config = merge_rose_cylc_suite_install_conf(
+                oldconfig, cli_config
+            )
 
     cli_config.comments = [
         ' This file records CLI Options.'
