@@ -48,6 +48,9 @@ def monkeymodule():
 
 @pytest.fixture(scope='module')
 def fixture_provide_flow(tmp_path_factory):
+    """Provide a cylc workflow based on the contents of a folder which can
+    be either validated or installed.
+    """
     src_flow_name = '11_reinstall_clean'
     workflow_src = Path(__file__).parent / src_flow_name
     test_flow_name = f'cylc-rose-test-{str(uuid4())[:8]}'
@@ -109,47 +112,6 @@ def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
         [
             'cylc', 'reinstall',
             f'{fixture_provide_flow["test_flow_name"]}/run1',
-            '-O', 'baz', '-D', '[env]BAR=2'
-        ],
-        capture_output=True,
-        env=os.environ
-    )
-    yield {
-        'fixture_provide_flow': fixture_provide_flow,
-        'result': result
-    }
-
-
-def test_cylc_reinstall_run(fixture_reinstall_flow):
-    assert fixture_reinstall_flow['result'].returncode == 0
-
-
-@pytest.mark.parametrize(
-    'file_, expect',
-    [
-        (
-            'run1/opt/rose-suite-cylc-install.conf', (
-                '# This file records CLI Options.\n\n'
-                '!opts=bar baz\n\n'
-                '[env]\n'
-                'BAR=2\n'
-                'FOO=1\n'
-            )
-        )
-    ]
-)
-def test_cylc_reinstall_files(fixture_reinstall_flow, file_, expect):
-    fpath = fixture_reinstall_flow['fixture_provide_flow']['flowpath']
-    assert (fpath / file_).read_text() == expect
-
-
-@pytest.fixture(scope='module')
-def fixture_reinstall_flow2(fixture_provide_flow, monkeymodule):
-    monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
-    result = subprocess.run(
-        [
-            'cylc', 'reinstall',
-            f'{fixture_provide_flow["test_flow_name"]}/run1',
             '-O', 'baz', '-D', '[env]BAR=2',
             '--clear-rose-install-options'
         ],
@@ -161,8 +123,8 @@ def fixture_reinstall_flow2(fixture_provide_flow, monkeymodule):
     }
 
 
-def test_cylc_reinstall_run2(fixture_reinstall_flow2):
-    assert fixture_reinstall_flow2['result'].returncode == 0
+def test_cylc_reinstall_run2(fixture_reinstall_flow):
+    assert fixture_reinstall_flow['result'].returncode == 0
 
 
 @pytest.mark.parametrize(
@@ -178,6 +140,6 @@ def test_cylc_reinstall_run2(fixture_reinstall_flow2):
         )
     ]
 )
-def test_cylc_reinstall_files2(fixture_reinstall_flow2, file_, expect):
-    fpath = fixture_reinstall_flow2['fixture_provide_flow']['flowpath']
+def test_cylc_reinstall_files2(fixture_reinstall_flow, file_, expect):
+    fpath = fixture_reinstall_flow['fixture_provide_flow']['flowpath']
     assert (fpath / file_).read_text() == expect
