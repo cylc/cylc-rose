@@ -71,6 +71,14 @@ def fixture_provide_flow(tmp_path_factory):
 
 @pytest.fixture(scope='module')
 def fixture_install_flow(fixture_provide_flow, monkeymodule):
+    """Run ``cylc install``.
+
+    By running in a fixture with modular scope we
+    can run tests on different aspects of its output as separate tests.
+
+    If a test fails using ``pytest --pdb then``
+    ``fixture_install_flow['result'].stderr`` may help with debugging.
+    """
     result = subprocess.run(
         [
             'cylc', 'install', '-O', 'bar', '-D', '[env]FOO=1',
@@ -110,6 +118,17 @@ def test_cylc_install_files(fixture_install_flow, file_, expect):
 
 @pytest.fixture(scope='module')
 def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
+    """Run ``cylc reinstall --clear-rose-install-options``.
+
+    Ensure that a reinstalled workflow ignores existing
+    rose-suite-cylc-install.conf if asked to do so.
+
+    By running in a fixture with modular scope we
+    can run tests on different aspects of its output as separate tests.
+
+    If a test fails using ``pytest --pdb then``
+    ``fixture_install_flow['result'].stderr`` may help with debugging.
+    """
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
     result = subprocess.run(
         [
@@ -126,7 +145,7 @@ def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
     }
 
 
-def test_cylc_reinstall_run2(fixture_reinstall_flow):
+def test_cylc_reinstall_run(fixture_reinstall_flow):
     assert fixture_reinstall_flow['result'].returncode == 0
 
 
@@ -143,6 +162,6 @@ def test_cylc_reinstall_run2(fixture_reinstall_flow):
         )
     ]
 )
-def test_cylc_reinstall_files2(fixture_reinstall_flow, file_, expect):
+def test_cylc_reinstall_files(fixture_reinstall_flow, file_, expect):
     fpath = fixture_reinstall_flow['fixture_provide_flow']['flowpath']
     assert (fpath / file_).read_text() == expect

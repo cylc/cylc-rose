@@ -71,6 +71,14 @@ def fixture_provide_flow(tmp_path_factory):
 
 @pytest.fixture(scope='module')
 def fixture_install_flow(fixture_provide_flow, monkeymodule):
+    """Run ``cylc install``.
+
+    By running in a fixture with modular scope we
+    can run tests on different aspects of its output as separate tests.
+
+    If a test fails using ``pytest --pdb then``
+    ``fixture_install_flow['result'].stderr`` may help with debugging.
+    """
     monkeymodule.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'b')
     result = subprocess.run(
         [
@@ -88,6 +96,8 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
 
 
 def test_cylc_install(fixture_provide_flow):
+    """Sanity check that workflow validates:
+    """
     srcpath = fixture_provide_flow['srcpath']
     assert subprocess.run(['cylc', 'validate', str(srcpath)]).returncode == 0
 
@@ -121,6 +131,14 @@ def test_cylc_install_files(fixture_install_flow, file_, expect):
 
 @pytest.fixture(scope='module')
 def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
+    """Run ``cylc reinstall``.
+
+    By running in a fixture with modular scope we
+    can run tests on different aspects of its output as separate tests.
+
+    If a test fails using ``pytest --pdb then``
+    ``fixture_install_flow['result'].stderr`` may help with debugging.
+    """
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
     result = subprocess.run(
         [
@@ -166,6 +184,18 @@ def test_cylc_reinstall_files(fixture_reinstall_flow, file_, expect):
 
 @pytest.fixture(scope='module')
 def fixture_reinstall_flow2(fixture_provide_flow, monkeymodule):
+    """Run ``cylc reinstall``.
+
+    This second re-install we change the contents of the source rose-suite.conf
+    to check that the reinstall changes the installed workflow based on this
+    change.
+
+    By running in a fixture with modular scope we
+    can run tests on different aspects of its output as separate tests.
+
+    If a test fails using ``pytest --pdb then``
+    ``fixture_install_flow['result'].stderr`` may help with debugging.
+    """
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
     (fixture_provide_flow['srcpath'] / 'rose-suite.conf').write_text(
         'opts=z\n'
