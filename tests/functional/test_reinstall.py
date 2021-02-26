@@ -48,6 +48,9 @@ def monkeymodule():
 
 @pytest.fixture(scope='module')
 def fixture_provide_flow(tmp_path_factory):
+    """Provide a cylc workflow based on the contents of a folder which can
+    be either validated or installed.
+    """
     src_flow_name = '10_reinstall_basic'
     workflow_src = Path(__file__).parent / src_flow_name
     test_flow_name = f'cylc-rose-test-{str(uuid4())[:8]}'
