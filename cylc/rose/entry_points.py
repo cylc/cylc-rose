@@ -253,7 +253,9 @@ def copy_config_file(
         dest_root is None or
         dir_ is None
     ):
-        return False
+        raise FileNotFoundError(
+            "This plugin requires both source and rundir to exist."
+        )
 
     rundir = Path(dest_root)
     srcdir = Path(dir_)
