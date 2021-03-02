@@ -20,6 +20,7 @@ Top level module providing entry point functions.
 """
 
 import os
+import shutil
 
 from pathlib import Path
 
@@ -34,6 +35,7 @@ from cylc.rose.utilities import (
     get_cli_opts_node,
     add_cylc_install_to_rose_conf_node_opts,
 )
+from cylc.flow import LOG
 
 
 def pre_configure(srcdir=None, opts=None, rundir=None):
@@ -44,6 +46,7 @@ def pre_configure(srcdir=None, opts=None, rundir=None):
 def post_install(srcdir=None, opts=None, rundir=None):
     srcdir, rundir = paths_to_pathlib([srcdir, rundir])
     results = {}
+    copy_config_file(srcdir=srcdir, rundir=rundir)
     results['record_install'] = record_cylc_install_options(
         srcdir=srcdir, opts=opts, rundir=rundir
     )
@@ -95,6 +98,13 @@ def get_rose_vars(srcdir=None, opts=None):
 
     # Load the raw config tree
     config_tree = rose_config_tree_loader(srcdir, opts)
+
+    # Warn if root-dir set in config:
+    if 'root-dir' in config_tree.node:
+        LOG.warning(
+            'You have set "root-dir", which at Cylc 8 does nothing. '
+            'See Cylc Install documentation.'
+        )
 
     # Extract templatevars from the configuration
     get_rose_vars_from_config_node(
@@ -164,11 +174,17 @@ def record_cylc_install_options(
     dumper = ConfigDumper()
     loader = ConfigLoader()
 
-    # Create rose-suite-cylc-install.conf. Merge with existing file if present.
+    # If file exists we need to merge with our new config, over-writing with
+    # new items where there are duplicates.
     if conf_filepath.is_file():
-        oldconfig = loader.load(str(conf_filepath))
-        cli_config = merge_rose_cylc_suite_install_conf(oldconfig, cli_config)
-    # Add an explanatory note to rose-suite-cylc-install.conf:
+        if opts.clear_rose_install_opts:
+            conf_filepath.unlink()
+        else:
+            oldconfig = loader.load(str(conf_filepath))
+            cli_config = merge_rose_cylc_suite_install_conf(
+                oldconfig, cli_config
+            )
+
     cli_config.comments = [
         ' This file records CLI Options.'
     ]
@@ -235,3 +251,44 @@ def rose_fileinstall(srcdir=None, opts=None, rundir=None):
             os.chdir(startpoint)
 
     return config_tree.node
+
+
+def copy_config_file(
+    srcdir=None,
+    opts=None,
+    rundir=None,
+):
+    """Copy the ``rose-suite.conf`` from a workflow source to run directory.
+
+    Args:
+        srcdir (pathlib.Path | or str):
+            Source Path of Cylc install.
+        opts:
+            Not used in this function, but requried for consistent entry point.
+        rundir (pathlib.Path | or str):
+            Destination path of Cylc install - the workflow rundir.
+
+    Return:
+        True if ``rose-suite.conf`` has been installed.
+        False if insufficiant information to install file given.
+    """
+    if (
+        rundir is None or
+        srcdir is None
+    ):
+        raise FileNotFoundError(
+            "This plugin requires both source and rundir to exist."
+        )
+
+    rundir = Path(rundir)
+    srcdir = Path(srcdir)
+    srcdir_rose_conf = srcdir / 'rose-suite.conf'
+    rundir_rose_conf = rundir / 'rose-suite.conf'
+
+    if not srcdir_rose_conf.is_file():
+        return False
+    elif rundir_rose_conf.is_file():
+        rundir_rose_conf.unlink()
+    shutil.copy2(srcdir_rose_conf, rundir_rose_conf)
+
+    return True

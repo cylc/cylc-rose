@@ -21,6 +21,8 @@ import subprocess
 import pytest
 import os
 
+from cylc.rose.entry_points import get_rose_vars
+
 
 def envar_exporter(dict_):
     for key, val in dict_.items():
@@ -120,3 +122,14 @@ def test_process(tmp_path, srcdir, envvars, args):
     ).stdout.decode()
     expect = (srcdir / 'processed.conf.control').read_text()
     assert expect == result
+
+
+def test_warn_if_root_dir_set(tmp_path, caplog):
+    (tmp_path / 'rose-suite.conf').write_text(
+        'root-dir="/the/only/path/ive/ever/known"\n'
+    )
+    get_rose_vars(srcdir=tmp_path)
+    assert caplog.records[0].msg == (
+        'You have set "root-dir", which at Cylc 8 does nothing. '
+        'See Cylc Install documentation.'
+    )

@@ -40,4 +40,3 @@ from cylc.rose.utilities import paths_to_pathlib
 )
 def test_paths_to_pathlib(paths, expect):
     assert paths_to_pathlib(paths) == expect
-

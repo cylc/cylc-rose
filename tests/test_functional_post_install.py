@@ -72,7 +72,8 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
     opts = SimpleNamespace(
         opt_conf_keys='',
         defines=[f'[file:installedme]source={str(srcdir)}/installme'],
-        define_suites=[]
+        define_suites=[],
+        clear_rose_install_opts=False
     )
 
     # Run both record_cylc_install options and fileinstall.
@@ -91,7 +92,10 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
         (
             # opts:
             SimpleNamespace(
-                opt_conf_keys='', defines=['[env]FOO=1'], define_suites=['X=Y']
+                opt_conf_keys='',
+                defines=['[env]FOO=1'],
+                define_suites=['X=Y'],
+                clear_rose_install_opts=False
             ),
             # {file: content}
             {
@@ -114,7 +118,9 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
         (
             # opts:
             SimpleNamespace(
-                opt_conf_keys='baz', defines=['[env]BAR=2']
+                opt_conf_keys='baz',
+                defines=['[env]BAR=2'],
+                clear_rose_install_opts=False
             ),
             # {file: content}
             {
@@ -139,7 +145,8 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
         (
             # opts:
             SimpleNamespace(
-                opt_conf_keys='c'
+                opt_conf_keys='c',
+                clear_rose_install_opts=False
             ),
             # {file: content}
             {
@@ -163,7 +170,8 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
             SimpleNamespace(
                 opt_conf_keys='bar',
                 defines=['[env]a=b'],
-                define_suites=['a="b"']
+                define_suites=['a="b"'],
+                clear_rose_install_opts=False
             ),
             # {file: content}
             {
