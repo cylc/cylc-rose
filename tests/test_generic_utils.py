@@ -13,9 +13,30 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Test generic ultilities
+"""
 
-[options.entry_points]
-cylc.pre_configure =
-    rose = cylc.rose.entry_points:pre_configure
-cylc.post_install =
-    rose_opts = cylc.rose.entry_points:post_install
+import pytest
+
+from pathlib import Path
+
+from cylc.rose.utilities import paths_to_pathlib
+
+
+@pytest.mark.parametrize(
+    'paths, expect',
+    [
+        # None is passed through:
+        ([None, None], [None, None]),
+        # Path as string is made Path:
+        (['/foot/path/', None], [Path('/foot/path'), None]),
+        # Path as Path left alone:
+        ([Path('/cycle/path/'), None], [Path('/cycle/path'), None]),
+        # Different starting types re-typed independently:
+        (
+            [Path('/cycle/path/'), '/bridle/path'],
+            [Path('/cycle/path'), Path('/bridle/path')]),
+    ]
+)
+def test_paths_to_pathlib(paths, expect):
+    assert paths_to_pathlib(paths) == expect

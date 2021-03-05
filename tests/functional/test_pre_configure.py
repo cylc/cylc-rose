@@ -128,7 +128,7 @@ def test_warn_if_root_dir_set(tmp_path, caplog):
     (tmp_path / 'rose-suite.conf').write_text(
         'root-dir="/the/only/path/ive/ever/known"\n'
     )
-    get_rose_vars(dir_=tmp_path)
+    get_rose_vars(srcdir=tmp_path)
     assert caplog.records[0].msg == (
         'You have set "root-dir", which at Cylc 8 does nothing. '
         'See Cylc Install documentation.'

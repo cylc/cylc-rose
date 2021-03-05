@@ -22,6 +22,7 @@ installation.
 """
 import pytest
 
+from pathlib import Path
 from types import SimpleNamespace
 
 from metomi.isodatetime.datetimeoper import DateTimeOperator
@@ -49,13 +50,13 @@ def assert_rose_conf_full_equal(left, right, no_ignore=True):
 
 
 def test_no_rose_suite_conf_in_devdir(tmp_path):
-    result = record_cylc_install_options(dir_=tmp_path)
+    result = record_cylc_install_options(srcdir=tmp_path)
     assert result is False
 
 
 def test_rose_fileinstall_no_config_in_folder():
     # It returns false if no rose-suite.conf
-    assert rose_fileinstall('/dev/null') is False
+    assert rose_fileinstall(Path('/dev/null')) is False
 
 
 def test_rose_fileinstall_uses_suite_defines(tmp_path):
@@ -76,8 +77,8 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
     )
 
     # Run both record_cylc_install options and fileinstall.
-    record_cylc_install_options(opts=opts, dest_root=destdir)
-    rose_fileinstall(str(srcdir), opts, str(destdir))
+    record_cylc_install_options(opts=opts, rundir=destdir)
+    rose_fileinstall(srcdir, opts, destdir)
     assert (destdir / 'installedme').read_text() == \
         'Galileo No! We will not let you go.'
 
@@ -107,9 +108,6 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 ),
                 'ref/rose-suite.conf': '!opts=foo (cylc-install)',
                 'ref/opt/rose-suite-foo.conf': '',
-                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
-                    '!opts=\n\n[env]\nFOO=1\n\n[jinja2:suite.rc]\nX=Y\n'
-                ),
                 'ref/rose-suite.conf': '!opts=foo (cylc-install)'
             },
             # ENVIRONMENT VARS
@@ -138,9 +136,6 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'ref/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-bar.conf': '',
                 'ref/opt/rose-suite-baz.conf': '',
-                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
-                    '!opts=bar baz\n\n[env]\nBAR=2\n'
-                ),
                 'ref/rose-suite.conf': '!opts=foo bar baz (cylc-install)'
             },
             # ENVIRONMENT VARS
@@ -165,9 +160,6 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'ref/opt/rose-suite-a.conf': '',
                 'ref/opt/rose-suite-b.conf': '',
                 'ref/opt/rose-suite-c.conf': '',
-                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
-                    '!opts=b c\n\n'
-                )
             },
             # ENVIRONMENT VARS
             {'ROSE_SUITE_OPT_CONF_KEYS': 'b'},
@@ -194,10 +186,6 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 ),
                 'ref/opt/rose-suite-foo.conf': '[jinja2:suite.rc]\ny="f"\n',
                 'ref/opt/rose-suite-bar.conf': '[jinja2:suite.rc]\ny="b"\n',
-                'ref/log/conf/18151210T0000Z-rose-suite.conf': (
-                    '!opts=foo bar\n\n[env]\na=b'
-                    '\n\n[jinja2:suite.rc]\na="b"\ny="b"\n'
-                )
             },
             # ENVIRONMENT VARS
             {'ROSE_SUITE_OPT_CONF_KEYS': 'foo'},
@@ -235,10 +223,10 @@ def test_functional_record_cylc_install_options(
     # Run the entry point top-level function:
     rose_suite_cylc_install_node, rose_suite_opts_node = \
         record_cylc_install_options(
-            dest_root=testdir, opts=opts, dir_=testdir
+            rundir=testdir, opts=opts, srcdir=testdir
         )
     rose_fileinstall(
-        dest_root=testdir, opts=opts, dir_=testdir
+        rundir=testdir, opts=opts, srcdir=testdir
     )
     ritems = sorted([i.relative_to(refdir) for i in refdir.rglob('*')])
     titems = sorted([i.relative_to(testdir) for i in testdir.rglob('*')])
@@ -256,18 +244,18 @@ def test_functional_record_cylc_install_options(
 
 def test_functional_rose_database_dumped_correctly(tmp_path):
     srcdir = (tmp_path / 'srcdir')
-    destdir = (tmp_path / 'destdir')
-    for dir_ in [srcdir, destdir]:
+    rundir = (tmp_path / 'rundir')
+    for dir_ in [srcdir, rundir]:
         dir_.mkdir()
     (srcdir / 'rose-suite.conf').touch()  # sidestep test for conf existance
-    (destdir / 'nicest_work_of.nature').touch()
-    (destdir / 'rose-suite.conf').write_text(
+    (rundir / 'nicest_work_of.nature').touch()
+    (rundir / 'rose-suite.conf').write_text(
         "[file:Gnu]\nsrc=nicest_work_of.nature\n"
     )
-    (destdir / 'cylc.flow').touch()
-    rose_fileinstall(dir_=srcdir, dest_root=destdir)
+    (rundir / 'cylc.flow').touch()
+    rose_fileinstall(srcdir=srcdir, rundir=rundir)
 
-    assert (destdir / '.rose-config_processors-file.db').is_file()
+    assert (rundir / '.rose-config_processors-file.db').is_file()
 
 
 def test_functional_rose_database_dumped_errors(tmp_path):
@@ -278,7 +266,7 @@ def test_functional_rose_database_dumped_errors(tmp_path):
         "[file:Gnu]\nsrc=nicest_work_of.nature\n"
     )
     (srcdir / 'cylc.flow').touch()
-    assert rose_fileinstall(dir_='/this/path/goes/nowhere') is False
+    assert rose_fileinstall(srcdir=Path('/this/path/goes/nowhere')) is False
 
 
 def test_rose_fileinstall_exception(tmp_path, monkeypatch):
@@ -288,4 +276,4 @@ def test_rose_fileinstall_exception(tmp_path, monkeypatch):
     monkeypatch.setattr(os, 'getcwd', broken)
     (tmp_path / 'rose-suite.conf').touch()
     with pytest.raises(FileNotFoundError):
-        rose_fileinstall(dir_=tmp_path, dest_root=tmp_path)
+        rose_fileinstall(srcdir=tmp_path, rundir=tmp_path)

@@ -31,25 +31,47 @@ from cylc.rose.utilities import (
     rose_config_exists,
     rose_config_tree_loader,
     merge_rose_cylc_suite_install_conf,
+    paths_to_pathlib,
     get_cli_opts_node,
     add_cylc_install_to_rose_conf_node_opts,
 )
 from cylc.flow import LOG
 
 
-def get_rose_vars(dir_=None, opts=None):
+def pre_configure(srcdir=None, opts=None, rundir=None):
+    srcdir, rundir = paths_to_pathlib([srcdir, rundir])
+    return get_rose_vars(srcdir=srcdir, opts=opts)
+
+
+def post_install(srcdir=None, opts=None, rundir=None):
+    srcdir, rundir = paths_to_pathlib([srcdir, rundir])
+    results = {}
+    copy_config_file(srcdir=srcdir, rundir=rundir)
+    results['record_install'] = record_cylc_install_options(
+        srcdir=srcdir, opts=opts, rundir=rundir
+    )
+    results['fileinstall'] = rose_fileinstall(
+        srcdir=srcdir, opts=opts, rundir=rundir
+    )
+    # Finally dump a log of the rose-conf in its final state.
+    dump_rose_log(rundir=rundir, node=results['fileinstall'])
+
+    return results
+
+
+def get_rose_vars(srcdir=None, opts=None):
     """Load template variables from Rose suite configuration.
 
-    This loads the Rose suite configuration tree from the filesystem
+    Loads the Rose suite configuration tree from the filesystem
     using the shell environment.
 
     Args:
-        dir_(string | pathlib.Path):
+        srcdir(pathlib.Path):
             Path to the Rose suite configuration
             (the directory containing the ``rose-suite.conf`` file).
         opts:
-            Some sort of options object or string - To be used to allow CLI
-            specification of optional configuaration.
+            Options object containing specification of optional
+            configuarations set by the CLI.
 
     Returns:
         dict - A dictionary of sections of rose-suite.conf.
@@ -63,16 +85,19 @@ def get_rose_vars(dir_=None, opts=None):
                 }
             }
     """
+    # Set up blank page for returns.
     config = {
         'env': {},
         'template_variables': {},
         'templating_detected': None
     }
-    # Return a blank config dict if dir_ does not exist
-    if not rose_config_exists(dir_, opts):
+
+    # Return a blank config dict if srcdir does not exist
+    if not rose_config_exists(srcdir, opts):
         return config
+
     # Load the raw config tree
-    config_tree = rose_config_tree_loader(dir_, opts)
+    config_tree = rose_config_tree_loader(srcdir, opts)
 
     # Warn if root-dir set in config:
     if 'root-dir' in config_tree.node:
@@ -95,82 +120,25 @@ def get_rose_vars(dir_=None, opts=None):
     return config
 
 
-def rose_fileinstall(dir_=None, opts=None, dest_root=None):
-    """Call Rose Fileinstall.
-
-    Args:
-        dir_(string or pathlib.Path):
-            Search for a ``rose-suite.conf`` file in this location.
-        dest_root (string or pathlib.Path)
-
-    """
-    if dir_ is not None:
-        dir_ = Path(dir_)
-    if dest_root is not None:
-        dest_root = Path(dest_root)
-
-    if (
-        not rose_config_exists(dir_, opts) or
-        not rose_config_exists(dest_root, opts)
-    ):
-        return False
-
-    # Load the config tree
-    config_tree = rose_config_tree_loader(dest_root, opts)
-
-    if any(i.startswith('file') for i in config_tree.node.value):
-        try:
-            startpoint = os.getcwd()
-            os.chdir(dest_root)
-        except FileNotFoundError as exc:
-            raise exc
-        else:
-            # Carry out imports.
-            from metomi.rose.config_processor import ConfigProcessorsManager
-            from metomi.rose.popen import RosePopener
-            from metomi.rose.reporter import Reporter
-            from metomi.rose.fs_util import FileSystemUtil
-
-            # Update config tree with install location
-            # NOTE-TO-SELF: value=os.environ["CYLC_SUITE_RUN_DIR"]
-            config_tree.node = config_tree.node.set(
-                keys=["file-install-root"], value=str(dest_root)
-            )
-
-            # Artificially set rose to verbose.
-            event_handler = Reporter(3)
-            fs_util = FileSystemUtil(event_handler)
-            popen = RosePopener(event_handler)
-
-            # Process files
-            config_pm = ConfigProcessorsManager(event_handler, popen, fs_util)
-            config_pm(config_tree, "file")
-        finally:
-            os.chdir(startpoint)
-
-    dump_rose_log(dest_root=dest_root, node=config_tree.node)
-
-    return True
-
-
 def record_cylc_install_options(
-    dest_root=None,
+    rundir=None,
     opts=None,
-    dir_=None,
+    srcdir=None,
 ):
     """Create/modify files recording Cylc install config options.
 
     Creates a new config based on CLI options and writes it to the workflow
-    install location as ``rose-suite-cylc-install.conf``. If
-    ``rose-suite-cylc-install.conf`` already exists over-writes changed items,
-    except for ``!opts=`` which is merged and simplified.
+    install location as ``rose-suite-cylc-install.conf``.
+
+    If ``rose-suite-cylc-install.conf`` already exists over-writes changed
+    items, except for ``!opts=`` which is merged and simplified.
 
     If ``!opts=`` have been changed these are appended to those that have
     been written in the installed ``rose-suite.conf``.
 
     Args:
-        _ (pathlib.Path | or str):
-            Not used in this function, but requried for consistent entry point.
+        srcdir (pathlib.Path):
+            Used to check whether the source directory contains a rose config.
         opts:
             Cylc option parser object - we want to extract the following
             values:
@@ -180,7 +148,7 @@ def record_cylc_install_options(
                 Equivelent of ``rose suite-run --define KEY=VAL``
             - suite_defines (list of str):
                 Equivelent of ``rose suite-run --define-suite KEY=VAL``
-        dest_root (pathlib.Path | or str):
+        rundir (pathlib.Path):
             Path to dump the rose-suite-cylc-conf
 
     Returns:
@@ -189,15 +157,20 @@ def record_cylc_install_options(
         rose_suite_conf['opts'] - Opts section of the config node dumped to
         installed ``rose-suite.conf``.
     """
-    if not rose_config_exists(dir_, opts):
+    if not rose_config_exists(srcdir, opts):
         return False
 
     # Create a config based on command line options:
     cli_config = get_cli_opts_node(opts)
-    # Construct a path objects representing our target files.
-    (Path(dest_root) / 'opt').mkdir(exist_ok=True)
-    conf_filepath = Path(dest_root) / 'opt/rose-suite-cylc-install.conf'
-    rose_conf_filepath = Path(dest_root) / 'rose-suite.conf'
+
+    # Leave now if there is nothing to do:
+    if not cli_config:
+        return False
+
+    # Construct path objects representing our target files.
+    (Path(rundir) / 'opt').mkdir(exist_ok=True)
+    conf_filepath = Path(rundir) / 'opt/rose-suite-cylc-install.conf'
+    rose_conf_filepath = Path(rundir) / 'rose-suite.conf'
     dumper = ConfigDumper()
     loader = ConfigLoader()
 
@@ -217,9 +190,7 @@ def record_cylc_install_options(
     ]
     dumper.dump(cli_config, str(conf_filepath))
 
-    # Replace the opts section of the rose-suite.conf in the install location.
-    # If we have not a rose-suite.conf but we use one of the Rose-style
-    # options we still want to record those options.
+    # Merge the opts section of the rose-suite.conf with those set by CLI:
     if not rose_conf_filepath.is_file():
         rose_conf_filepath.touch()
     rose_suite_conf = loader.load(str(rose_conf_filepath))
@@ -227,22 +198,74 @@ def record_cylc_install_options(
         rose_suite_conf, cli_config
     )
     dumper(rose_suite_conf, rose_conf_filepath)
+
     return cli_config, rose_suite_conf
 
 
+def rose_fileinstall(srcdir=None, opts=None, rundir=None):
+    """Call Rose Fileinstall.
+
+    Args:
+        srcdir(pathlib.Path):
+            Search for a ``rose-suite.conf`` file in this location.
+        rundir (pathlib.Path)
+
+    """
+    if (
+        not rose_config_exists(srcdir, opts) or
+        not rose_config_exists(rundir, opts)
+    ):
+        return False
+
+    # Load the config tree
+    config_tree = rose_config_tree_loader(rundir, opts)
+
+    if any(i.startswith('file') for i in config_tree.node.value):
+        try:
+            startpoint = os.getcwd()
+            os.chdir(rundir)
+        except FileNotFoundError as exc:
+            raise exc
+        else:
+            # Carry out imports.
+            from metomi.rose.config_processor import ConfigProcessorsManager
+            from metomi.rose.popen import RosePopener
+            from metomi.rose.reporter import Reporter
+            from metomi.rose.fs_util import FileSystemUtil
+
+            # Update config tree with install location
+            # NOTE-TO-SELF: value=os.environ["CYLC_SUITE_RUN_DIR"]
+            config_tree.node = config_tree.node.set(
+                keys=["file-install-root"], value=str(rundir)
+            )
+
+            # Artificially set rose to verbose.
+            event_handler = Reporter(3)
+            fs_util = FileSystemUtil(event_handler)
+            popen = RosePopener(event_handler)
+
+            # Process files
+            config_pm = ConfigProcessorsManager(event_handler, popen, fs_util)
+            config_pm(config_tree, "file")
+        finally:
+            os.chdir(startpoint)
+
+    return config_tree.node
+
+
 def copy_config_file(
-    dir_=None,
+    srcdir=None,
     opts=None,
-    dest_root=None,
+    rundir=None,
 ):
     """Copy the ``rose-suite.conf`` from a workflow source to run directory.
 
     Args:
-        dir_ (pathlib.Path | or str):
+        srcdir (pathlib.Path | or str):
             Source Path of Cylc install.
         opts:
             Not used in this function, but requried for consistent entry point.
-        dest_root (pathlib.Path | or str):
+        rundir (pathlib.Path | or str):
             Destination path of Cylc install - the workflow rundir.
 
     Return:
@@ -250,15 +273,15 @@ def copy_config_file(
         False if insufficiant information to install file given.
     """
     if (
-        dest_root is None or
-        dir_ is None
+        rundir is None or
+        srcdir is None
     ):
         raise FileNotFoundError(
             "This plugin requires both source and rundir to exist."
         )
 
-    rundir = Path(dest_root)
-    srcdir = Path(dir_)
+    rundir = Path(rundir)
+    srcdir = Path(srcdir)
     srcdir_rose_conf = srcdir / 'rose-suite.conf'
     rundir_rose_conf = rundir / 'rose-suite.conf'
 
