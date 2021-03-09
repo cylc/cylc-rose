@@ -44,6 +44,8 @@ def pre_configure(srcdir=None, opts=None, rundir=None):
 
 
 def post_install(srcdir=None, opts=None, rundir=None):
+    if not rose_config_exists(srcdir, opts):
+        return False
     srcdir, rundir = paths_to_pathlib([srcdir, rundir])
     results = {}
     copy_config_file(srcdir=srcdir, rundir=rundir)
@@ -54,7 +56,8 @@ def post_install(srcdir=None, opts=None, rundir=None):
         srcdir=srcdir, opts=opts, rundir=rundir
     )
     # Finally dump a log of the rose-conf in its final state.
-    dump_rose_log(rundir=rundir, node=results['fileinstall'])
+    if results['fileinstall']:
+        dump_rose_log(rundir=rundir, node=results['fileinstall'])
 
     return results
 
@@ -157,9 +160,6 @@ def record_cylc_install_options(
         rose_suite_conf['opts'] - Opts section of the config node dumped to
         installed ``rose-suite.conf``.
     """
-    if not rose_config_exists(srcdir, opts):
-        return False
-
     # Create a config based on command line options:
     cli_config = get_cli_opts_node(opts)
 
@@ -211,10 +211,7 @@ def rose_fileinstall(srcdir=None, opts=None, rundir=None):
         rundir (pathlib.Path)
 
     """
-    if (
-        not rose_config_exists(srcdir, opts) or
-        not rose_config_exists(rundir, opts)
-    ):
+    if not rose_config_exists(rundir, opts):
         return False
 
     # Load the config tree
