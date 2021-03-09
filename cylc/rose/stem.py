@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (C) British Crown (Met Office) & Contributors.
+# Copyright (C) 2012-2020 British Crown (Met Office) & Contributors.
 #
 # This file is part of Rose, a framework for meteorological suites.
 #
@@ -23,17 +23,21 @@ import os
 import re
 import sys
 
+from cylc.flow.scripts.install import (
+    get_option_parser,
+    install as cylc_install
+)
+
 import metomi.rose.config
 from metomi.rose.fs_util import FileSystemUtil
 from metomi.rose.host_select import HostSelector
-from metomi.rose.opt_parse import RoseOptionParser
-from metomi.rose.popen import RosePopener, RosePopenError
+from metomi.rose.popen import RosePopener
 from metomi.rose.reporter import Reporter, Event
 from metomi.rose.resource import ResourceLocator
 from metomi.rose.suite_run import SuiteRunner
 
+
 DEFAULT_TEST_DIR = 'rose-stem'
-OPTIONS = ['group', 'source', 'task', ]
 ROSE_STEM_VERSION = 1
 SUITE_RC_PREFIX = '[jinja2:suite.rc]'
 
@@ -96,17 +100,17 @@ class ProjectNotFoundException(Exception):
 
 class RoseStemVersionException(Exception):
 
-    """Exception class when running the wrong metomi.rose-stem version."""
+    """Exception class when running the wrong rose-stem version."""
 
     def __init__(self, version):
         Exception.__init__(self, version)
         if version is None:
-            self.suite_version = "not metomi.rose-stem compatible"
+            self.suite_version = "not rose-stem compatible"
         else:
             self.suite_version = "at version %s" % (version)
 
     def __repr__(self):
-        return "Running metomi.rose-stem version %s but suite is %s" % (
+        return "Running rose-stem version %s but suite is %s" % (
             ROSE_STEM_VERSION, self.suite_version)
 
     __str__ = __repr__
@@ -114,7 +118,7 @@ class RoseStemVersionException(Exception):
 
 class RoseSuiteConfNotFoundException(Exception):
 
-    """Exception class when unable to find metomi.rose-suite.conf."""
+    """Exception class when unable to find rose-suite.conf."""
 
     def __init__(self, location):
         Exception.__init__(self, location)
@@ -162,7 +166,7 @@ class SuiteSelectionEvent(Event):
     LEVEL = Event.DEFAULT
 
     def __repr__(self):
-        return "Will run suite from %s" % (self.args[0])
+        return "Will install suite from %s" % (self.args[0])
 
     __str__ = __repr__
 
@@ -208,12 +212,11 @@ class StemRunner(object):
         """
 
         ret_code, output, stderr = self.popen.run('fcm', 'loc-layout', item)
-        output = output.decode()
         if ret_code != 0:
             raise ProjectNotFoundException(item, stderr)
 
         ret = {}
-        for line in output.splitlines():
+        for line in output.decode().splitlines():
             if ":" not in line:
                 continue
             key, value = line.split(":", 1)
@@ -230,13 +233,12 @@ class StemRunner(object):
         if source_dict['project']:
             repo += '/' + source_dict['project']
 
-        kpoutput = self.popen.run('fcm', 'kp', source_dict['url'])[1]
+        kpoutput = self.popen.run('fcm', 'kp', source_dict['url'])[1].decode()
 
         project = None
         for line in kpoutput.splitlines():
-            if line.rstrip().endswith(repo.encode('UTF-8')):
-                kpresult = re.search(r'^location{primary}\[(.*)\]',
-                                     line.decode())
+            if line.rstrip().endswith(repo):
+                kpresult = re.search(r'^location{primary}\[(.*)\]', line)
                 if kpresult:
                     project = kpresult.group(1)
                     break
@@ -267,10 +269,10 @@ class StemRunner(object):
     def _ascertain_project(self, item):
         """Set the project name and top-level from 'fcm loc-layout'.
         Returns:
-            * project name
-            * top-level location of the source tree with revision number
-            * top-level location of the source tree without revision number
-            * revision number
+        - project name
+        - top-level location of the source tree with revision number
+        - top-level location of the source tree without revision number
+        - revision number
         """
 
         project = None
@@ -283,8 +285,7 @@ class StemRunner(object):
             item = os.path.abspath(os.path.join(os.getcwd(), item))
 
         if project is not None:
-            print("[WARN] Forcing project for '{0}' to be '{1}'".format(
-                item, project))
+            print(f"[WARN] Forcing project for '{item}' to be '{project}'")
             return project, item, item, '', ''
 
         source_dict = self._get_base_dir(item)
@@ -321,8 +322,8 @@ class StemRunner(object):
         try:
             basedir = self._ascertain_project(os.getcwd())[1]
         except ProjectNotFoundException:
-            if self.opts.conf_dir:
-                basedir = os.path.abspath(self.opts.conf_dir)
+            if self.opts.source:
+                basedir = os.path.abspath(self.opts.source)
             else:
                 basedir = os.getcwd()
         name = os.path.basename(basedir)
@@ -334,15 +335,17 @@ class StemRunner(object):
 
         # Get base of first source
         basedir = ''
-        if self.opts.source:
-            basedir = self.opts.source[0]
+        if self.opts.stem_sources:
+            basedir = self.opts.stem_sources[0]
         else:
             basedir = self._ascertain_project(os.getcwd())[1]
 
         suitedir = os.path.join(basedir, DEFAULT_TEST_DIR)
         suitefile = os.path.join(suitedir, "rose-suite.conf")
 
-        if not os.path.isfile(suitefile):
+        if os.path.isfile(suitefile):
+            self.opts.suite = suitedir
+        else:
             raise RoseSuiteConfNotFoundException(suitedir)
 
         self._check_suite_version(suitefile)
@@ -350,13 +353,12 @@ class StemRunner(object):
         return suitedir
 
     def _read_auto_opts(self):
-        """Read the site metomi.rose.conf file."""
+        """Read the site rose.conf file."""
         return ResourceLocator.default().get_conf().get_value(
             ["rose-stem", "automatic-options"])
 
     def _check_suite_version(self, fname):
-        """Check the suite is compatible with this version of metomi.rose-stem.
-        """
+        """Check the suite is compatible with this version of rose-stem."""
         if not os.path.isfile(fname):
             raise RoseSuiteConfNotFoundException(os.path.dirname(fname))
         config = metomi.rose.config.load(fname)
@@ -378,17 +380,16 @@ class StemRunner(object):
 
     def process(self):
         """Process STEM options into 'rose suite-run' options."""
-
         # Generate options for source trees
         repos = {}
         repos_with_hosts = {}
-        if not self.opts.source:
-            self.opts.source = ['.']
+        if not self.opts.stem_sources:
+            self.opts.stem_sources = ['.']
         self.opts.project = list()
 
-        for i, url in enumerate(self.opts.source):
+        for i, url in enumerate(self.opts.stem_sources):
             project, url, base, rev, mirror = self._ascertain_project(url)
-            self.opts.source[i] = url
+            self.opts.stem_sources[i] = url
             self.opts.project.append(project)
 
             # Versions of variables with hostname prepended for working copies
@@ -410,6 +411,7 @@ class StemRunner(object):
                 self._add_define_option('SOURCE_' + project.upper() +
                                         '_MIRROR', '"' + mirror + '"')
             self.reporter(SourceTreeAddedAsBranchEvent(url))
+
         for project, branches in repos.items():
             var = 'SOURCE_' + project.upper()
             branchstring = RosePopener.list_to_shell_str(branches)
@@ -420,11 +422,11 @@ class StemRunner(object):
             self._add_define_option(var_host, '"' + branchstring + '"')
 
         # Generate the variable containing tasks to run
-        if self.opts.group:
+        if self.opts.stem_groups:
             if not self.opts.defines:
                 self.opts.defines = []
             expanded_groups = []
-            for i in self.opts.group:
+            for i in self.opts.stem_groups:
                 expanded_groups.extend(i.split(','))
             self.opts.defines.append(SUITE_RC_PREFIX + 'RUN_NAMES=' +
                                      str(expanded_groups))
@@ -440,57 +442,56 @@ class StemRunner(object):
                         elements[0], '"' + elements[1] + '"')
 
         # Change into the suite directory
-        if self.opts.conf_dir:
-            self.reporter(SuiteSelectionEvent(self.opts.conf_dir))
+        if self.opts.source:
+            self.reporter(SuiteSelectionEvent(self.opts.source))
             self._check_suite_version(
-                os.path.join(self.opts.conf_dir, 'rose-suite.conf'))
+                os.path.join(self.opts.source, 'rose-suite.conf'))
         else:
             thissuite = self._this_suite()
             self.fs_util.chdir(thissuite)
             self.reporter(SuiteSelectionEvent(thissuite))
 
         # Create a default name for the suite; allow override by user
-        if not self.opts.name:
-            self.opts.name = self._generate_name()
-        import pdb; pdb.set_trace()
+        if not self.opts.flow_name:
+            self.opts.flow_name = self._generate_name()
+
         return self.opts
 
 
 def main():
-    """Launcher for command line invokation of metomi.rose stem."""
+    """Implement rose stem."""
+    # use the cylc install option parser
+    parser = get_option_parser()
 
-    # Process options
-    opt_parser = RoseOptionParser()
+    # TODO: add any rose stem specific CLI args that might exist
+    # pull the opts and args out of sys.argv
+    parser.add_options([f'--{i}' for i in SuiteRunner.OPTIONS])
+    # On inspection of rose/lib/python/rose/opt_parse.py it turns out that
+    # opts.group is stored by the --task option.
+    parser.add_option(
+        "--task", "--group",
+        help="Specifies a source tree to include in a suite.",
+        action="append",
+        metavar="PATH/TO/FLOW",
+        default=[],
+        dest="stem_groups")
+    parser.add_option(
+        "--source",
+        help="Specifies a source tree to include in a suite.",
+        action="append",
+        metavar="PATH/TO/FLOW",
+        default=[],
+        dest="stem_sources")
 
-    option_keys = SuiteRunner.OPTIONS + OPTIONS
-    opt_parser.add_my_options(*option_keys)
-    opts, args = opt_parser.parse_args()
+    # Hard-set for now, but could be set based upon cylc verbosity levels?
+    parser.add_option('--verbosity', default=1)
+    parser.add_option('--quietness', default=0)
+    opts, args = parser.parse_args(sys.argv)
+    # modify the CLI options to add whatever rose stem would like to add
+    opts = StemRunner(opts).process()
 
-    # Set up a runner instance and process the options
-    stem = StemRunner(opts)
-    if opts.debug_mode:
-        opts = stem.process()
-    else:
-        try:
-            opts = stem.process()
-        except Exception as exc:
-            stem.reporter(exc)
-            sys.exit(1)
-
-    # Get the suiterunner object and execute
-    runner = SuiteRunner(event_handler=stem.reporter,
-                         popen=stem.popen,
-                         fs_util=stem.fs_util)
-    if opts.debug_mode:
-        sys.exit(runner(opts, args))
-    try:
-        sys.exit(runner(opts, args))
-    except Exception as exc:
-        runner.handle_event(exc)
-        if isinstance(exc, RosePopenError):
-            sys.exit(exc.ret_code)
-        else:
-            sys.exit(1)
+    # call cylc install
+    cylc_install(parser, opts, args)
 
 
 if __name__ == "__main__":
