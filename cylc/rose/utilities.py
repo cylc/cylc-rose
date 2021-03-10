@@ -165,7 +165,7 @@ def rose_config_exists(srcdir, opts):
 
     # If _any_ of the following are true we want to return True.
     if (
-        (srcdir / 'rose-suite.conf').is_file() or
+        Path(srcdir, 'rose-suite.conf').is_file() or
         opts and opts.opt_conf_keys or
         opts and opts.defines or
         opts and opts.define_suites
