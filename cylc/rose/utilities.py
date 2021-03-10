@@ -18,10 +18,10 @@ configuration files.
 """
 
 import os
+from pathlib import Path
 import re
 import shlex
-
-from pathlib import Path
+from typing import TYPE_CHECKING, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
@@ -32,6 +32,9 @@ from metomi.rose.config import ConfigDumper, ConfigNodeDiff, ConfigNode
 from metomi.rose.config_processor import ConfigProcessError
 from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
 from metomi.rose.resource import ResourceLocator
+
+if TYPE_CHECKING:
+    from cylc.flow.option_parsers import Options
 
 
 class MultipleTemplatingEnginesError(Exception):
@@ -146,14 +149,14 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             'ROSE_SUITE_VARIABLES'] = config['template_variables']
 
 
-def rose_config_exists(srcdir, opts):
+def rose_config_exists(
+    srcdir: Union[Path, str, None], opts: 'Options'
+) -> bool:
     """Do opts or srcdir contain a rose config?
 
     Args:
-        srcdir(str or pathlib.Path object):
-            location to test.
-        opts (Rose Options):
-            Options, which might contain config items.
+        srcdir: location to test.
+        opts: Cylc Rose options, which might contain config items.
 
     Returns:
         True if a ``rose-suite.conf`` exists, or option config items have

@@ -26,10 +26,13 @@ jobs:
             'cylc-flow[all] @ git+https://github.com/cylc/cylc-flow@master' \
             'metomi-rose[all] @ git+https://github.com/metomi/rose@master'
           pip install ."[all]"
-      
+
       - name: Style
         run: |
           flake8
+
+      - name: Mypy
+        run: mypy
 
       - name: Test
         run: |
