@@ -200,15 +200,15 @@ def rose_stem_run_template(setup_stem_repo):
             cwd=setup_stem_repo['workingcopy']
         )
 
+        # If you need to debug a test looking at the output of the
+        # subprocessed tasks here is often helpful: try ``run_stem.stderr``.
+        # breakpoint()
+
         outputpath = (
             Path(setup_stem_repo['suite_install_dir']) /
             'runN/opt/rose-suite-cylc-install.conf'
         )
         output = outputpath.read_text()
-
-        # If you need to debug a test looking at the output of the
-        # subprocessed tasks here is often helpful: try ``run_stem.stderr``.
-        # breakpoint()
 
         return {
             'run_stem': run_stem,
@@ -430,7 +430,7 @@ def with_config(
         "rose-stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
-        f"--name {setup_stem_repo['suitename']}"
+        f"--flow-name {setup_stem_repo['suitename']}"
     )
     (setup_stem_repo['basetemp'] / 'rose.conf').write_text(
         '[rose-stem]\n'
@@ -482,7 +482,7 @@ def with_config2(
     rose_stem_cmd = (
         "rose-stem --group=assam "
         f"--source={setup_stem_repo['workingcopy']}/rose-stem "
-        f"--name {setup_stem_repo['suitename']}"
+        f"--flow-name {setup_stem_repo['suitename']}"
     )
     (setup_stem_repo['basetemp'] / 'rose.conf').write_text(
         '[rose-stem]\n'

@@ -19,4 +19,10 @@ Cylc Rose is the bridge between Rose suite configurations and Cylc workflows.
 Cylc Rose is a replacement for the ``rose suite-run`` command (present in Rose
 versions 2019.01 and earlier). It reads the ``rose-suite.conf`` file and
 performs the required actions.
+
+Rose Stem
+#########
+
+Cylc Rose provides a Rose Stem command, if FCM is installed on your system.
+See `the Rose Stem documentation <https://metomi.github.io/rose/2019.01.2/html/tutorial/rose/furthertopics/rose-stem.html>`_
 """

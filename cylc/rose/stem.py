@@ -464,8 +464,6 @@ def main():
     parser = get_option_parser()
 
     # TODO: add any rose stem specific CLI args that might exist
-    # pull the opts and args out of sys.argv
-    parser.add_options([f'--{i}' for i in SuiteRunner.OPTIONS])
     # On inspection of rose/lib/python/rose/opt_parse.py it turns out that
     # opts.group is stored by the --task option.
     parser.add_option(
