@@ -51,5 +51,6 @@ setup(
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRE,
     tests_require=TESTS_REQUIRE,
+    package_data={'cylc.rose': ['py.typed']},
     packages=find_namespace_packages(include=["cylc.*"]),
 )
