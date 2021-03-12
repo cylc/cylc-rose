@@ -24,5 +24,6 @@ Rose Stem
 #########
 
 Cylc Rose provides a Rose Stem command, if FCM is installed on your system.
-See `the Rose Stem documentation <https://metomi.github.io/rose/2019.01.2/html/tutorial/rose/furthertopics/rose-stem.html>`_
+See `the Rose Stem documentation
+<https://metomi.github.io/rose/2019.01.2/html/tutorial/rose/furthertopics/rose-stem.html>`_
 """

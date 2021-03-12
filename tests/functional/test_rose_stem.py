@@ -104,8 +104,8 @@ def setup_stem_repo(tmp_path_factory, monkeymodule):
        |   `-- keyword.cfg
        |-- cylc-rose-stem-test-1df3e028
        |   `-- rose-stem
-       |       |-- rose-suite.conf
-       |       `-- suite.rc
+       |       |-- flow.cylc
+       |       `-- rose-suite.conf
        `-- rose-test-battery-stemtest-repo
            `-- foo
                <truncated>
@@ -154,7 +154,7 @@ def setup_stem_repo(tmp_path_factory, monkeymodule):
     subprocess.run(split(f'fcm checkout -q fcm:foo.x_tr {workingcopy}'))
     # Copy suite into working copy.
     test_src_dir = Path(__file__).parent / '12_rose_stem'
-    for file in ['rose-suite.conf', 'suite.rc']:
+    for file in ['rose-suite.conf', 'flow.cylc']:
         src = str(test_src_dir / file)
         dest = str(workingcopy / 'rose-stem')
         shutil.copy2(src, dest)

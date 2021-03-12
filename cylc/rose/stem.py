@@ -34,7 +34,6 @@ from metomi.rose.host_select import HostSelector
 from metomi.rose.popen import RosePopener
 from metomi.rose.reporter import Reporter, Event
 from metomi.rose.resource import ResourceLocator
-from metomi.rose.suite_run import SuiteRunner
 
 
 DEFAULT_TEST_DIR = 'rose-stem'
