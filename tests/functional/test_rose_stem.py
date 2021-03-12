@@ -188,8 +188,6 @@ def rose_stem_run_template(setup_stem_repo):
             dict:
                 'run_stem': subprocess.CompletedProcess
                     The results of running rose-stem.
-                'cylc_play': subprocess.CompletedProcess
-                    The results of running cylc-play on the rose-stem suite.
                 'jobout_content': str
                     Content of test job output file.
                 ``**setup_stem_repo``:
@@ -202,18 +200,9 @@ def rose_stem_run_template(setup_stem_repo):
             cwd=setup_stem_repo['workingcopy']
         )
 
-        # Run Cylc Play
-        cylc_play = subprocess.run(
-            split(
-                f'cylc play {setup_stem_repo["suitename"]}'
-                '/runN --no-detach'
-            ),
-            capture_output=True
-        )
-
         outputpath = (
             Path(setup_stem_repo['suite_install_dir']) /
-            'runN/log/job/1/my_task_1/01/job.out'
+            'runN/opt/rose-suite-cylc-install.conf'
         )
         output = outputpath.read_text()
 
@@ -223,7 +212,6 @@ def rose_stem_run_template(setup_stem_repo):
 
         return {
             'run_stem': run_stem,
-            'cylc_play': cylc_play,
             'jobout_content': output,
             **setup_stem_repo
         }
@@ -236,7 +224,7 @@ def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
     rose_stem_cmd = (
         "rose-stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
-        "--source=fcm:foo.x_tr@head "
+        "--source=\"fcm:foo.x_tr\"@head "
         f"--flow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
@@ -247,13 +235,13 @@ class TestBasic():
         'expected',
         [
             "run_ok",
-            "RUN_NAMES=[earl_grey, milk, sugar, spoon, cup, milk]",
-            "SOURCE_FOO={workingcopy} fcm:foo.x_tr@head",
-            "HOST_SOURCE_FOO={hostname}:{workingcopy} fcm:foo.x_tr@head",
-            "SOURCE_FOO_BASE={workingcopy}\n",
-            "SOURCE_FOO_BASE={hostname}:{workingcopy}\n",
-            "SOURCE_FOO_REV=\n",
-            "SOURCE_FOO_MIRROR=fcm:foo.xm/trunk@1\n",
+            "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
+            "SOURCE_FOO=\"{workingcopy} fcm:foo.x_tr@head\"",
+            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy} fcm:foo.x_tr@head\"",
+            "SOURCE_FOO_BASE=\"{workingcopy}\"\n",
+            "SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"\n",
+            "SOURCE_FOO_REV=\"\"\n",
+            "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"\n",
         ]
     )
     def test_basic(self, rose_stem_run_basic, expected):
@@ -287,18 +275,21 @@ class TestProjectOverride():
         'expected',
         [
             "run_ok",
-            "RUN_NAMES=[earl_grey, milk, sugar, spoon, cup, milk]",
-            "SOURCE_FOO=fcm:foo.x_tr@head",
-            "HOST_SOURCE_FOO=fcm:foo.x_tr@head",
-            "SOURCE_BAR={workingcopy}",
-            "HOST_SOURCE_BAR={hostname}:{workingcopy}",
-            "SOURCE_FOO_BASE=fcm:foo.x_tr",
-            "HOST_SOURCE_FOO_BASE=fcm:foo.x_tr",
-            "SOURCE_BAR_BASE={workingcopy}",
-            "HOST_SOURCE_BAR_BASE={hostname}:{workingcopy}",
-            "SOURCE_FOO_REV=@1",
-            "SOURCE_BAR_REV=",
-            "SOURCE_FOO_MIRROR=fcm:foo.xm/trunk@1",
+            (
+                "RUN_NAMES=[\'earl_grey\', \'milk\', \'sugar\', "
+                "\'spoon\', \'cup\', \'milk\']"
+            ),
+            "SOURCE_FOO=\"fcm:foo.x_tr@head\"",
+            "HOST_SOURCE_FOO=\"fcm:foo.x_tr@head\"",
+            "SOURCE_BAR=\"{workingcopy}\"",
+            "HOST_SOURCE_BAR=\"{hostname}:{workingcopy}\"",
+            "SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
+            "HOST_SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
+            "SOURCE_BAR_BASE=\"{workingcopy}\"",
+            "HOST_SOURCE_BAR_BASE=\"{hostname}:{workingcopy}\"",
+            "SOURCE_FOO_REV=\"@1\"",
+            "SOURCE_BAR_REV=\"\"",
+            "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
         ]
     )
     def test_project_override(self, project_override, expected):
@@ -321,7 +312,7 @@ def suite_redirection(
     rose_stem_cmd = (
         "rose-stem --group=lapsang "
         f"-C {setup_stem_repo['workingcopy']}/rose-stem "
-        "--source=fcm:foo.x_tr@head "
+        "--source=\"fcm:foo.x_tr\"@head "
         f"--flow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
@@ -332,10 +323,10 @@ class TestSuiteRedirection:
         'expected',
         [
             "run_ok",
-            "RUN_NAMES=[lapsang]",
-            "SOURCE_FOO=fcm:foo.x_tr@head",
-            "SOURCE_FOO_BASE=fcm:foo.x_tr",
-            "SOURCE_FOO_REV=@1",
+            "RUN_NAMES=[\'lapsang\']",
+            "SOURCE_FOO=\"fcm:foo.x_tr@head\"",
+            "SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
+            "SOURCE_FOO_REV=\"@1\"",
         ]
     )
     def test_suite_redirection(self, suite_redirection, expected):
@@ -368,13 +359,13 @@ class TestSubdirectory:
         'expected',
         [
             "run_ok",
-            "RUN_NAMES=[assam]",
-            "SOURCE_FOO={workingcopy}",
-            "HOST_SOURCE_FOO={hostname}:{workingcopy}",
-            "SOURCE_FOO_BASE={workingcopy}",
-            "HOST_SOURCE_FOO_BASE={hostname}:{workingcopy}",
-            "SOURCE_FOO_REV=",
-            "SOURCE_FOO_MIRROR=fcm:foo.xm/trunk@1",
+            "RUN_NAMES=[\'assam\']",
+            "SOURCE_FOO=\"{workingcopy}\"",
+            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
+            "SOURCE_FOO_BASE=\"{workingcopy}\"",
+            "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
+            "SOURCE_FOO_REV=\"\"",
+            "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
         ]
     )
     def test_subdirectory(self, subdirectory, expected):
@@ -408,12 +399,12 @@ class TestRelativePath:
         'expected',
         [
             "run_ok",
-            "RUN_NAMES=[ceylon]",
-            "SOURCE_FOO={workingcopy}",
-            "HOST_SOURCE_FOO={hostname}:{workingcopy}",
-            "SOURCE_FOO_BASE={workingcopy}",
-            "HOST_SOURCE_FOO_BASE={hostname}:{workingcopy}",
-            "SOURCE_FOO_REV=",
+            "RUN_NAMES=[\'ceylon\']",
+            "SOURCE_FOO=\"{workingcopy}\"",
+            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
+            "SOURCE_FOO_BASE=\"{workingcopy}\"",
+            "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
+            "SOURCE_FOO_REV=\"\"",
         ]
     )
     def test_relative_path(self, relative_path, expected):
@@ -457,13 +448,16 @@ class TestWithConfig:
         'expected',
         [
             "run_ok",
-            "RUN_NAMES=[earl_grey, milk, sugar, spoon, cup, milk]",
-            "SOURCE_FOO={workingcopy} fcm:foo.x_tr@head",
-            "HOST_SOURCE_FOO={hostname}:{workingcopy} fcm:foo.x_tr@head",
-            "SOURCE_FOO_BASE={workingcopy}",
-            "HOST_SOURCE_FOO_BASE={hostname}:{workingcopy}",
-            "SOURCE_FOO_REV=",
-            "MILK=true",
+            (
+                "RUN_NAMES=[\'earl_grey\', \'milk\', \'sugar\', "
+                "\'spoon\', \'cup\', \'milk\']"
+            ),
+            "SOURCE_FOO=\"{workingcopy} fcm:foo.x_tr@head\"",
+            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy} fcm:foo.x_tr@head\"",
+            "SOURCE_FOO_BASE=\"{workingcopy}\"",
+            "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
+            "SOURCE_FOO_REV=\"\"",
+            "MILK=\"true\"",
         ]
     )
     def test_with_config(self, with_config, expected):
@@ -506,8 +500,8 @@ class TestWithConfig2:
         'expected',
         [
             "run_ok",
-            "MILK=true\n",
-            "TEA=darjeeling\n"
+            "MILK=\"true\"\n",
+            "TEA=\"darjeeling\"\n"
         ]
     )
     def test_with_config2(self, with_config2, expected):
