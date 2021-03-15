@@ -283,7 +283,4 @@ def test_cylc_no_rose(tmp_path):
     """A Cylc workflow that contains no ``rose-suite.conf`` installs OK.
     """
     from cylc.rose.entry_points import post_install
-    assert post_install(srcdir=tmp_path, rundir=tmp_path) == {
-        'record_install': False,
-        'fileinstall': False
-    }
+    assert post_install(srcdir=tmp_path, rundir=tmp_path) is False
