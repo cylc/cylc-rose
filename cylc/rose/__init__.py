@@ -21,7 +21,7 @@ versions 2019.01 and earlier). It reads the ``rose-suite.conf`` file and
 performs the required actions.
 
 Rose Stem
-#########
+---------
 
 Cylc Rose provides a Rose Stem command, if FCM is installed on your system.
 See `the Rose Stem documentation
