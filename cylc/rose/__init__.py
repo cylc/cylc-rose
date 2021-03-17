@@ -24,45 +24,92 @@ Cylc Rose is a replacement for the ``rose suite-run`` command (present in Rose
 versions 2019.01 and earlier). It reads the ``rose-suite.conf`` file and
 performs the required actions.
 
-Pre install
-===========
+Rose Config
+-----------
+
+A fuller description of
+:rose:ref:`rose suite config is available here<Rose Suites>`.
+
+Cylc-rose allows you to set environment and :term:`template variables` in a
+configuration file called ``rose-suite.conf``. The following sections are
+permitted in the ``rose-suite.conf`` files:
+
+.. csv-table::
+   :header: config item, description
+
+   ``opts=A B C``, A space limited list of optional configs.
+   ``[env]``, "Variables which the cylc-rose plugin will export to the
+   environment."
+   ``[template variables]``, "Variables which can be used by Jinja2 or Empy
+   in the workflow definition."
+   ``[file:destination]``, A file from one or more sources to be installed.
 
 .. note::
 
-   For more information on using ``cylc install`` and ``cylc reinstall`` see
-   :ref:`Installing-workflows`.
+   For compatibility with Cylc 7 sections ``[suite.rc:empy]`` and
+   ``[suite.rc:jinja2]`` will be processed, but are deprecated and provided
+   for ease of porting Cylc 7 workflows.
 
 
-Before running ``cylc install`` or ``cylc reinstall`` Cylc Rose will:
+Additional CLI options
+----------------------
+It is possible to set :term:`template variables` on the command line - If you
+have Cylc Rose installed see ``cylc install --help``.
 
-- Load any rose configuration defined in the installation
-  :term:`source directory`.
-- Export any environment variables set in the ``[env]`` section
-  of the configuration.
-- Return the configuration so that Cylc can access template variables.
 
-Post install
-============
+Cylc Install Optional Config
+----------------------------
 
-After running ``cylc install`` or ``cylc reinstall`` Cylc Rose will:
+If Cylc-Rose is installed, using ``cylc install`` with a Rose Suite will
+write a record of command line options in
+``$CYLC_RUN_DIR/workflow_name/opt/rose-suite-cylc-install.conf``.
 
-- If a ``rose-suite.conf`` file is present in the :term:`source directory`,
-  then copy it to the :term:`run directory`. The ``rose-suite.conf``
-  is excluded from installation by Cylc.
-- Create a ``rose-suite-cylc-install.conf`` file saving options set by the
-  user on the command line.  Cylc Rose will save this file in the
-  ``rundir/opt/`` directory.
-- If a ``rose-suite-cylc-install.conf`` already exists in ``rundir/opt/``
-  Cylc Rose will merge the new and old options. Cylc Rose gives new options
-  higher priority.
-- If you run ``cylc reinstall --clear-rose-install-options``, Cylc Rose will
-  delete any previous ``rose-suite-cylc-install.conf`` file.
-- Create a ``rose-suite.conf``` in the :term:`run directory`. In this file
-  Cylc Rose
-  will add ``(cylc-install)`` to the end of the ``opts`` setting.
-- Install any files described by ``[file:<filename>]`` sections in the Rose
-  configuration.
-- Record the final configuration used for this install. Cylc Rose writes
-  the record to ``log/conf/<timestamp>-rose-suite.conf``.
+
+Example
+-------
+
+For a suite with the following definitions in the :term:`source directory`:
+
+rose-suite.conf
+
+.. code-block:: ini
+
+   [template variables]
+   NAME='Mars'
+
+
+suite.rc
+
+.. code-block:: cylc
+
+   #!jinja2
+   [scheduling]
+       initial cycle point = 2020
+       [[graph]]
+           R1 = Hello_{{ NAME }}
+
+   [runtime]
+       [[Hello_{{ NAME }}]]
+           script = True
+
+If you then ran
+
+.. code-block:: bash
+
+   cylc install .
+
+
+Your final workflow would have the variable ``NAME`` inserted:
+
+.. code-block:: diff
+
+   - Before processing
+   + After processing
+
+   -           R1 = Hello_{{ NAME }}
+   +           R1 = Hello_Mars
+
+   -       [[Hello_{{ NAME }}]]
+   +       [[Hello_Mars]]
 
 """
