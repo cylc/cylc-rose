@@ -96,7 +96,7 @@ If you then ran
 
 .. code-block:: bash
 
-   cylc install .
+   cylc install
 
 
 Your final workflow would have the variable ``NAME`` inserted:
