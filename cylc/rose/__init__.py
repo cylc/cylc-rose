@@ -53,7 +53,8 @@ permitted in the ``rose-suite.conf`` files:
 
 Additional CLI options
 ----------------------
-It is possible to set :term:`template variables` on the command line - If you
+You can use command line options to set or override
+any setting you could put in a ``rose-suite.conf`` file: If you
 have Cylc Rose installed see ``cylc install --help``.
 
 
@@ -61,7 +62,7 @@ Cylc Install Optional Config
 ----------------------------
 
 If Cylc-Rose is installed, using ``cylc install`` with a Rose Suite will
-write a record of command line options in
+write a record of command line options set in
 ``$CYLC_RUN_DIR/workflow_name/opt/rose-suite-cylc-install.conf``.
 
 
