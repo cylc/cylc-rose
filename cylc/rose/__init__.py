@@ -78,7 +78,7 @@ rose-suite.conf
    NAME='Mars'
 
 
-suite.rc
+flow.cylc
 
 .. code-block:: cylc
 
