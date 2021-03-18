@@ -33,7 +33,7 @@ from cylc.rose.entry_points import copy_config_file
                 'src/rose-suite.conf': '[env]\nFOO=2',
                 'dest/rose-suite.conf': '[env]\nFOO=1'
             },
-            {'dir_': 'src', 'dest_root': 'dest'},
+            {'srcdir': 'src', 'rundir': 'dest'},
             True
         )
     ]

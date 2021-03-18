@@ -13,9 +13,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Functional tests for top-level function record_cylc_install_options and
+"""
 
-[options.entry_points]
-cylc.pre_configure =
-    rose = cylc.rose.entry_points:pre_configure
-cylc.post_install =
-    rose_opts = cylc.rose.entry_points:post_install
+import pytest
+
+from cylc.flow import __version__ as CYLC_VERSION
+
+
+@pytest.fixture(scope='package', autouse=True)
+def set_cylc_version():
+    from _pytest.monkeypatch import MonkeyPatch
+    mpatch = MonkeyPatch()
+    yield mpatch.setenv('CYLC_VERSION', CYLC_VERSION)
+    mpatch.undo()

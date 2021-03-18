@@ -18,10 +18,10 @@ configuration files.
 """
 
 import os
+from pathlib import Path
 import re
 import shlex
-
-from pathlib import Path
+from typing import TYPE_CHECKING, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
@@ -33,6 +33,9 @@ from metomi.rose.config_processor import ConfigProcessError
 from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
 from metomi.rose.resource import ResourceLocator
 
+if TYPE_CHECKING:
+    from cylc.flow.option_parsers import Options
+
 
 class MultipleTemplatingEnginesError(Exception):
     ...
@@ -42,7 +45,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     """Load template variables from a Rose config node.
 
     This uses only the provided config node and environment variables
-    (i.e. no system interaction).
+    - there is no system interaction.
 
     Args:
         config (dict):
@@ -55,6 +58,8 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     """
     templating = None
     sections = {'jinja2:suite.rc', 'empy:suite.rc', 'template variables'}
+
+    # Don't allow multiple templating sections.
     defined_sections = sections.intersection(set(config_node.value))
     if len(defined_sections) > 1:
         raise MultipleTemplatingEnginesError(
@@ -68,15 +73,15 @@ def get_rose_vars_from_config_node(config, config_node, environ):
         else:
             config['templating_detected'] = templating
 
-    # Get Values for standard ROSE variables.
-    rose_orig_host = get_host()
-    rose_site = ResourceLocator().get_conf().get_value(['site'], '')
-
     # Create env section if it doesn't already exist.
     if 'env' not in config_node.value:
         config_node.set(['env'])
 
-    # For each section add standard variables and process variables.
+    # Get Values for standard ROSE variables (ROSE_ORIG_HOST and ROSE_SITE).
+    rose_orig_host = get_host()
+    rose_site = ResourceLocator().get_conf().get_value(['site'], '')
+
+    # For each section process variables and add standard variables.
     for section in ['env', templating]:
         if section not in config_node.value:
             continue
@@ -144,58 +149,53 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             'ROSE_SUITE_VARIABLES'] = config['template_variables']
 
 
-def rose_config_exists(dir_, opts):
-    """Does a directory contain a rose-suite config?
+def rose_config_exists(
+    srcdir: Union[Path, str, None], opts: 'Options'
+) -> bool:
+    """Do opts or srcdir contain a rose config?
 
     Args:
-        dir_(str or pathlib.Path object):
-            location to test.
-        opts (Rose Options):
-            Options, which might contain config items.
+        srcdir: location to test.
+        opts: Cylc Rose options, which might contain config items.
 
     Returns:
         True if a ``rose-suite.conf`` exists, or option config items have
         been set.
     """
     # Return false if source dir doesn't exist.
-    if dir_ is None:
+    if srcdir is None:
         return False
-
-    # Turn string into Path object if it isn't.
-    if isinstance(dir_, str):
-        dir_ = Path(dir_)
-    top_level_file = dir_ / 'rose-suite.conf'
 
     # If _any_ of the following are true we want to return True.
     if (
-        top_level_file.is_file() or
+        Path(srcdir, 'rose-suite.conf').is_file() or
         opts and opts.opt_conf_keys or
         opts and opts.defines or
         opts and opts.define_suites
     ):
         return True
-
     return False
 
 
-def rose_config_tree_loader(dir_=None, opts=None):
-    """Get a rose config tree from a given dir
+def rose_config_tree_loader(srcdir=None, opts=None):
+    """Get a rose config tree from srcdir.
 
     Args:
-        dir_(string or Pathlib.path object):
+        srcdir(string or Pathlib.path object):
             Search for a ``rose-suite.conf`` file in this location.
         opts:
-            Some sort of options object or string - To be used to allow CLI
-            specification of optional configuaration.
+            Options namespace: To be used to allow CLI
+            specification of optional configuarations.
     Returns:
         A Rose ConfigTree object.
     """
-    from metomi.rose.config_tree import ConfigTreeLoader
     opt_conf_keys = []
+
     # get optional config key set as environment variable:
     opt_conf_keys_env = os.getenv("ROSE_SUITE_OPT_CONF_KEYS")
     if opt_conf_keys_env:
         opt_conf_keys += shlex.split(opt_conf_keys_env)
+
     # ... or as command line options
     if opts and 'opt_conf_keys' in dir(opts) and opts.opt_conf_keys:
         if isinstance(opts.opt_conf_keys, str):
@@ -208,9 +208,10 @@ def rose_config_tree_loader(dir_=None, opts=None):
     if opts and 'defines' in dir(opts) and opts.defines:
         redefinitions = opts.defines
 
-    # Load the actual config tree
+    # Load the config tree
+    from metomi.rose.config_tree import ConfigTreeLoader
     config_tree = ConfigTreeLoader().load(
-        str(dir_),
+        str(srcdir),
         'rose-suite.conf',
         opt_keys=opt_conf_keys,
         defines=redefinitions,
@@ -222,15 +223,15 @@ def rose_config_tree_loader(dir_=None, opts=None):
 def merge_rose_cylc_suite_install_conf(old, new):
     """Merge old and new ``rose-suite-cylc-install.conf`` configs nodes.
 
-    Mostly this is straightforward, but special treatment is called for in
-    the merger of opts.
+    Opts are merged separately to allow special behaviour.
+    The rest is merged using ConfigNodeDiff.
 
     Args:
         old, new (ConfigNode):
             Old and new nodes.
 
     Returns:
-        ConfigNode representing config to be written.
+        ConfigNode representing config to be written to the rundir.
 
     Example:
         >>> from metomi.rose.config import ConfigNode;
@@ -239,12 +240,14 @@ def merge_rose_cylc_suite_install_conf(old, new):
         >>> merge_rose_cylc_suite_install_conf(old, new)['opts']
         {'value': 'a b c d e', 'state': '', 'comments': []}
     """
+    # Special treatement of opts key:
     if 'opts' in old and 'opts' in new:
-        new['opts'].value = simplify_opts_strings(
-            old['opts'].value + ' ' + new['opts'].value
-        )
+        new_opts_str = f'{old["opts"].value} {new["opts"].value}'
+        new['opts'].value = simplify_opts_strings(new_opts_str)
     elif 'opts' in old:
         new.set(['opts'], old['opts'].value)
+
+    # Straightforward merge of the rest of the configs.
     diff = ConfigNodeDiff()
     diff.set_from_configs(old, new)
     diff.delete_removed()
@@ -253,14 +256,14 @@ def merge_rose_cylc_suite_install_conf(old, new):
 
 
 def get_cli_opts_node(opts=None):
-    """Create a node representing options set on the command line.
+    """Create a ConfigNode representing options set on the command line.
 
     Args:
         opts (CylcOptionParser object):
             Object with values from the command line.
 
     Returns:
-        Cylc ConfigNode.
+        Rose ConfigNode.
 
     Example:
         >>> from types import SimpleNamespace
@@ -277,7 +280,7 @@ def get_cli_opts_node(opts=None):
         >>> node['jinja2:suite.rc']['QUX']
         {'value': 'BAZ', 'state': '', 'comments': []}
     """
-    # Unpack options:
+    # Unpack info we want from opts:
     opt_conf_keys = []
     defines = []
     suite_defines = []
@@ -289,15 +292,14 @@ def get_cli_opts_node(opts=None):
         suite_defines = opts.define_suites
 
     # Construct new ouput based on optional Configs:
-    newconfig = []
     newconfig = ConfigNode()
 
-    # For each define determine whether it is an env or template define.
+    # For each __define__ determine whether it is an env or template define.
     for define in defines:
         match = re.match(
                 (
-                        r'^\[(?P<key1>.*)\](?P<state>!{0,2})'
-                        r'(?P<key2>.*)\s*=\s*(?P<value>.*)'
+                    r'^\[(?P<key1>.*)\](?P<state>!{0,2})'
+                    r'(?P<key2>.*)\s*=\s*(?P<value>.*)'
                 ),
                 define
             ).groupdict()
@@ -312,7 +314,7 @@ def get_cli_opts_node(opts=None):
                 state=match['state']
             )
 
-    # Write suite defines
+    # For each __suite define__ add define.
     for define in suite_defines:
         # For now just assuming that we just support Jinja2 - after I've
         # Implemented the fully template-engine neutral template variables
@@ -337,6 +339,18 @@ def get_cli_opts_node(opts=None):
 
 
 def add_cylc_install_to_rose_conf_node_opts(rose_conf, cli_conf):
+    """Combine file based config opts with CLI config.
+
+    Args:
+        rose_conf (ConfigNode):
+            A config node representing settings loaded from files.
+        cli_conf (ConfigNode):
+            A config node representing settings loaded from the CLI
+
+    Returns:
+        A combined ConfigNode.
+    """
+
     if 'opts' in cli_conf:
         cli_opts = cli_conf['opts'].value
     else:
@@ -443,11 +457,11 @@ def simplify_opts_strings(opts):
     return ' '.join(reversed(seen_once))
 
 
-def dump_rose_log(dest_root, node):
+def dump_rose_log(rundir, node):
     """Dump a config node to a timestamped file in the ``log`` sub-directory.
 
     Args:
-        dest_root (pathlib.Path):
+        rundir (pathlib.Path):
             Installed location of a flow.
         node (Rose Config node):
             Node to be dumped to file.
@@ -460,7 +474,17 @@ def dump_rose_log(dest_root, node):
         print_format='%Y%m%dT%H%M%S%Z'
     )
     rel_path = f'log/conf/{timestamp}-rose-suite.conf'
-    fpath = dest_root / rel_path
+    fpath = rundir / rel_path
     fpath.parent.mkdir(exist_ok=True, parents=True)
     dumper.dump(node, str(fpath))
     return rel_path
+
+
+def paths_to_pathlib(paths):
+    """Convert paths to pathlib
+    """
+    return [
+        Path(path) if path is not None
+        else None
+        for path in paths
+    ]
