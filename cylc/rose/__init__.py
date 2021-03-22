@@ -30,7 +30,7 @@ Rose Config
 A fuller description of
 :rose:ref:`rose suite config is available here<Rose Suites>`.
 
-Cylc-rose allows you to set environment and :term:`template variables` in a
+Cylc-rose allows you to set environment and template variables in a
 configuration file called ``rose-suite.conf``. The following sections are
 permitted in the ``rose-suite.conf`` files:
 
