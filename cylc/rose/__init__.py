@@ -113,4 +113,12 @@ Your final workflow would have the variable ``NAME`` inserted:
    -       [[Hello_{{ NAME }}]]
    +       [[Hello_Mars]]
 
+
+Rose Stem
+=========
+
+Cylc Rose provides a Rose Stem command, if FCM is installed on your system.
+See `the Rose Stem documentation
+<https://metomi.github.io/rose/2019.01.2/html/tutorial/rose/furthertopics/rose-stem.html>`_
+
 """
