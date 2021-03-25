@@ -17,6 +17,9 @@
 
 from setuptools import setup, find_namespace_packages
 
+# load __version__ number from the source
+exec(open('cylc/rose/__init__.py', 'r').read())
+
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -42,10 +45,9 @@ EXTRAS_REQUIRE['all'] = list(
     }
 ) + TESTS_REQUIRE
 
-
 setup(
     name='cylc-rose',
-    version='1.0.0',
+    version=__version__,
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=INSTALL_REQUIRES,
