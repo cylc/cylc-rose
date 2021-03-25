@@ -47,7 +47,7 @@ EXTRAS_REQUIRE['all'] = list(
 
 setup(
     name='cylc-rose',
-    version=__version__,
+    version=__version__,   # noqa
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=INSTALL_REQUIRES,
