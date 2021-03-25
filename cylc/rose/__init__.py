@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 Cylc Rose
 =========
 
@@ -122,3 +121,5 @@ See `the Rose Stem documentation
 <https://metomi.github.io/rose/2019.01.2/html/tutorial/rose/furthertopics/rose-stem.html>`_
 
 """
+
+__version__ = '0.1.0'
