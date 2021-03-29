@@ -227,13 +227,11 @@ class StemRunner(object):
 
     def _get_project_from_url(self, source_dict):
         """Run 'fcm keyword-print' to work out the project name."""
-
         repo = source_dict['root']
         if source_dict['project']:
             repo += '/' + source_dict['project']
 
         kpoutput = self.popen.run('fcm', 'kp', source_dict['url'])[1].decode()
-
         project = None
         for line in kpoutput.splitlines():
             if line.rstrip().endswith(repo):
@@ -488,7 +486,7 @@ def main():
     opts = StemRunner(opts).process()
 
     # call cylc install
-    cylc_install(parser, opts, args)
+    cylc_install(parser, opts)
 
 
 if __name__ == "__main__":

@@ -72,6 +72,10 @@ from uuid import uuid4
 from cylc.flow.pathutil import get_workflow_run_dir
 
 
+class SubprocessesError(Exception):
+    ...
+
+
 # Check that FCM is present on system, skipping checks elsewise:
 try:
     subprocess.run(['fcm', '--version'])
@@ -200,9 +204,16 @@ def rose_stem_run_template(setup_stem_repo):
             cwd=setup_stem_repo['workingcopy']
         )
 
-        # If you need to debug a test looking at the output of the
-        # subprocessed tasks here is often helpful: try ``run_stem.stderr``.
-        # breakpoint()
+        # To assist with debugging fail horribly if the subproc'd rose-stem
+        # command returns non-zero.
+        # You might wish to add breakpoint() here.
+
+        if run_stem.returncode != 0:
+            msg = (
+                f'rose-stem command:\n {rose_stem_cmd} failed with'
+                f':\n{run_stem.stderr.decode()}'
+            )
+            raise SubprocessesError(msg)
 
         outputpath = (
             Path(setup_stem_repo['suite_install_dir']) /
