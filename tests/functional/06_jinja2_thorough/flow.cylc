@@ -29,11 +29,13 @@
 
 # 5. ROSE_VERSION should be provided
 {{ assert(ROSE_VERSION is defined, "failed 5.1") }}
+{% do LOG.info("ROSE_VERSION from Cylc-rose is " + ROSE_VERSION) %}
 {% set cli_rose_version = Popen(["rose", "version"], stdout=PIPE).communicate()[0] %}
 {% set cli_rose_version = cli_rose_version.decode() %}
 {% set cli_rose_version = cli_rose_version.replace('Rose ', '') %}  # strip the "Rose " prefix
 {% set cli_rose_version = cli_rose_version.split(' ')[0] %}  # strip the (location) suffix
-{% do LOG.info("$ rose version: " + cli_rose_version) %}
+{% set cli_rose_version = cli_rose_version.strip() %}
+{% do LOG.info("rose version from CLI: " + cli_rose_version) %}
 {{ assert(ROSE_VERSION == cli_rose_version, "failed 5.2") }}
 
 # 6. CYLC_VERSION should be provided
