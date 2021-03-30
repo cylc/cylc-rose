@@ -17,7 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-"""Implementation of 'rose stem'"""
+"""Cylc 8 implementation of 'rose stem'
+
+Provide a wrapper around ``cylc install`` for rose-stem suites.
+
+To run a rose-stem suite use ``cylc play``.
+"""
 
 import os
 import re
@@ -481,6 +486,10 @@ def main():
     # Hard-set for now, but could be set based upon cylc verbosity levels?
     parser.add_option('--verbosity', default=1)
     parser.add_option('--quietness', default=0)
+
+    parser.n_of_compulsory_args = 0
+    parser.usage = __doc__
+
     opts, args = parser.parse_args(sys.argv)
     # modify the CLI options to add whatever rose stem would like to add
     opts = StemRunner(opts).process()
