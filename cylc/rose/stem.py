@@ -19,9 +19,9 @@
 # -----------------------------------------------------------------------------
 """Cylc 8 implementation of 'rose stem'
 
-Provide a wrapper around ``cylc install`` for rose-stem suites.
+Provide a wrapper around "cylc install" for rose-stem suites.
 
-To run a rose-stem suite use ``cylc play``.
+To run a rose-stem suite use "cylc play".
 """
 
 import os
