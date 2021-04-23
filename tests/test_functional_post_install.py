@@ -27,10 +27,14 @@ from types import SimpleNamespace
 
 from metomi.isodatetime.datetimeoper import DateTimeOperator
 
+from cylc.flow.hostuserutil import get_host
 from cylc.rose.entry_points import (
     record_cylc_install_options, rose_fileinstall, post_install
 )
 from metomi.rose.config import ConfigLoader
+
+
+HOST = get_host()
 
 
 def assert_rose_conf_full_equal(left, right, no_ignore=True):
@@ -104,7 +108,8 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'test/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-cylc-install.conf': (
                     'opts=\n[env]\nFOO=1'
-                    '\n[jinja2:suite.rc]\nX=Y\n'
+                    f'\n[jinja2:suite.rc]\nX=Y\nROSE_ORIG_HOST={HOST}\n'
+                    f'\n[env]\nROSE_ORIG_HOST={HOST}\n'
                 ),
                 'ref/rose-suite.conf': '!opts=foo (cylc-install)',
                 'ref/opt/rose-suite-foo.conf': '',
@@ -129,9 +134,11 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'test/opt/rose-suite-bar.conf': '',
                 'test/opt/rose-suite-baz.conf': '',
                 'test/opt/rose-suite-cylc-install.conf':
-                    '!opts=bar\n[env]\nBAR=1',
+                    f'!opts=bar\n[env]\nBAR=1\nROSE_ORIG_HOST=abc123\n'
+                    f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST=abc123\n',
                 'ref/opt/rose-suite-cylc-install.conf':
-                    '!opts=bar baz\n[env]\nBAR=2',
+                    f'!opts=bar baz\n[env]\nBAR=2\nROSE_ORIG_HOST={HOST}\n'
+                    f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST={HOST}\n',
                 'ref/rose-suite.conf': '!opts=foo bar baz (cylc-install)',
                 'ref/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-bar.conf': '',
@@ -155,7 +162,10 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'test/opt/rose-suite-a.conf': '',
                 'test/opt/rose-suite-b.conf': '',
                 'test/opt/rose-suite-c.conf': '',
-                'ref/opt/rose-suite-cylc-install.conf': '!opts=b c\n',
+                'ref/opt/rose-suite-cylc-install.conf': (
+                    f'!opts=b c\n\n[env]\nROSE_ORIG_HOST={HOST}\n'
+                    f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST={HOST}\n'
+                ),
                 'ref/rose-suite.conf': '!opts=a b c (cylc-install)',
                 'ref/opt/rose-suite-a.conf': '',
                 'ref/opt/rose-suite-b.conf': '',
@@ -179,7 +189,8 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'test/opt/rose-suite-foo.conf': '[jinja2:suite.rc]\ny="f"\n',
                 'test/opt/rose-suite-bar.conf': '[jinja2:suite.rc]\ny="b"\n',
                 'ref/opt/rose-suite-cylc-install.conf': (
-                    '!opts=foo bar\n[env]\na=b\n[jinja2:suite.rc]\na="b"'
+                    f'!opts=foo bar\n[env]\na=b\nROSE_ORIG_HOST={HOST}\n'
+                    f'[jinja2:suite.rc]\na="b"\nROSE_ORIG_HOST={HOST}\n'
                 ),
                 'ref/rose-suite.conf': (
                     '!opts=foo bar (cylc-install)\n[jinja2:suite.rc]\ny="base"'

@@ -26,6 +26,7 @@ import pytest
 from types import SimpleNamespace
 from io import StringIO
 
+from cylc.flow.hostuserutil import get_host
 from cylc.rose.utilities import (
     get_cli_opts_node,
     merge_opts,
@@ -38,6 +39,9 @@ from cylc.rose.entry_points import (
     get_rose_vars,
 )
 from metomi.rose.config import ConfigLoader
+
+
+HOST = get_host()
 
 
 def test_rose_config_exists_no_dir(tmp_path):
@@ -435,8 +439,10 @@ def test_cli_defines_ignored_are_ignored(
             "!opts=A B\n"
             "\n[env]\n"
             "FOO=BAR\n"
+            f"ROSE_ORIG_HOST={HOST}\n"
             "\n[jinja2:suite.rc]\n"
-            "QUX=BAZ"
+            "QUX=BAZ\n"
+            f"ROSE_ORIG_HOST={HOST}"
         )),
         # Check handling of ignored & trigger ignored items
         (
@@ -448,9 +454,11 @@ def test_cli_defines_ignored_are_ignored(
                 "\n[env]\n"
                 "!FOO=Arthur\n"
                 "!!BAR=Trillian\n"
+                f"ROSE_ORIG_HOST={HOST}\n"
                 "\n[jinja2:suite.rc]\n"
                 "!BAZ=Zaphod\n"
                 "!!QUX=Ford\n"
+                f"ROSE_ORIG_HOST={HOST}\n"
             )
         )
     ]

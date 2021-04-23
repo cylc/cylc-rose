@@ -89,7 +89,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
         # Add standard ROSE_VARIABLES
         config_node[section].set(['ROSE_SITE'], rose_site)
         config_node[section].set(['ROSE_VERSION'], ROSE_VERSION)
-        config_node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
+        # config_node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
 
         # Use env_var_process to process variables which may need expanding.
         for key, node in config_node.value[section].value.items():
@@ -290,6 +290,10 @@ def get_cli_opts_node(opts=None):
         defines = opts.defines
     if opts and 'define_suites' in dir(opts):
         suite_defines = opts.define_suites
+
+    rose_orig_host = get_host()
+    defines.append(f'[env]ROSE_ORIG_HOST={rose_orig_host}')
+    suite_defines.append(f'ROSE_ORIG_HOST={rose_orig_host}')
 
     # Construct new ouput based on optional Configs:
     newconfig = ConfigNode()
