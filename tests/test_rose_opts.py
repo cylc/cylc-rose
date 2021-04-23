@@ -1,4 +1,4 @@
-# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC SUITE ENGINE.
+# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC WORKFLOW ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@ def fixture_provide_flow(tmp_path_factory):
     # Create a unique flow name for this test:
     flow_name = f'cylc-rose-test-{str(uuid4())[:8]}'
 
-    # Create source suite:
+    # Create source workflow:
     (srcpath / 'flow.cylc').write_text(
         '[scheduling]\n'
         '    initial cycle point = 2020\n'
@@ -63,7 +63,7 @@ def fixture_install_flow(fixture_provide_flow):
         '--no-run-name '  # Avoid having to keep looking a sub-dir.
         '--opt-conf-key="A" -O "B" '
         '--define "[env]FOO=42" -D "[jinja2:suite.rc]BAR=84" '
-        '--define-suite="FLAKE=99" -S "CORNETTO=120" '
+        '--rose-template-variable="FLAKE=99" -S "CORNETTO=120" '
     )
     result = subprocess.run(cmd, capture_output=True)
     destpath = Path(get_workflow_run_dir(flow_name))

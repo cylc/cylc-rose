@@ -1,4 +1,4 @@
-# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC SUITE ENGINE.
+# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC WORKFLOW ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@ from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
 from metomi.rose.resource import ResourceLocator
 
 if TYPE_CHECKING:
-    from cylc.flow.option_parsers import Options
+    from optparse import Values
 
 
 class MultipleTemplatingEnginesError(Exception):
@@ -150,7 +150,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
 
 
 def rose_config_exists(
-    srcdir: Union[Path, str, None], opts: 'Options'
+    srcdir: Union[Path, str, None], opts: 'Values'
 ) -> bool:
     """Do opts or srcdir contain a rose config?
 
@@ -171,7 +171,7 @@ def rose_config_exists(
         Path(srcdir, 'rose-suite.conf').is_file() or
         opts and opts.opt_conf_keys or
         opts and opts.defines or
-        opts and opts.define_suites
+        opts and opts.rose_template_var
     ):
         return True
     return False
@@ -270,7 +270,7 @@ def get_cli_opts_node(opts=None):
         >>> opts = SimpleNamespace(
         ...     opt_conf_keys='A B',
         ...     defines=["[env]FOO=BAR"],
-        ...     define_suites=["QUX=BAZ"]
+        ...     rose_template_var=["QUX=BAZ"]
         ... )
         >>> node = get_cli_opts_node(opts)
         >>> node['opts']
@@ -283,13 +283,13 @@ def get_cli_opts_node(opts=None):
     # Unpack info we want from opts:
     opt_conf_keys = []
     defines = []
-    suite_defines = []
+    rose_template_var = []
     if opts and 'opt_conf_keys' in dir(opts):
         opt_conf_keys = opts.opt_conf_keys
     if opts and 'defines' in dir(opts):
         defines = opts.defines
-    if opts and 'define_suites' in dir(opts):
-        suite_defines = opts.define_suites
+    if opts and 'rose_template_var' in dir(opts):
+        rose_template_var = opts.rose_template_var
 
     # Construct new ouput based on optional Configs:
     newconfig = ConfigNode()
@@ -314,8 +314,8 @@ def get_cli_opts_node(opts=None):
                 state=match['state']
             )
 
-    # For each __suite define__ add define.
-    for define in suite_defines:
+    # For each __workflow define__ add define.
+    for define in rose_template_var:
         # For now just assuming that we just support Jinja2 - after I've
         # Implemented the fully template-engine neutral template variables
         # section this should be a moot point.

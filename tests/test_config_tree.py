@@ -1,4 +1,4 @@
-# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC SUITE ENGINE.
+# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC WORKFLOW ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -42,14 +42,14 @@ from metomi.rose.config import ConfigLoader
 
 def test_rose_config_exists_no_dir(tmp_path):
     assert rose_config_exists(None, SimpleNamespace(
-        opt_conf_keys=None, defines=[], define_suites=[])
+        opt_conf_keys=None, defines=[], rose_template_var=[])
     ) is False
 
 
 def test_rose_config_exists_no_rose_suite_conf(tmp_path):
     assert rose_config_exists(
         tmp_path, SimpleNamespace(
-            opt_conf_keys=None, defines=[], define_suites=[]
+            opt_conf_keys=None, defines=[], rose_template_var=[]
         )
     ) is False
 
@@ -57,12 +57,12 @@ def test_rose_config_exists_no_rose_suite_conf(tmp_path):
 @pytest.mark.parametrize(
     'opts',
     [
-        SimpleNamespace(opt_conf_keys='A', defines=[], define_suites=[]),
+        SimpleNamespace(opt_conf_keys='A', defines=[], rose_template_var=[]),
         SimpleNamespace(
-            opt_conf_keys='', defines=['[env]Foo=Bar'], define_suites=[]
+            opt_conf_keys='', defines=['[env]Foo=Bar'], rose_template_var=[]
         ),
         SimpleNamespace(
-            opt_conf_keys='', defines=[], define_suites=['Foo=Bar']
+            opt_conf_keys='', defines=[], rose_template_var=['Foo=Bar']
         ),
     ]
 )
@@ -76,7 +76,7 @@ def test_rose_config_exists_conf_set_by_options(tmp_path, opts):
 def test_rose_config_exists_nonexistant_dir(tmp_path):
     assert rose_config_exists(
         tmp_path / "non-existant-folder", SimpleNamespace(
-            opt_conf_keys='', defines=[], define_suites=[]
+            opt_conf_keys='', defines=[], rose_template_var=[]
         )
     ) is False
 
@@ -162,7 +162,7 @@ def test_get_rose_vars(
         - Get optional config name from an explicit over-ride string.
     """
     options = SimpleNamespace(
-        opt_conf_keys=[], defines=[], define_suites=[]
+        opt_conf_keys=[], defines=[], rose_template_var=[]
     )
     if override == 'environment':
         os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = "gravy"
@@ -374,7 +374,7 @@ def rose_fileinstall_config_template(tmp_path, scope='module'):
 @pytest.mark.parametrize(
     'defines_opts, env_opts, opt_conf_keys, expected',
     [
-        # Simple cases equivelent to those in doctest:
+        # Simple cases equivalent to those in doctest:
         ('a', None, 'c', 'a c'),
         ('a', 'b', '', 'a b'),
         ('a', 'b', 'c', 'a b c'),
@@ -420,7 +420,8 @@ def test_cli_defines_ignored_are_ignored(
     state, caplog
 ):
     opts = SimpleNamespace(
-        opt_confs='', defines=[f'[]{state}opts=ignore me'], define_suites=[]
+        opt_confs='', defines=[f'[]{state}opts=ignore me'],
+        rose_template_var=[]
     )
     get_cli_opts_node(opts)
     assert caplog.records[0].message == \
@@ -428,7 +429,7 @@ def test_cli_defines_ignored_are_ignored(
 
 
 @pytest.mark.parametrize(
-    'opt_confs, defines, define_suites, expect',
+    'opt_confs, defines, rose_template_var, expect',
     [
         # Basic simple test
         ('A B', ['[env]FOO=BAR'], ['QUX=BAZ'], (
@@ -455,11 +456,11 @@ def test_cli_defines_ignored_are_ignored(
         )
     ]
 )
-def test_get_cli_opts_node(opt_confs, defines, define_suites, expect):
+def test_get_cli_opts_node(opt_confs, defines, rose_template_var, expect):
     opts = SimpleNamespace(
         opt_conf_keys=opt_confs,
         defines=defines,
-        define_suites=define_suites
+        rose_template_var=rose_template_var
     )
     loader = ConfigLoader()
     expect = loader.load(StringIO(expect))
