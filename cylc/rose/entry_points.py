@@ -161,8 +161,7 @@ def record_cylc_install_options(
         installed ``rose-suite.conf``.
     """
     # Create a config based on command line options:
-    cli_config = get_cli_opts_node(opts)
-
+    cli_config = get_cli_opts_node(opts, srcdir)
     # Leave now if there is nothing to do:
     if not cli_config:
         return False

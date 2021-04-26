@@ -426,6 +426,7 @@ def test_cli_defines_ignored_are_ignored(
     opts = SimpleNamespace(
         opt_confs='', defines=[f'[]{state}opts=ignore me'], define_suites=[]
     )
+
     get_cli_opts_node(opts)
     assert caplog.records[0].message == \
         'CLI opts set to ignored or trigger-ignored will be ignored.'
@@ -440,7 +441,7 @@ def test_cli_defines_ignored_are_ignored(
             "\n[env]\n"
             "FOO=BAR\n"
             f"ROSE_ORIG_HOST={HOST}\n"
-            "\n[jinja2:suite.rc]\n"
+            "\n[template variables]\n"
             "QUX=BAZ\n"
             f"ROSE_ORIG_HOST={HOST}"
         )),
@@ -455,7 +456,7 @@ def test_cli_defines_ignored_are_ignored(
                 "!FOO=Arthur\n"
                 "!!BAR=Trillian\n"
                 f"ROSE_ORIG_HOST={HOST}\n"
-                "\n[jinja2:suite.rc]\n"
+                "\n[template variables]\n"
                 "!BAZ=Zaphod\n"
                 "!!QUX=Ford\n"
                 f"ROSE_ORIG_HOST={HOST}\n"
@@ -472,7 +473,7 @@ def test_get_cli_opts_node(opt_confs, defines, define_suites, expect):
     loader = ConfigLoader()
     expect = loader.load(StringIO(expect))
     result = get_cli_opts_node(opts)
-    for item in ['env', 'jinja2:suite.rc', 'opts']:
+    for item in ['env', 'template variables', 'opts']:
         assert result[item] == expect[item]
 
 

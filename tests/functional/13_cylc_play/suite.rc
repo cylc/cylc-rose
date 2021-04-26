@@ -1,0 +1,27 @@
+#!jinja2
+{% from "cylc.flow" import LOG %}
+{{ assert(ROSE_ORIG_HOST is defined, "ROSE_ORIG_HOST not defined") }}
+{% do LOG.warning("ROSE_ORIG_HOST (template var) is: " + ROSE_ORIG_HOST) %}
+{{ assert(environ['ROSE_ORIG_HOST'] is defined, "ROSE_ORIG_HOST not defined")}}
+{% do LOG.warning("ROSE_ORIG_HOST (env) is: " + environ['ROSE_ORIG_HOST']) %}
+
+
+[scheduler]
+    [[events]]
+        abort on stalled = True
+
+[scheduling]
+    [[graph]]
+        R1 = hello & bore_da
+
+[runtime]
+    [[hello]]
+        script = true
+        [[[remote]]]
+            host={{ROSE_ORIG_HOST}}
+            #host = $undefined
+            #host = els055
+    [[bore_da]]
+        script = true
+        [[[remote]]]
+            host = $ROSE_ORIG_HOST

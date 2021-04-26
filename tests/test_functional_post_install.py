@@ -108,7 +108,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'test/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-cylc-install.conf': (
                     'opts=\n[env]\nFOO=1'
-                    f'\n[jinja2:suite.rc]\nX=Y\nROSE_ORIG_HOST={HOST}\n'
+                    f'\n[template variables]\nX=Y\nROSE_ORIG_HOST={HOST}\n'
                     f'\n[env]\nROSE_ORIG_HOST={HOST}\n'
                 ),
                 'ref/rose-suite.conf': '!opts=foo (cylc-install)',
@@ -133,12 +133,13 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'test/opt/rose-suite-foo.conf': '',
                 'test/opt/rose-suite-bar.conf': '',
                 'test/opt/rose-suite-baz.conf': '',
-                'test/opt/rose-suite-cylc-install.conf':
-                    f'!opts=bar\n[env]\nBAR=1\nROSE_ORIG_HOST=abc123\n'
-                    f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST=abc123\n',
+                'test/opt/rose-suite-cylc-install.conf': (
+                    '!opts=bar\n[env]\nBAR=1\nROSE_ORIG_HOST=abc123\n'
+                    '\n[template variables]\nROSE_ORIG_HOST=abc123\n'
+                ),
                 'ref/opt/rose-suite-cylc-install.conf':
                     f'!opts=bar baz\n[env]\nBAR=2\nROSE_ORIG_HOST={HOST}\n'
-                    f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST={HOST}\n',
+                    f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n',
                 'ref/rose-suite.conf': '!opts=foo bar baz (cylc-install)',
                 'ref/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-bar.conf': '',
@@ -164,7 +165,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
                 'test/opt/rose-suite-c.conf': '',
                 'ref/opt/rose-suite-cylc-install.conf': (
                     f'!opts=b c\n\n[env]\nROSE_ORIG_HOST={HOST}\n'
-                    f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST={HOST}\n'
+                    f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
                 ),
                 'ref/rose-suite.conf': '!opts=a b c (cylc-install)',
                 'ref/opt/rose-suite-a.conf': '',
@@ -207,9 +208,6 @@ def test_functional_record_cylc_install_options(
     monkeypatch, tmp_path, opts, files, env_inserts
 ):
     """It works the way the proposal says it should.
-
-    TODO: Once the the dump of the final rose-suite.conf is done then this
-    should be expanded to test that too.
     """
     # Pin down the results of the function used to provide a timestamp.
     def fake(*arg, **kwargs):

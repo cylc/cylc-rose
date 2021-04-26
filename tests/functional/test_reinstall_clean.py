@@ -112,7 +112,7 @@ def test_cylc_install_run(fixture_install_flow):
                 '[env]\n'
                 'FOO=1\n'
                 f'ROSE_ORIG_HOST={HOST}\n'
-                f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
             )
         ),
     ]
@@ -165,7 +165,7 @@ def test_cylc_reinstall_run(fixture_reinstall_flow):
                 '[env]\n'
                 'BAR=2\n'
                 f'ROSE_ORIG_HOST={HOST}\n'
-                f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
             )
         )
     ]

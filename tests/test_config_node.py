@@ -35,7 +35,9 @@ def test_blank():
     ret = {}
     node = ConfigNode()
     get_rose_vars_from_config_node(ret, node, {})
-    assert set(ret.keys()) == {'env'}
+    assert set(ret.keys()) == {
+        'template_variables', 'templating_detected', 'env'
+    }
     assert set(ret['env'].keys()) == {
         'ROSE_ORIG_HOST',
         'ROSE_SITE',

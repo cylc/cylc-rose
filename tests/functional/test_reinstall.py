@@ -125,7 +125,7 @@ def test_cylc_install_run(fixture_install_flow):
                 '# This file records CLI Options.\n\n'
                 '!opts=b c\n'
                 f'\n[env]\nROSE_ORIG_HOST={HOST}\n'
-                f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
             )
         )
     ]
@@ -180,7 +180,7 @@ def test_cylc_reinstall_run(fixture_reinstall_flow):
                 '# This file records CLI Options.\n\n'
                 '!opts=b c d\n'
                 f'\n[env]\nROSE_ORIG_HOST={HOST}\n'
-                f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
             )
         )
     ]
@@ -240,7 +240,7 @@ def test_cylc_reinstall_run2(fixture_reinstall_flow2):
                 '# This file records CLI Options.\n\n'
                 '!opts=b c d\n'
                 f'\n[env]\nROSE_ORIG_HOST={HOST}\n'
-                f'\n[jinja2:suite.rc]\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
             )
         )
     ]
