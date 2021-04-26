@@ -293,11 +293,11 @@ def test_functional_rose_database_dumped_errors(tmp_path):
             # {file: content}
             {
                 'test/rose-suite.conf':
-                    f'\n[template variables]\nFOO=7\nROSE_ORIG_HOST={HOST}\n'
+                    f'\n[empy:suite.rc]\nFOO=7\nROSE_ORIG_HOST={HOST}\n'
             },
             (
-                r"((jinja2:suite\.rc)|(template variables)); "
-                r"((jinja2:suite\.rc)|(template variables))"
+                r"((jinja2:suite\.rc)|(empy:suite.rc)); "
+                r"((jinja2:suite\.rc)|(empy:suite.rc))"
             ),
             id='CLI contains different templating'
         ),

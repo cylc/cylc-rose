@@ -167,7 +167,7 @@ def test_dump_rose_log(monkeypatch, tmp_path):
         pytest.param(
             (
                 (['empy:suite.rc', 'foo'], 'Hello World'),
-                (['template variables', 'foo'], 'Hello World'),
+                (['jinja2:suite.rc', 'foo'], 'Hello World'),
             ),
             None,
             MultipleTemplatingEnginesError,
