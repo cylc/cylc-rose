@@ -31,6 +31,7 @@ from cylc.flow.hostuserutil import get_host
 from cylc.rose.entry_points import (
     record_cylc_install_options, rose_fileinstall, post_install
 )
+from cylc.rose.utilities import MultipleTemplatingEnginesError
 from metomi.rose.config import ConfigLoader
 
 
@@ -276,6 +277,50 @@ def test_functional_rose_database_dumped_errors(tmp_path):
     )
     (srcdir / 'cylc.flow').touch()
     assert rose_fileinstall(srcdir=Path('/this/path/goes/nowhere')) is False
+
+
+@pytest.mark.parametrize(
+    (
+        'opts, files, expect'
+    ),
+    [
+        pytest.param(
+            # opts:
+            SimpleNamespace(
+                opt_conf_keys='', defines=['[jinja2:suite.rc]FOO=1'],
+                define_suites=[], clear_rose_install_opts=False
+            ),
+            # {file: content}
+            {
+                'test/rose-suite.conf':
+                    f'\n[template variables]\nFOO=7\nROSE_ORIG_HOST={HOST}\n'
+            },
+            (
+                r"((jinja2:suite\.rc)|(template variables)); "
+                r"((jinja2:suite\.rc)|(template variables))"
+            ),
+            id='CLI contains different templating'
+        ),
+    ]
+)
+def test_template_section_conflict(
+    monkeypatch, tmp_path, opts, files, expect
+):
+    """Cylc install fails if multiple template sections set:"""
+    testdir = tmp_path / 'test'
+    # Set up existing files, should these exist:
+    for fname, content in files.items():
+        path = tmp_path / fname
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+
+    with pytest.raises(MultipleTemplatingEnginesError) as exc_info:
+        # Run the entry point top-level function:
+        rose_suite_cylc_install_node, rose_suite_opts_node = \
+            record_cylc_install_options(
+                rundir=testdir, opts=opts, srcdir=testdir
+            )
+    assert exc_info.match(expect)
 
 
 def test_rose_fileinstall_exception(tmp_path, monkeypatch):
