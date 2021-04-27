@@ -185,9 +185,7 @@ def record_cylc_install_options(
                 oldconfig, cli_config
             )
 
-    cli_config.comments = [
-        ' This file records CLI Options.'
-    ]
+    cli_config.comments = [' This file records CLI Options.']
     identify_templating_section(cli_config)
     dumper.dump(cli_config, str(conf_filepath))
 
