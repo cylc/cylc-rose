@@ -171,7 +171,7 @@ def rose_config_exists(
         Path(srcdir, 'rose-suite.conf').is_file() or
         opts and opts.opt_conf_keys or
         opts and opts.defines or
-        opts and opts.rose_template_var
+        opts and opts.rose_template_vars
     ):
         return True
     return False
@@ -270,7 +270,7 @@ def get_cli_opts_node(opts=None):
         >>> opts = SimpleNamespace(
         ...     opt_conf_keys='A B',
         ...     defines=["[env]FOO=BAR"],
-        ...     rose_template_var=["QUX=BAZ"]
+        ...     rose_template_vars=["QUX=BAZ"]
         ... )
         >>> node = get_cli_opts_node(opts)
         >>> node['opts']
@@ -283,13 +283,13 @@ def get_cli_opts_node(opts=None):
     # Unpack info we want from opts:
     opt_conf_keys = []
     defines = []
-    rose_template_var = []
+    rose_template_vars = []
     if opts and 'opt_conf_keys' in dir(opts):
         opt_conf_keys = opts.opt_conf_keys
     if opts and 'defines' in dir(opts):
         defines = opts.defines
-    if opts and 'rose_template_var' in dir(opts):
-        rose_template_var = opts.rose_template_var
+    if opts and 'rose_template_vars' in dir(opts):
+        rose_template_vars = opts.rose_template_vars
 
     # Construct new ouput based on optional Configs:
     newconfig = ConfigNode()
@@ -315,7 +315,7 @@ def get_cli_opts_node(opts=None):
             )
 
     # For each __workflow define__ add define.
-    for define in rose_template_var:
+    for define in rose_template_vars:
         # For now just assuming that we just support Jinja2 - after I've
         # Implemented the fully template-engine neutral template variables
         # section this should be a moot point.

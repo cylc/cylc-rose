@@ -149,7 +149,7 @@ def record_cylc_install_options(
                 Equivalent of ``rose suite-run --option KEY``
             - defines (list of str):
                 Equivalent of ``rose suite-run --define KEY=VAL``
-            - rose_template_var (list of str):
+            - rose_template_vars (list of str):
                 Equivalent of ``rose suite-run --define-suite KEY=VAL``
         rundir (pathlib.Path):
             Path to dump the rose-suite-cylc-conf

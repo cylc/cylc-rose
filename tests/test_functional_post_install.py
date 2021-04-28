@@ -59,7 +59,7 @@ def test_rose_fileinstall_no_config_in_folder():
     assert rose_fileinstall(Path('/dev/null')) is False
 
 
-def test_rose_fileinstall_uses_rose_template_var(tmp_path):
+def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
     # Setup source and destination dirs, including the file ``installme``:
     srcdir = tmp_path / 'source'
     destdir = tmp_path / 'dest'
@@ -72,7 +72,7 @@ def test_rose_fileinstall_uses_rose_template_var(tmp_path):
     opts = SimpleNamespace(
         opt_conf_keys='',
         defines=[f'[file:installedme]source={str(srcdir)}/installme'],
-        rose_template_var=[],
+        rose_template_vars=[],
         clear_rose_install_opts=False
     )
 
@@ -94,7 +94,7 @@ def test_rose_fileinstall_uses_rose_template_var(tmp_path):
             SimpleNamespace(
                 opt_conf_keys='',
                 defines=['[env]FOO=1'],
-                rose_template_var=['X=Y'],
+                rose_template_vars=['X=Y'],
                 clear_rose_install_opts=False
             ),
             # {file: content}
@@ -170,7 +170,7 @@ def test_rose_fileinstall_uses_rose_template_var(tmp_path):
             SimpleNamespace(
                 opt_conf_keys='bar',
                 defines=['[env]a=b'],
-                rose_template_var=['a="b"'],
+                rose_template_vars=['a="b"'],
                 clear_rose_install_opts=False
             ),
             # {file: content}
