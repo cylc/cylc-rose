@@ -68,7 +68,7 @@ write a record of command line options set in
 Example
 -------
 
-For a suite with the following definitions in the :term:`source directory`:
+For a workflow with the following definitions in the :term:`source directory`:
 
 rose-suite.conf
 
