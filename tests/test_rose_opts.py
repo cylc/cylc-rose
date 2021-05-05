@@ -63,7 +63,7 @@ def fixture_install_flow(fixture_provide_flow):
         '--no-run-name '  # Avoid having to keep looking a sub-dir.
         '--opt-conf-key="A" -O "B" '
         '--define "[env]FOO=42" -D "[jinja2:suite.rc]BAR=84" '
-        '--define-suite="FLAKE=99" -S "CORNETTO=120" '
+        '--rose-template-variable="FLAKE=99" -S "CORNETTO=120" '
     )
     result = subprocess.run(cmd, capture_output=True)
     destpath = Path(get_workflow_run_dir(flow_name))

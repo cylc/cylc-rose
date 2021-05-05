@@ -428,7 +428,7 @@ def test_cli_defines_ignored_are_ignored(
 
 
 @pytest.mark.parametrize(
-    'opt_confs, defines, define_suites, expect',
+    'opt_confs, defines, rose_template_vars, expect',
     [
         # Basic simple test
         ('A B', ['[env]FOO=BAR'], ['QUX=BAZ'], (
@@ -455,11 +455,11 @@ def test_cli_defines_ignored_are_ignored(
         )
     ]
 )
-def test_get_cli_opts_node(opt_confs, defines, define_suites, expect):
+def test_get_cli_opts_node(opt_confs, defines, rose_template_vars, expect):
     opts = SimpleNamespace(
         opt_conf_keys=opt_confs,
         defines=defines,
-        define_suites=define_suites
+        rose_template_vars=rose_template_vars
     )
     loader = ConfigLoader()
     expect = loader.load(StringIO(expect))

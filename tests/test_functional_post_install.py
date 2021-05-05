@@ -72,7 +72,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
     opts = SimpleNamespace(
         opt_conf_keys='',
         defines=[f'[file:installedme]source={str(srcdir)}/installme'],
-        define_suites=[],
+        rose_template_vars=[],
         clear_rose_install_opts=False
     )
 
@@ -94,7 +94,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
             SimpleNamespace(
                 opt_conf_keys='',
                 defines=['[env]FOO=1'],
-                define_suites=['X=Y'],
+                rose_template_vars=['X=Y'],
                 clear_rose_install_opts=False
             ),
             # {file: content}
@@ -170,7 +170,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
             SimpleNamespace(
                 opt_conf_keys='bar',
                 defines=['[env]a=b'],
-                define_suites=['a="b"'],
+                rose_template_vars=['a="b"'],
                 clear_rose_install_opts=False
             ),
             # {file: content}

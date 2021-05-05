@@ -288,8 +288,8 @@ def get_cli_opts_node(opts=None):
         opt_conf_keys = opts.opt_conf_keys
     if opts and 'defines' in dir(opts):
         defines = opts.defines
-    if opts and 'define_suites' in dir(opts):
-        suite_defines = opts.define_suites
+    if opts and 'rose_template_vars' in dir(opts):
+        suite_defines = opts.rose_template_vars
 
     # Construct new ouput based on optional Configs:
     newconfig = ConfigNode()

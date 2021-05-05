@@ -162,7 +162,6 @@ def record_cylc_install_options(
     """
     # Create a config based on command line options:
     cli_config = get_cli_opts_node(opts)
-
     # Leave now if there is nothing to do:
     if not cli_config:
         return False
@@ -184,7 +183,6 @@ def record_cylc_install_options(
             cli_config = merge_rose_cylc_suite_install_conf(
                 oldconfig, cli_config
             )
-
     cli_config.comments = [
         ' This file records CLI Options.'
     ]
