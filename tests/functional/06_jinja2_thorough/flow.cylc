@@ -48,7 +48,6 @@
 
 # 7. ROSE_ORIG_HOST should be provided (hard to test it is set correctly here)
 {{ assert(ROSE_ORIG_HOST is defined, "failed 7.1") }}
-{{ assert(environ['ROSE_ORIG_HOST'] is defined, "failed 7.2")}}
 
 # 8. ROSE_SITE should be provided
 {{ assert(ROSE_SITE is defined, "failed 8.1") }}

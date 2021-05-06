@@ -35,11 +35,7 @@ import subprocess
 from pathlib import Path
 from uuid import uuid4
 
-from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
-
-
-HOST = get_host()
 
 
 @pytest.fixture(scope='module')
@@ -111,8 +107,6 @@ def test_cylc_install_run(fixture_install_flow):
                 '!opts=bar\n\n'
                 '[env]\n'
                 'FOO=1\n'
-                f'ROSE_ORIG_HOST={HOST}\n'
-                f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
             )
         ),
     ]
@@ -164,8 +158,6 @@ def test_cylc_reinstall_run(fixture_reinstall_flow):
                 '!opts=baz\n\n'
                 '[env]\n'
                 'BAR=2\n'
-                f'ROSE_ORIG_HOST={HOST}\n'
-                f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
             )
         )
     ]

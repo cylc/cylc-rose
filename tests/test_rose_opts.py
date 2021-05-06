@@ -24,7 +24,6 @@ import subprocess
 from pathlib import Path
 from uuid import uuid4
 
-from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
 
 
@@ -99,16 +98,13 @@ def test_rose_fileinstall_rose_conf(fixture_install_flow):
 
 def test_rose_fileinstall_rose_suite_cylc_install_conf(fixture_install_flow):
     _, _, _, result, destpath = fixture_install_flow
-    host = get_host()
     assert (destpath / 'opt/rose-suite-cylc-install.conf').read_text() == (
         "# This file records CLI Options.\n\n"
         "!opts=A B\n\n"
         "[env]\n"
-        "FOO=42\n"
-        f"ROSE_ORIG_HOST={host}\n\n"
+        "FOO=42\n\n"
         "[jinja2:suite.rc]\n"
         "BAR=84\n"
         "CORNETTO=120\n"
         "FLAKE=99\n"
-        f"ROSE_ORIG_HOST={host}\n"
     )
