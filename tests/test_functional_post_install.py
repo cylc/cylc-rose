@@ -27,10 +27,15 @@ from types import SimpleNamespace
 
 from metomi.isodatetime.datetimeoper import DateTimeOperator
 
+from cylc.flow.hostuserutil import get_host
 from cylc.rose.entry_points import (
     record_cylc_install_options, rose_fileinstall, post_install
 )
+from cylc.rose.utilities import MultipleTemplatingEnginesError
 from metomi.rose.config import ConfigLoader
+
+
+HOST = get_host()
 
 
 def assert_rose_conf_full_equal(left, right, no_ignore=True):
@@ -104,7 +109,8 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                 'test/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-cylc-install.conf': (
                     'opts=\n[env]\nFOO=1'
-                    '\n[jinja2:suite.rc]\nX=Y\n'
+                    f'\n[template variables]\nX=Y\nROSE_ORIG_HOST={HOST}\n'
+                    f'\n[env]\nROSE_ORIG_HOST={HOST}\n'
                 ),
                 'ref/rose-suite.conf': '!opts=foo (cylc-install)',
                 'ref/opt/rose-suite-foo.conf': '',
@@ -128,10 +134,13 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                 'test/opt/rose-suite-foo.conf': '',
                 'test/opt/rose-suite-bar.conf': '',
                 'test/opt/rose-suite-baz.conf': '',
-                'test/opt/rose-suite-cylc-install.conf':
-                    '!opts=bar\n[env]\nBAR=1',
+                'test/opt/rose-suite-cylc-install.conf': (
+                    '!opts=bar\n[env]\nBAR=1\nROSE_ORIG_HOST=abc123\n'
+                    '\n[template variables]\nROSE_ORIG_HOST=abc123\n'
+                ),
                 'ref/opt/rose-suite-cylc-install.conf':
-                    '!opts=bar baz\n[env]\nBAR=2',
+                    f'!opts=bar baz\n[env]\nBAR=2\nROSE_ORIG_HOST={HOST}\n'
+                    f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n',
                 'ref/rose-suite.conf': '!opts=foo bar baz (cylc-install)',
                 'ref/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-bar.conf': '',
@@ -155,7 +164,10 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                 'test/opt/rose-suite-a.conf': '',
                 'test/opt/rose-suite-b.conf': '',
                 'test/opt/rose-suite-c.conf': '',
-                'ref/opt/rose-suite-cylc-install.conf': '!opts=b c\n',
+                'ref/opt/rose-suite-cylc-install.conf': (
+                    f'!opts=b c\n\n[env]\nROSE_ORIG_HOST={HOST}\n'
+                    f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
+                ),
                 'ref/rose-suite.conf': '!opts=a b c (cylc-install)',
                 'ref/opt/rose-suite-a.conf': '',
                 'ref/opt/rose-suite-b.conf': '',
@@ -179,7 +191,8 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                 'test/opt/rose-suite-foo.conf': '[jinja2:suite.rc]\ny="f"\n',
                 'test/opt/rose-suite-bar.conf': '[jinja2:suite.rc]\ny="b"\n',
                 'ref/opt/rose-suite-cylc-install.conf': (
-                    '!opts=foo bar\n[env]\na=b\n[jinja2:suite.rc]\na="b"'
+                    f'!opts=foo bar\n[env]\na=b\nROSE_ORIG_HOST={HOST}\n'
+                    f'[jinja2:suite.rc]\na="b"\nROSE_ORIG_HOST={HOST}\n'
                 ),
                 'ref/rose-suite.conf': (
                     '!opts=foo bar (cylc-install)\n[jinja2:suite.rc]\ny="base"'
@@ -196,9 +209,6 @@ def test_functional_record_cylc_install_options(
     monkeypatch, tmp_path, opts, files, env_inserts
 ):
     """It works the way the proposal says it should.
-
-    TODO: Once the the dump of the final rose-suite.conf is done then this
-    should be expanded to test that too.
     """
     # Pin down the results of the function used to provide a timestamp.
     def fake(*arg, **kwargs):
@@ -267,6 +277,50 @@ def test_functional_rose_database_dumped_errors(tmp_path):
     )
     (srcdir / 'cylc.flow').touch()
     assert rose_fileinstall(srcdir=Path('/this/path/goes/nowhere')) is False
+
+
+@pytest.mark.parametrize(
+    (
+        'opts, files, expect'
+    ),
+    [
+        pytest.param(
+            # opts:
+            SimpleNamespace(
+                opt_conf_keys='', defines=['[jinja2:suite.rc]FOO=1'],
+                define_suites=[], clear_rose_install_opts=False
+            ),
+            # {file: content}
+            {
+                'test/rose-suite.conf':
+                    f'\n[empy:suite.rc]\nFOO=7\nROSE_ORIG_HOST={HOST}\n'
+            },
+            (
+                r"((jinja2:suite\.rc)|(empy:suite.rc)); "
+                r"((jinja2:suite\.rc)|(empy:suite.rc))"
+            ),
+            id='CLI contains different templating'
+        ),
+    ]
+)
+def test_template_section_conflict(
+    monkeypatch, tmp_path, opts, files, expect
+):
+    """Cylc install fails if multiple template sections set:"""
+    testdir = tmp_path / 'test'
+    # Set up existing files, should these exist:
+    for fname, content in files.items():
+        path = tmp_path / fname
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+
+    with pytest.raises(MultipleTemplatingEnginesError) as exc_info:
+        # Run the entry point top-level function:
+        rose_suite_cylc_install_node, rose_suite_opts_node = \
+            record_cylc_install_options(
+                rundir=testdir, opts=opts, srcdir=testdir
+            )
+    assert exc_info.match(expect)
 
 
 def test_rose_fileinstall_exception(tmp_path, monkeypatch):

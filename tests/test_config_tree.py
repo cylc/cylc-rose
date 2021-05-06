@@ -26,6 +26,7 @@ import pytest
 from types import SimpleNamespace
 from io import StringIO
 
+from cylc.flow.hostuserutil import get_host
 from cylc.rose.utilities import (
     get_cli_opts_node,
     merge_opts,
@@ -38,6 +39,10 @@ from cylc.rose.entry_points import (
     get_rose_vars,
 )
 from metomi.rose.config import ConfigLoader
+from metomi.rose import __version__ as ROSE_VERSION
+
+
+HOST = get_host()
 
 
 def test_rose_config_exists_no_dir(tmp_path):
@@ -220,14 +225,31 @@ def test_get_rose_vars_expansions(tmp_path):
     assert rose_vars['template_variables']['LIST'] == ["a", 1, True]
 
 
+def test_get_rose_vars_but_not_VERSION_vars(tmp_path, caplog):
+    """Check that variables are expanded correctly."""
+    os.environ['XYZ'] = "xyz"
+    (tmp_path / "rose-suite.conf").write_text(
+        "[env]\n"
+        "ROSE_VERSION=99.99\n"
+        "CYLC_VERSION=999.99\n"
+    )
+    rose_vars = get_rose_vars(tmp_path)
+    # Check that the variables have been removed/altered.
+    assert 'CYLC_VERSION' not in rose_vars['env']
+    assert rose_vars['env']['ROSE_VERSION'] == ROSE_VERSION
+    warnings = [r.message for r in caplog.records]
+    assert 'CYLC_VERSION=999.99' in warnings[0]
+    assert 'ROSE_VERSION=99.99' in warnings[1]
+
+
 def test_get_rose_vars_ROSE_VARS(tmp_path):
     """Test that rose variables are available in the environment section.."""
     (tmp_path / "rose-suite.conf").touch()
     rose_vars = get_rose_vars(tmp_path)
-    assert list(rose_vars['env'].keys()) == [
+    assert sorted(list(rose_vars['env'].keys())) == [
         'ROSE_ORIG_HOST',
+        'ROSE_SITE',
         'ROSE_VERSION',
-        'ROSE_SITE'
     ]
 
 
@@ -237,13 +259,13 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
         "[jinja2:suite.rc]"
     )
     rose_vars = get_rose_vars(tmp_path)
-    assert list(rose_vars['template_variables'][
+    assert sorted(list(rose_vars['template_variables'][
         'ROSE_SUITE_VARIABLES'
-    ].keys()) == [
+    ].keys())) == [
         'ROSE_ORIG_HOST',
-        'ROSE_VERSION',
         'ROSE_SITE',
-        'ROSE_SUITE_VARIABLES'
+        'ROSE_SUITE_VARIABLES',
+        'ROSE_VERSION',
     ]
 
 
@@ -423,6 +445,7 @@ def test_cli_defines_ignored_are_ignored(
         opt_confs='', defines=[f'[]{state}opts=ignore me'],
         rose_template_vars=[]
     )
+
     get_cli_opts_node(opts)
     assert caplog.records[0].message == \
         'CLI opts set to ignored or trigger-ignored will be ignored.'
@@ -436,8 +459,10 @@ def test_cli_defines_ignored_are_ignored(
             "!opts=A B\n"
             "\n[env]\n"
             "FOO=BAR\n"
-            "\n[jinja2:suite.rc]\n"
-            "QUX=BAZ"
+            f"ROSE_ORIG_HOST={HOST}\n"
+            "\n[template variables]\n"
+            "QUX=BAZ\n"
+            f"ROSE_ORIG_HOST={HOST}"
         )),
         # Check handling of ignored & trigger ignored items
         (
@@ -449,9 +474,11 @@ def test_cli_defines_ignored_are_ignored(
                 "\n[env]\n"
                 "!FOO=Arthur\n"
                 "!!BAR=Trillian\n"
-                "\n[jinja2:suite.rc]\n"
+                f"ROSE_ORIG_HOST={HOST}\n"
+                "\n[template variables]\n"
                 "!BAZ=Zaphod\n"
                 "!!QUX=Ford\n"
+                f"ROSE_ORIG_HOST={HOST}\n"
             )
         )
     ]
@@ -465,7 +492,7 @@ def test_get_cli_opts_node(opt_confs, defines, rose_template_vars, expect):
     loader = ConfigLoader()
     expect = loader.load(StringIO(expect))
     result = get_cli_opts_node(opts)
-    for item in ['env', 'jinja2:suite.rc', 'opts']:
+    for item in ['env', 'template variables', 'opts']:
         assert result[item] == expect[item]
 
 
