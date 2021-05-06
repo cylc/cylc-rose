@@ -1,4 +1,4 @@
-# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC SUITE ENGINE.
+# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC WORKFLOW ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -37,7 +37,7 @@ def fixture_provide_flow(tmp_path):
     # Create a unique flow name for this test:
     flow_name = f'cylc-rose-test-{str(uuid4())[:8]}'
 
-    # Create source suite:
+    # Create source workflow:
     (srcpath / 'flow.cylc').write_text(
         '[scheduling]\n'
         '    initial cycle point = 2020\n'
