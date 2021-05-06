@@ -1,4 +1,4 @@
-# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC SUITE ENGINE.
+# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC WORKFLOW ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -64,7 +64,7 @@ def test_rose_fileinstall_no_config_in_folder():
     assert rose_fileinstall(Path('/dev/null')) is False
 
 
-def test_rose_fileinstall_uses_suite_defines(tmp_path):
+def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
     # Setup source and destination dirs, including the file ``installme``:
     srcdir = tmp_path / 'source'
     destdir = tmp_path / 'dest'
@@ -77,7 +77,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
     opts = SimpleNamespace(
         opt_conf_keys='',
         defines=[f'[file:installedme]source={str(srcdir)}/installme'],
-        define_suites=[],
+        rose_template_vars=[],
         clear_rose_install_opts=False
     )
 
@@ -99,7 +99,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
             SimpleNamespace(
                 opt_conf_keys='',
                 defines=['[env]FOO=1'],
-                define_suites=['X=Y'],
+                rose_template_vars=['X=Y'],
                 clear_rose_install_opts=False
             ),
             # {file: content}
@@ -182,7 +182,7 @@ def test_rose_fileinstall_uses_suite_defines(tmp_path):
             SimpleNamespace(
                 opt_conf_keys='bar',
                 defines=['[env]a=b'],
-                define_suites=['a="b"'],
+                rose_template_vars=['a="b"'],
                 clear_rose_install_opts=False
             ),
             # {file: content}

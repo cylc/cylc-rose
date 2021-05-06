@@ -1,4 +1,4 @@
-# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC SUITE ENGINE.
+# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC WORKFLOW ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -68,7 +68,7 @@ write a record of command line options set in
 Example
 -------
 
-For a suite with the following definitions in the :term:`source directory`:
+For a workflow with the following definitions in the :term:`source directory`:
 
 rose-suite.conf
 

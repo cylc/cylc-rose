@@ -1,4 +1,4 @@
-# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC SUITE ENGINE.
+# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC WORKFLOW ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -147,11 +147,11 @@ def record_cylc_install_options(
             Cylc option parser object - we want to extract the following
             values:
             - opt_conf_keys (list or str):
-                Equivelent of ``rose suite-run --option KEY``
+                Equivalent of ``rose suite-run --option KEY``
             - defines (list of str):
-                Equivelent of ``rose suite-run --define KEY=VAL``
-            - suite_defines (list of str):
-                Equivelent of ``rose suite-run --define-suite KEY=VAL``
+                Equivalent of ``rose suite-run --define KEY=VAL``
+            - rose_template_vars (list of str):
+                Equivalent of ``rose suite-run --define-suite KEY=VAL``
         rundir (pathlib.Path):
             Path to dump the rose-suite-cylc-conf
 
@@ -233,7 +233,7 @@ def rose_fileinstall(srcdir=None, opts=None, rundir=None):
             from metomi.rose.fs_util import FileSystemUtil
 
             # Update config tree with install location
-            # NOTE-TO-SELF: value=os.environ["CYLC_SUITE_RUN_DIR"]
+            # NOTE-TO-SELF: value=os.environ["CYLC_WORKFLOW_RUN_DIR"]
             config_tree.node = config_tree.node.set(
                 keys=["file-install-root"], value=str(rundir)
             )
