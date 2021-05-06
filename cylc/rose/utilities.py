@@ -293,7 +293,7 @@ def get_cli_opts_node(opts=None, srcdir=None):
         {'value': 'A B', 'state': '!', 'comments': []}
         >>> node['env']['FOO']
         {'value': 'BAR', 'state': '', 'comments': []}
-        >>> node['jinja2:suite.rc']['QUX']
+        >>> node['template variables']['QUX']
         {'value': 'BAZ', 'state': '', 'comments': []}
     """
     # Unpack info we want from opts:
