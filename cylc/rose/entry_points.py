@@ -28,6 +28,7 @@ from metomi.rose.config import ConfigLoader, ConfigDumper
 from cylc.rose.utilities import (
     dump_rose_log,
     get_rose_vars_from_config_node,
+    identify_templating_section,
     rose_config_exists,
     rose_config_tree_loader,
     merge_rose_cylc_suite_install_conf,
@@ -161,8 +162,7 @@ def record_cylc_install_options(
         installed ``rose-suite.conf``.
     """
     # Create a config based on command line options:
-    cli_config = get_cli_opts_node(opts)
-
+    cli_config = get_cli_opts_node(opts, srcdir)
     # Leave now if there is nothing to do:
     if not cli_config:
         return False
@@ -185,9 +185,8 @@ def record_cylc_install_options(
                 oldconfig, cli_config
             )
 
-    cli_config.comments = [
-        ' This file records CLI Options.'
-    ]
+    cli_config.comments = [' This file records CLI Options.']
+    identify_templating_section(cli_config)
     dumper.dump(cli_config, str(conf_filepath))
 
     # Merge the opts section of the rose-suite.conf with those set by CLI:
@@ -197,6 +196,7 @@ def record_cylc_install_options(
     rose_suite_conf = add_cylc_install_to_rose_conf_node_opts(
         rose_suite_conf, cli_config
     )
+    identify_templating_section(rose_suite_conf)
     dumper(rose_suite_conf, rose_conf_filepath)
 
     return cli_config, rose_suite_conf
