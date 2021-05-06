@@ -26,7 +26,9 @@ from metomi.rose.config_processor import ConfigProcessError
 from cylc.rose.utilities import (
     get_rose_vars_from_config_node,
     add_cylc_install_to_rose_conf_node_opts,
-    dump_rose_log
+    dump_rose_log,
+    identify_templating_section,
+    MultipleTemplatingEnginesError
 )
 
 
@@ -35,7 +37,9 @@ def test_blank():
     ret = {}
     node = ConfigNode()
     get_rose_vars_from_config_node(ret, node, {})
-    assert set(ret.keys()) == {'env'}
+    assert set(ret.keys()) == {
+        'template_variables', 'templating_detected', 'env'
+    }
     assert set(ret['env'].keys()) == {
         'ROSE_ORIG_HOST',
         'ROSE_SITE',
@@ -123,3 +127,69 @@ def test_dump_rose_log(monkeypatch, tmp_path):
     dump_rose_log(tmp_path, node)
     result = (tmp_path / 'log/conf/18151210T0000Z-rose-suite.conf').read_text()
     assert '[env]\nFOO="The finger writes."\n' == result
+
+
+@pytest.mark.parametrize(
+    'node_, expect, raises',
+    [
+        pytest.param(
+            (
+                (['template variables', 'foo'], 'Hello World'),
+            ),
+            'template variables',
+            None,
+            id="OK - template variables",
+        ),
+        pytest.param(
+            (
+                (['jinja2:suite.rc', 'foo'], 'Hello World'),
+            ),
+            'jinja2:suite.rc',
+            None,
+            id="OK - jinja2:suite.rc",
+        ),
+        pytest.param(
+            (
+                (['empy:suite.rc', 'foo'], 'Hello World'),
+            ),
+            'empy:suite.rc',
+            None,
+            id="OK - empy:suite.rc",
+        ),
+        pytest.param(
+            (
+                ('opt', 'a b'),
+            ),
+            'template variables',
+            None,
+            id="OK - no template variables section set",
+        ),
+        pytest.param(
+            (
+                (['empy:suite.rc', 'foo'], 'Hello World'),
+                (['jinja2:suite.rc', 'foo'], 'Hello World'),
+            ),
+            None,
+            MultipleTemplatingEnginesError,
+            id="FAILS - clashing template sections set",
+        ),
+        pytest.param(
+            (
+                (['file:stuffin', 'turkey'], 'gobble'),
+                (['template variables', 'foo'], 'Hello World'),
+            ),
+            'template variables',
+            None,
+            id="OK - No interference with irrelevant sections",
+        ),
+    ]
+)
+def test_identify_templating_section(node_, expect, raises):
+    node = ConfigNode()
+    for item in node_:
+        node.set(item[0], item[1])
+    if expect is not None:
+        assert identify_templating_section(node) == expect
+    if raises is not None:
+        with pytest.raises(raises):
+            identify_templating_section(node)

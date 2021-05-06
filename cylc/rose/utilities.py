@@ -37,6 +37,9 @@ if TYPE_CHECKING:
     from optparse import Values
 
 
+SECTIONS = {'jinja2:suite.rc', 'empy:suite.rc', 'template variables'}
+
+
 class MultipleTemplatingEnginesError(Exception):
     ...
 
@@ -57,25 +60,20 @@ def get_rose_vars_from_config_node(config, config_node, environ):
 
     """
     templating = None
-    sections = {'jinja2:suite.rc', 'empy:suite.rc', 'template variables'}
 
     # Don't allow multiple templating sections.
-    defined_sections = sections.intersection(set(config_node.value))
-    if len(defined_sections) > 1:
-        raise MultipleTemplatingEnginesError(
-            "You should not define more than one templating section. "
-            f"You defined:\n\t{'; '.join(defined_sections)}"
-        )
-    elif len(defined_sections) == 1:
-        templating, = defined_sections
-        if templating != 'template variables':
-            config['templating_detected'] = templating.replace(':suite.rc', '')
-        else:
-            config['templating_detected'] = templating
+    templating = identify_templating_section(config_node)
+
+    if templating != 'template variables':
+        config['templating_detected'] = templating.replace(':suite.rc', '')
+    else:
+        config['templating_detected'] = templating
 
     # Create env section if it doesn't already exist.
     if 'env' not in config_node.value:
         config_node.set(['env'])
+    if templating not in config_node.value:
+        config_node.set([templating])
 
     # Get Values for standard ROSE variables (ROSE_ORIG_HOST and ROSE_SITE).
     rose_orig_host = get_host()
@@ -83,9 +81,6 @@ def get_rose_vars_from_config_node(config, config_node, environ):
 
     # For each section process variables and add standard variables.
     for section in ['env', templating]:
-        if section not in config_node.value:
-            continue
-
         # Add standard ROSE_VARIABLES
         config_node[section].set(['ROSE_SITE'], rose_site)
         config_node[section].set(['ROSE_VERSION'], ROSE_VERSION)
@@ -147,6 +142,27 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     if templating is not None:
         config['template_variables'][
             'ROSE_SUITE_VARIABLES'] = config['template_variables']
+
+
+def identify_templating_section(config_node):
+
+    defined_sections = SECTIONS.intersection(set(config_node.value.keys()))
+    if (
+        'jinja2:suite.rc' in defined_sections
+        and 'empy:suite.rc' in defined_sections
+    ):
+        raise MultipleTemplatingEnginesError(
+            "You should not define more than one templating section. "
+            f"You defined:\n\t{'; '.join(defined_sections)}"
+        )
+    elif 'jinja2:suite.rc' in defined_sections:
+        templating = 'jinja2:suite.rc'
+    elif 'empy:suite.rc' in defined_sections:
+        templating = 'empy:suite.rc'
+    else:
+        templating = 'template variables'
+
+    return templating
 
 
 def rose_config_exists(
@@ -255,7 +271,7 @@ def merge_rose_cylc_suite_install_conf(old, new):
     return old
 
 
-def get_cli_opts_node(opts=None):
+def get_cli_opts_node(opts=None, srcdir=None):
     """Create a ConfigNode representing options set on the command line.
 
     Args:
@@ -277,7 +293,7 @@ def get_cli_opts_node(opts=None):
         {'value': 'A B', 'state': '!', 'comments': []}
         >>> node['env']['FOO']
         {'value': 'BAR', 'state': '', 'comments': []}
-        >>> node['jinja2:suite.rc']['QUX']
+        >>> node['template variables']['QUX']
         {'value': 'BAZ', 'state': '', 'comments': []}
     """
     # Unpack info we want from opts:
@@ -290,6 +306,10 @@ def get_cli_opts_node(opts=None):
         defines = opts.defines
     if opts and 'rose_template_vars' in dir(opts):
         rose_template_vars = opts.rose_template_vars
+
+    rose_orig_host = get_host()
+    defines.append(f'[env]ROSE_ORIG_HOST={rose_orig_host}')
+    rose_template_vars.append(f'ROSE_ORIG_HOST={rose_orig_host}')
 
     # Construct new ouput based on optional Configs:
     newconfig = ConfigNode()
@@ -314,16 +334,21 @@ def get_cli_opts_node(opts=None):
                 state=match['state']
             )
 
-    # For each __workflow define__ add define.
+    # For each __suite define__ add define.
+    if srcdir is not None:
+        config_node = rose_config_tree_loader(srcdir, opts).node
+        templating = identify_templating_section(config_node)
+    else:
+        templating = 'template variables'
+
     for define in rose_template_vars:
-        # For now just assuming that we just support Jinja2 - after I've
-        # Implemented the fully template-engine neutral template variables
-        # section this should be a moot point.
+        # TODO test what happens if CLI settings use "wrong" templating engine.
         match = re.match(
             r'(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)', define
         ).groupdict()
+        # Guess templating type?
         newconfig.set(
-            keys=['jinja2:suite.rc', match['key']],
+            keys=[templating, match['key']],
             value=match['value'],
             state=match['state']
         )
