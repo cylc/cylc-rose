@@ -342,7 +342,6 @@ def get_cli_opts_node(opts=None, srcdir=None):
         templating = 'template variables'
 
     for define in rose_template_vars:
-        # TODO test what happens if CLI settings use "wrong" templating engine.
         match = re.match(
             r'(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)', define
         ).groupdict()

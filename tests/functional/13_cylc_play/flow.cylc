@@ -2,7 +2,7 @@
 {% from "cylc.flow" import LOG %}
 {{ assert(ROSE_ORIG_HOST is defined, "ROSE_ORIG_HOST not defined") }}
 {% do LOG.warning("ROSE_ORIG_HOST (template var) is: " + ROSE_ORIG_HOST) %}
-{{ assert(environ['ROSE_ORIG_HOST'] is defined, "ROSE_ORIG_HOST not defined")}}
+{{ assert(environ['ROSE_ORIG_HOST'] is defined, "ROSE_ORIG_HOST env var not defined")}}
 {% do LOG.warning("ROSE_ORIG_HOST (env) is: " + environ['ROSE_ORIG_HOST']) %}
 
 

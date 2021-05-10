@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------
-# Copyright (C) 2012-2020 British Crown (Met Office) & Contributors.
+# Copyright (C) British Crown (Met Office) & Contributors.
 #
 # This file is part of Rose, a framework for meteorological suites.
 #
@@ -112,7 +110,7 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
     By running in a fixture with modular scope we
     can run tests on different aspects of its output as separate tests.
 
-    If a test fails using ``pytest --pdb then``
+    If a test fails then using ``pytest --pdb`` and
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
     result = subprocess.run(
@@ -125,7 +123,7 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
         env=os.environ
     )
     yield {
-        'fixture_provide_flow': fixture_provide_flow,
+        **fixture_provide_flow,
         'result': result
     }
 
@@ -134,11 +132,11 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
 def fixture_play_flow(fixture_install_flow):
     """Run cylc flow in a fixture.
     """
-    flowname = fixture_install_flow['fixture_provide_flow']['test_flow_name']
+    flowname = fixture_install_flow['test_flow_name']
     flowname = f"{flowname}/runN"
     play = subprocess.run(
         ['cylc', 'play', flowname, '--no-detach'],
-        capture_output=True
+        capture_output=True, text=True
     )
     return play
 
@@ -162,7 +160,7 @@ def test_cylc_install_ROSE_ORIG_HOST(fixture_install_flow):
     """Install flow added ROSE_ORIG_HOSTS to env and jinja2:suite.rc sections.
     """
     cylc_install_conf = (
-        fixture_install_flow['fixture_provide_flow']['flowpath'] /
+        fixture_install_flow['flowpath'] /
         'runN/opt/rose-suite-cylc-install.conf'
     ).read_text()
     assert f'[env]\nROSE_ORIG_HOST={HOST}' in cylc_install_conf
@@ -187,4 +185,4 @@ def test_cylc_play_had_access_to_ROSE_ORIG_HOST(fixture_play_flow, searchfor):
     """
     play = fixture_play_flow
     search = f'WARNING - ROSE_ORIG_HOST \\({searchfor}\\) is: (.*)'
-    assert re.findall(search, play.stderr.decode())[0] == HOST
+    assert re.findall(search, play.stderr)[0] == HOST
