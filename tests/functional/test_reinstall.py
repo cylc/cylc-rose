@@ -280,3 +280,5 @@ def test_cylc_reinstall_fail_on_clashing_template_vars(tmp_path):
         'You should not define more than one templating section'
         in reinstall.stderr.decode()
     )
+    # Clean up run dir:
+    shutil.rmtree(get_workflow_run_dir(test_flow_name))
