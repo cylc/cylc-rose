@@ -37,6 +37,7 @@ from cylc.rose.utilities import (
     add_cylc_install_to_rose_conf_node_opts,
 )
 from cylc.flow import LOG
+from cylc.flow.hostuserutil import get_host
 
 
 def pre_configure(srcdir=None, opts=None, rundir=None):
@@ -184,6 +185,14 @@ def record_cylc_install_options(
             cli_config = merge_rose_cylc_suite_install_conf(
                 oldconfig, cli_config
             )
+
+    # Get Values for standard ROSE variables (ROSE_ORIG_HOST and ROSE_SITE).
+    rose_orig_host = get_host()
+    for section in [
+        'env', 'jinja2:suite.rc', 'empy:suite.rc', 'template variables'
+    ]:
+        if section in cli_config:
+            cli_config[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
 
     cli_config.comments = [' This file records CLI Options.']
     identify_templating_section(cli_config)
