@@ -6,22 +6,10 @@
 {% do LOG.warning("ROSE_ORIG_HOST (env) is: " + environ['ROSE_ORIG_HOST']) %}
 
 
-[scheduler]
-    [[events]]
-        abort on stalled = True
-
 [scheduling]
     [[graph]]
-        R1 = hello & bore_da
+        R1 = hello
 
 [runtime]
     [[hello]]
         script = true
-        [[[remote]]]
-            host={{ROSE_ORIG_HOST}}
-            #host = $undefined
-            #host = els055
-    [[bore_da]]
-        script = true
-        [[[remote]]]
-            host = $ROSE_ORIG_HOST

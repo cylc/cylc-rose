@@ -122,6 +122,13 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
         capture_output=True,
         env=os.environ
     )
+    install_conf_path = (
+        fixture_provide_flow['flowpath'] /
+        'runN/opt/rose-suite-cylc-install.conf'
+    )
+    text = install_conf_path.read_text()
+    text = re.sub('ROSE_ORIG_HOST=.*', 'ROSE_ORIG_HOST=foo', text)
+    install_conf_path.write_text(text)
     yield {
         **fixture_provide_flow,
         'result': result
@@ -141,48 +148,34 @@ def fixture_play_flow(fixture_install_flow):
     return play
 
 
-def test_cylc_install(fixture_provide_flow):
+def test_cylc_validate_srcdir(fixture_install_flow):
     """Sanity check that workflow validates:
     """
-    srcpath = fixture_provide_flow['srcpath']
+    srcpath = fixture_install_flow['srcpath']
     validate = subprocess.run(
         ['cylc', 'validate', str(srcpath)], capture_output=True
     )
+    search = re.findall(
+        r'WARNING - ROSE_ORIG_HOST \(.*\) is: (.*)', validate.stderr.decode()
+    )
     assert validate.returncode == 0
+    assert search == [HOST, HOST]
+
+
+def test_cylc_validate_rundir(fixture_install_flow):
+    """Sanity check that workflow validates:
+    """
+    flowpath = fixture_install_flow['flowpath'] / 'runN'
+    validate = subprocess.run(
+        ['cylc', 'validate', str(flowpath)], capture_output=True
+    )
+    search = re.findall(
+        r'WARNING - ROSE_ORIG_HOST \(.*\) is: (.*)', validate.stderr.decode()
+    )
+    assert validate.returncode == 0
+    assert search == ['foo', 'foo']
 
 
 def test_cylc_install_run(fixture_install_flow):
     """install flow works."""
     assert fixture_install_flow['result'].returncode == 0
-
-
-def test_cylc_install_ROSE_ORIG_HOST(fixture_install_flow):
-    """Install flow added ROSE_ORIG_HOSTS to env and jinja2:suite.rc sections.
-    """
-    cylc_install_conf = (
-        fixture_install_flow['flowpath'] /
-        'runN/opt/rose-suite-cylc-install.conf'
-    ).read_text()
-    assert f'[env]\nROSE_ORIG_HOST={HOST}' in cylc_install_conf
-    assert f'[jinja2:suite.rc]\nROSE_ORIG_HOST={HOST}' in cylc_install_conf
-
-
-def test_cylc_play_runs(fixture_play_flow):
-    """Play flow works."""
-    assert fixture_play_flow.returncode == 0
-
-
-@pytest.mark.parametrize(
-    'searchfor',
-    [
-        pytest.param('template var', id="Template Variable"),
-        pytest.param('env', id='Environment Variable')
-    ]
-)
-def test_cylc_play_had_access_to_ROSE_ORIG_HOST(fixture_play_flow, searchfor):
-    """ROSE_ORIG_HOST was available to the workflow config as both and
-    environment variable and a template variable.
-    """
-    play = fixture_play_flow
-    search = f'WARNING - ROSE_ORIG_HOST \\({searchfor}\\) is: (.*)'
-    assert re.findall(search, play.stderr)[0] == HOST

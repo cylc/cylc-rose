@@ -75,6 +75,11 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     if templating not in config_node.value:
         config_node.set([templating])
 
+    # Get Rose Orig host if it's not in definition.
+    rose_orig_host = None
+    if 'ROSE_ORIG_HOST' not in config_node['env']:
+        rose_orig_host = get_host()
+
     # Get Values for standard ROSE variables (ROSE_ORIG_HOST and ROSE_SITE).
     rose_site = ResourceLocator().get_conf().get_value(['site'], '')
 
@@ -83,6 +88,8 @@ def get_rose_vars_from_config_node(config, config_node, environ):
         # Add standard ROSE_VARIABLES
         config_node[section].set(['ROSE_SITE'], rose_site)
         config_node[section].set(['ROSE_VERSION'], ROSE_VERSION)
+        if rose_orig_host:
+            config_node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
 
         # Use env_var_process to process variables which may need expanding.
         for key, node in config_node.value[section].value.items():
