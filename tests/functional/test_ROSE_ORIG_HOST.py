@@ -88,7 +88,7 @@ def fixture_provide_flow(tmp_path_factory):
     """Provide a cylc workflow based on the contents of a folder which can
     be either validated or installed.
     """
-    src_flow_name = '13_cylc_play'
+    src_flow_name = '13_ROSE_ORIG_HOST'
     workflow_src = Path(__file__).parent / src_flow_name
     test_flow_name = f'cylc-rose-test-{str(uuid4())[:8]}'
     srcpath = (tmp_path_factory.getbasetemp() / test_flow_name)
