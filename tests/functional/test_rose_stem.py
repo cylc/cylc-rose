@@ -207,14 +207,12 @@ def rose_stem_run_template(setup_stem_repo):
         # To assist with debugging fail horribly if the subproc'd rose-stem
         # command returns non-zero.
         # You might wish to add breakpoint() here.
-
         if run_stem.returncode != 0:
             msg = (
                 f'rose-stem command:\n {rose_stem_cmd} failed with'
                 f':\n{run_stem.stderr.decode()}'
             )
             raise SubprocessesError(msg)
-
         outputpath = (
             Path(setup_stem_repo['suite_install_dir']) /
             'runN/opt/rose-suite-cylc-install.conf'
