@@ -27,7 +27,7 @@ Rose Config
 -----------
 
 A fuller description of
-:rose:ref:`rose suite config is available here<Rose Suites>`.
+:ref:`rose suite config is available here<Rose Suites>`.
 
 Cylc-rose allows you to set environment and template variables in a
 configuration file called ``rose-suite.conf``. The following sections are
