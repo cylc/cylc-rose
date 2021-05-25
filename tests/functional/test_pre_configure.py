@@ -44,8 +44,8 @@ def envar_exporter(dict_):
         (
             '08_template_engine_conflict',
             (
-                b'FileParseError: Plugins set templating engine = empy '
-                b'which does not match #!jinja2 set in flow.cylc.\n'
+                b'TemplateVarLanguageClash: Plugins set templating engine = '
+                b'empy which does not match #!jinja2 set in flow.cylc.\n'
             )
         )
     ]
