@@ -124,12 +124,19 @@ def test_process(tmp_path, srcdir, envvars, args):
     assert expect == result
 
 
-def test_warn_if_root_dir_set(tmp_path, caplog):
-    (tmp_path / 'rose-suite.conf').write_text(
-        'root-dir="/the/only/path/ive/ever/known"\n'
-    )
+@pytest.mark.parametrize(
+    'root_dir_config', [
+        'root-dir="/the/only/path/ive/ever/known"\n',
+        'root-dir{work}="some/other/path"/n',
+        '[rose-suite-run]\nroot-dir="somepath"\n',
+        '[rose-suite-run]\nroot-dir{share/cycle}=*="some/share/cycle/path"\n'
+    ]
+)
+def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
+    """Test using unsupported root-dir config raises error."""
+    (tmp_path / 'rose-suite.conf').write_text(root_dir_config)
     get_rose_vars(srcdir=tmp_path)
     assert caplog.records[0].msg == (
-        'You have set "root-dir", which at Cylc 8 does nothing. '
-        'See Cylc Install documentation.'
+        'You have set "root-dir", which is not supported at Cylc 8. Use '
+        '`[install] symlink dirs` in global.cylc instead.'
     )
