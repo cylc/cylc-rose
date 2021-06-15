@@ -50,7 +50,7 @@ def assert_rose_conf_full_equal(left, right, no_ignore=True):
             node_1.comments != node_2.comments
         )
 
-    for keys_2, node_2 in right.walk(no_ignore=no_ignore):
+    for keys_2, _node_2 in right.walk(no_ignore=no_ignore):
         assert left.get(keys_2, no_ignore=no_ignore) is not None
 
 
@@ -84,8 +84,9 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
     # Run both record_cylc_install options and fileinstall.
     record_cylc_install_options(opts=opts, rundir=destdir)
     rose_fileinstall(srcdir, opts, destdir)
-    assert (destdir / 'installedme').read_text() == \
-        'Galileo No! We will not let you go.'
+    assert ((destdir / 'installedme').read_text() ==
+            'Galileo No! We will not let you go.'
+            )
 
 
 @pytest.mark.parametrize(
@@ -231,10 +232,11 @@ def test_functional_record_cylc_install_options(
     loader = ConfigLoader()
 
     # Run the entry point top-level function:
-    rose_suite_cylc_install_node, rose_suite_opts_node = \
+    rose_suite_cylc_install_node, rose_suite_opts_node = (
         record_cylc_install_options(
             rundir=testdir, opts=opts, srcdir=testdir
         )
+    )
     rose_fileinstall(
         rundir=testdir, opts=opts, srcdir=testdir
     )
@@ -316,10 +318,11 @@ def test_template_section_conflict(
 
     with pytest.raises(MultipleTemplatingEnginesError) as exc_info:
         # Run the entry point top-level function:
-        rose_suite_cylc_install_node, rose_suite_opts_node = \
+        rose_suite_cylc_install_node, rose_suite_opts_node = (
             record_cylc_install_options(
                 rundir=testdir, opts=opts, srcdir=testdir
             )
+        )
     assert exc_info.match(expect)
 
 

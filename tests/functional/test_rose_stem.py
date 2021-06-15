@@ -563,8 +563,9 @@ class TestIncompatibleVersions:
         """
 
         assert incompatible_versions.returncode == 1
-        assert b'Running rose-stem version 1 but suite is at version 0' in \
-            incompatible_versions.stderr
+        assert (b'Running rose-stem version 1 but suite is at version 0'
+                in incompatible_versions.stderr
+                )
 
 
 @pytest.fixture(scope='class')
@@ -592,5 +593,6 @@ class TestProjectNotInKeywords:
         """test for successful execution with site/user configuration
         """
         assert project_not_in_keywords.returncode == 1
-        assert b'Cannot ascertain project for source tree' in \
-            project_not_in_keywords.stderr
+        assert (b'Cannot ascertain project for source tree' in
+                project_not_in_keywords.stderr
+                )

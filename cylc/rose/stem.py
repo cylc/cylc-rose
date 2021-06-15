@@ -387,7 +387,7 @@ class StemRunner(object):
         repos_with_hosts = {}
         if not self.opts.stem_sources:
             self.opts.stem_sources = ['.']
-        self.opts.project = list()
+        self.opts.project = []
 
         for i, url in enumerate(self.opts.stem_sources):
             project, url, base, rev, mirror = self._ascertain_project(url)

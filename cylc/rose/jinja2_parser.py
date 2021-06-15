@@ -123,6 +123,6 @@ class Parser(NativeEnvironment):
                     f'Invalid literal: {value}'
                     f'\n{type(node)}'
                 )
-            stack.extend([x for x in node.iter_child_nodes()])
+            stack.extend(list(node.iter_child_nodes()))
         # evaluate it
         return self.from_string('{{ %s }}' % value).render()

@@ -89,16 +89,15 @@ def test_rose_fileinstall_subfolders(fixture_install_flow):
     """File installed into a sub directory:
     """
     _, datapath, _, _, destpath = fixture_install_flow
-    assert (destpath / 'runN/lib/python/lion.py').read_text() ==\
-        (datapath / 'lion.py').read_text()
+    assert ((destpath / 'runN/lib/python/lion.py').read_text() ==
+            (datapath / 'lion.py').read_text())
 
 
 def test_rose_fileinstall_concatenation(fixture_install_flow):
     """Multiple files concatenated on install (source contained wildcard):
     """
     _, datapath, _, _, destpath = fixture_install_flow
-    assert (destpath / 'runN/data').read_text() ==\
-        (
-            (datapath / 'randoms1.data').read_text() +
+    assert ((destpath / 'runN/data').read_text() ==
+            ((datapath / 'randoms1.data').read_text() +
             (datapath / 'randoms3.data').read_text()
-        )
+             ))
