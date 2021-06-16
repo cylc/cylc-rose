@@ -36,7 +36,7 @@ TESTS_REQUIRE = [
     'flake8',
     'pytest',
     'pytest_cov',
-    'types-Jinja2>=0.1.3',
+    'types-Jinja2',
 ]
 EXTRAS_REQUIRE['all'] = list(
     {
