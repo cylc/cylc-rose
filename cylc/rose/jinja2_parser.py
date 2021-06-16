@@ -18,8 +18,8 @@
 from ast import literal_eval as python_literal_eval
 import re
 
-from jinja2.nativetypes import NativeEnvironment
-from jinja2.nodes import (
+from jinja2.nativetypes import NativeEnvironment  # type: ignore
+from jinja2.nodes import (  # type: ignore
     Literal,
     Output,
     Pair,

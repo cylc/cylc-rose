@@ -33,7 +33,7 @@ EXTRAS_REQUIRE = {
 }
 TESTS_REQUIRE = [
     'coverage>=5.0.0',
-    'flake8',
+    'flake8-*',
     'pytest',
     'pytest_cov',
 ]
