@@ -104,12 +104,7 @@ def get_rose_vars(srcdir=None, opts=None):
     # Load the raw config tree
     config_tree = rose_config_tree_loader(srcdir, opts)
     # Warn if root-dir set in config
-    old_rose_suite_run_config = (
-        config_tree.node.get_value(["rose-suite-run"]))
-    list_to_check = list(config_tree.node)
-    if old_rose_suite_run_config:
-        list_to_check.extend(list(old_rose_suite_run_config))
-    for string in list_to_check:
+    for string in list(config_tree.node):
         if 'root-dir' in string:
             LOG.warning(
                 'You have set "root-dir", which is not supported at '

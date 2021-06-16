@@ -127,9 +127,7 @@ def test_process(tmp_path, srcdir, envvars, args):
 @pytest.mark.parametrize(
     'root_dir_config', [
         'root-dir="/the/only/path/ive/ever/known"\n',
-        'root-dir{work}="some/other/path"/n',
-        '[rose-suite-run]\nroot-dir="somepath"\n',
-        '[rose-suite-run]\nroot-dir{share/cycle}=*="some/share/cycle/path"\n'
+        'root-dir{work}="some/other/path"/n'
     ]
 )
 def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
