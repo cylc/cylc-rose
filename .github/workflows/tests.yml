@@ -32,7 +32,8 @@ jobs:
           flake8
 
       - name: Mypy
-        run: mypy --install-types
+        run: | 
+          yes| mypy --install-types
 
       - name: Test
         run: |
