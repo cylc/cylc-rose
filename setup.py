@@ -18,7 +18,8 @@
 from setuptools import setup, find_namespace_packages
 
 # load __version__ number from the source
-exec(open('cylc/rose/__init__.py', 'r').read())
+with open('cylc/rose/__init__.py', 'r') as f:
+    exec(f.read())
 
 
 with open("README.md", "r") as fh:
