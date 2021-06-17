@@ -126,7 +126,7 @@ def test_dump_rose_log(monkeypatch, tmp_path):
     node.set(['env', 'FOO'], '"The finger writes."')
     dump_rose_log(tmp_path, node)
     result = (tmp_path / 'log/conf/18151210T0000Z-rose-suite.conf').read_text()
-    assert '[env]\nFOO="The finger writes."\n' == result
+    assert result == '[env]\nFOO="The finger writes."\n'
 
 
 @pytest.mark.parametrize(

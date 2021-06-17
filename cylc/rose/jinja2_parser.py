@@ -18,8 +18,8 @@
 from ast import literal_eval as python_literal_eval
 import re
 
-from jinja2.nativetypes import NativeEnvironment
-from jinja2.nodes import (
+from jinja2.nativetypes import NativeEnvironment  # type: ignore
+from jinja2.nodes import (  # type: ignore
     Literal,
     Output,
     Pair,
@@ -123,6 +123,6 @@ class Parser(NativeEnvironment):
                     f'Invalid literal: {value}'
                     f'\n{type(node)}'
                 )
-            stack.extend([x for x in node.iter_child_nodes()])
+            stack.extend(list(node.iter_child_nodes()))
         # evaluate it
         return self.from_string('{{ %s }}' % value).render()

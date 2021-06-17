@@ -103,13 +103,15 @@ def get_rose_vars(srcdir=None, opts=None):
 
     # Load the raw config tree
     config_tree = rose_config_tree_loader(srcdir, opts)
-
-    # Warn if root-dir set in config:
-    if 'root-dir' in config_tree.node:
-        LOG.warning(
-            'You have set "root-dir", which at Cylc 8 does nothing. '
-            'See Cylc Install documentation.'
-        )
+    # Warn if root-dir set in config
+    for string in list(config_tree.node):
+        if 'root-dir' in string:
+            LOG.warning(
+                'You have set "root-dir", which is not supported at '
+                'Cylc 8. Use `[install] symlink dirs` in global.cylc '
+                'instead.'
+                )
+            break
 
     # Extract templatevars from the configuration
     get_rose_vars_from_config_node(

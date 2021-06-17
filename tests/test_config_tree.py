@@ -429,8 +429,9 @@ def test_cli_defines_ignored_are_ignored(
     )
 
     get_cli_opts_node(opts)
-    assert caplog.records[0].message == \
-        'CLI opts set to ignored or trigger-ignored will be ignored.'
+    assert (caplog.records[0].message ==
+            'CLI opts set to ignored or trigger-ignored will be ignored.'
+            )
 
 
 @pytest.mark.parametrize(
@@ -507,5 +508,6 @@ def test_merge_rose_cylc_suite_install_conf(old, new, expect):
     loader = ConfigLoader()
     old = loader.load(StringIO(old))
     new = loader.load(StringIO(new))
-    assert loader.load(StringIO(expect)) == \
-        merge_rose_cylc_suite_install_conf(old, new)
+    assert (loader.load(StringIO(expect)) ==
+            merge_rose_cylc_suite_install_conf(old, new)
+            )

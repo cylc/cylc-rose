@@ -32,7 +32,7 @@ jobs:
           flake8
 
       - name: Mypy
-        run: mypy --explicit-package-bases
+        run: mypy
 
       - name: Test
         run: |

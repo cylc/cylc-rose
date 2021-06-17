@@ -54,7 +54,8 @@ def test_basic(tmp_path, sources, inputs, expect):
     # Test
     if expect:
         assert copy_config_file(**inputs) == expect
-        assert Path(tmp_path / 'src/rose-suite.conf').read_text() ==\
-            Path(tmp_path / 'dest/rose-suite.conf').read_text()
+        assert (Path(tmp_path / 'src/rose-suite.conf').read_text() ==
+                Path(tmp_path / 'dest/rose-suite.conf').read_text()
+                )
     else:
         assert copy_config_file(**inputs) == expect

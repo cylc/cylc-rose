@@ -479,7 +479,7 @@ def simplify_opts_strings(opts):
     """
 
     seen_once = []
-    for index, item in enumerate(reversed(opts.split())):
+    for _index, item in enumerate(reversed(opts.split())):
         if item not in seen_once:
             seen_once.append(item)
 

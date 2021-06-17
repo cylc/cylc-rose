@@ -24,6 +24,7 @@ Provide a wrapper around "cylc install" for rose-stem suites.
 To run a rose-stem suite use "cylc play".
 """
 
+from contextlib import suppress
 import os
 import re
 import sys
@@ -175,7 +176,7 @@ class SuiteSelectionEvent(Event):
     __str__ = __repr__
 
 
-class StemRunner(object):
+class StemRunner:
 
     """Set up options for running a STEM job through Rose."""
 
@@ -224,9 +225,8 @@ class StemRunner(object):
             if ":" not in line:
                 continue
             key, value = line.split(":", 1)
-            if key:
-                if value:
-                    ret[key] = value.strip()
+            if key and value:
+                ret[key] = value.strip()
 
         return ret
 
@@ -278,10 +278,8 @@ class StemRunner(object):
         """
 
         project = None
-        try:
+        with suppress(ValueError):
             project, item = item.split("=", 1)
-        except ValueError:
-            pass
 
         if re.search(r'^\.', item):
             item = os.path.abspath(os.path.join(os.getcwd(), item))
@@ -341,17 +339,12 @@ class StemRunner(object):
             basedir = self.opts.stem_sources[0]
         else:
             basedir = self._ascertain_project(os.getcwd())[1]
-
         suitedir = os.path.join(basedir, DEFAULT_TEST_DIR)
         suitefile = os.path.join(suitedir, "rose-suite.conf")
-
-        if os.path.isfile(suitefile):
-            self.opts.suite = suitedir
-        else:
+        if not os.path.isfile(suitefile):
             raise RoseSuiteConfNotFoundException(suitedir)
-
+        self.opts.suite = suitedir
         self._check_suite_version(suitefile)
-
         return suitedir
 
     def _read_auto_opts(self):
@@ -387,7 +380,7 @@ class StemRunner(object):
         repos_with_hosts = {}
         if not self.opts.stem_sources:
             self.opts.stem_sources = ['.']
-        self.opts.project = list()
+        self.opts.project = []
 
         for i, url in enumerate(self.opts.stem_sources):
             project, url, base, rev, mirror = self._ascertain_project(url)
