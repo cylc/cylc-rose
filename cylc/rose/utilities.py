@@ -87,7 +87,6 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     for section in ['env', templating]:
         # Add standard ROSE_VARIABLES
         config_node[section].set(['ROSE_SITE'], rose_site)
-        config_node[section].set(['ROSE_VERSION'], ROSE_VERSION)
         if rose_orig_host:
             config_node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
 
