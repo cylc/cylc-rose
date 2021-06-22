@@ -246,7 +246,7 @@ def test_get_rose_vars_ROSE_VARS(tmp_path):
     """Test that rose variables are available in the environment section.."""
     (tmp_path / "rose-suite.conf").touch()
     rose_vars = get_rose_vars(tmp_path)
-    assert sorted(list(rose_vars['env'].keys())) == [
+    assert sorted(rose_vars['env'].keys()) == [
         'ROSE_ORIG_HOST',
         'ROSE_SITE',
         'ROSE_VERSION',
@@ -259,9 +259,9 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
         "[jinja2:suite.rc]"
     )
     rose_vars = get_rose_vars(tmp_path)
-    assert sorted(list(rose_vars['template_variables'][
+    assert sorted(rose_vars['template_variables'][
         'ROSE_SUITE_VARIABLES'
-    ].keys())) == [
+    ].keys()) == [
         'ROSE_ORIG_HOST',
         'ROSE_SITE',
         'ROSE_SUITE_VARIABLES',
