@@ -23,7 +23,9 @@ from jinja2.nodes import (  # type: ignore
     Literal,
     Output,
     Pair,
-    Template
+    Template,
+    Neg,
+    Pos
 )
 
 
@@ -37,7 +39,10 @@ class Parser(NativeEnvironment):
         # all valid literals
         Literal,
         # key: value pairs in dictionaries
-        Pair
+        Pair,
+        # Signed floats (+2.0, -4.2)
+        Neg,
+        Pos
     )
 
     _STRING_REGEX = re.compile(
@@ -62,6 +67,10 @@ class Parser(NativeEnvironment):
             42
             >>> parser.literal_eval('(1,2,3)')
             (1, 2, 3)
+            >>> parser.literal_eval('-1.2')
+            -1.2
+            >>> parser.literal_eval('+1.2')
+            1.2
             >>> parser.literal_eval('[1,2,3]')
             [1, 2, 3]
             >>> parser.literal_eval('{"a": 1, "b": 2, "c": 3}')
