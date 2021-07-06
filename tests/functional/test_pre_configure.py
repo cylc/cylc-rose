@@ -17,9 +17,11 @@
 """
 
 from pathlib import Path
-import subprocess
 import pytest
 import os
+
+from shlex import split
+from subprocess import run
 
 from cylc.rose.entry_points import get_rose_vars
 
@@ -52,7 +54,7 @@ def envar_exporter(dict_):
 )
 def test_validate_fail(srcdir, expect):
     srcdir = Path(__file__).parent / srcdir
-    sub = subprocess.run(
+    sub = run(
         ['cylc', 'validate', str(srcdir)], capture_output=True
     )
     assert sub.returncode != 0
@@ -89,7 +91,7 @@ def test_validate(tmp_path, srcdir, envvars, args):
     if args:
         script = script + args
     assert (
-        subprocess.run(script, env=envvars)
+        run(script, env=envvars)
     ).returncode == 0
 
 
@@ -115,7 +117,7 @@ def test_process(tmp_path, srcdir, envvars, args):
     if envvars is not None:
         envvars = os.environ.update(envvars)
     srcdir = Path(__file__).parent / srcdir
-    result = subprocess.run(
+    result = run(
         ['cylc', 'view', '-p', '--stdout', str(srcdir)],
         capture_output=True,
         env=envvars
@@ -138,3 +140,38 @@ def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
         'You have set "root-dir", which is not supported at Cylc 8. Use '
         '`[install] symlink dirs` in global.cylc instead.'
     )
+
+
+@pytest.mark.parametrize(
+    'srcdir, option, envvars, expect',
+    [
+        pytest.param(
+            '05_opts_set_from_rose_suite_conf/', '',
+            {}, b'\nfin\nmynd\nprynu\n',
+            id='rose-suite.conf'
+        ),
+        pytest.param(
+            '05_opts_set_from_rose_suite_conf/', '-O Gaelige',
+            {}, b'\ncuir\nfin\ngabh',
+            id='use -O'
+        ),
+        pytest.param(
+            '05_opts_set_from_rose_suite_conf/', '-D opts=""',
+            {}, b'allow\nfin\nplunge_control',
+            id='use -D'
+        ),
+        pytest.param(
+            '05_opts_set_from_rose_suite_conf/', '',
+            {'ROSE_SUITE_OPT_CONF_KEYS': 'Gaelige'},
+            b'\ncuir\nfin\ngabh',
+            id='use env variable to set option config'
+        ),
+    ]
+)
+def test_cylc_list(monkeypatch, srcdir, option, envvars, expect):
+    """Cylc list can parse folders without installing."""
+    for name, value in envvars.items():
+        monkeypatch.setenv(name, value)
+    srcpath = Path(__file__).parent / srcdir
+    output = run(split(f'cylc list {srcpath} {option}'), capture_output=True)
+    assert expect in output.stdout
