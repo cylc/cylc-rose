@@ -175,3 +175,41 @@ def test_cylc_list(monkeypatch, srcdir, option, envvars, expect):
     srcpath = Path(__file__).parent / srcdir
     output = run(split(f'cylc list {srcpath} {option}'), capture_output=True)
     assert expect in output.stdout
+
+
+@pytest.mark.parametrize(
+    'srcdir, option, envvars, expect',
+    [
+        pytest.param(
+            '05_opts_set_from_rose_suite_conf/flow.cylc', '',
+            {}, b'edge "mynd.1" "bwyta_dau.1"',
+            id='rose-suite.conf'
+        ),
+        pytest.param(
+            '05_opts_set_from_rose_suite_conf/flow.cylc', '-O Gaelige',
+            {}, b'edge "tog_tr\xc3\xac.1" "gabh.1"',
+            id='use -O'
+        ),
+        pytest.param(
+            '05_opts_set_from_rose_suite_conf/flow.cylc', '-D opts=""',
+            {}, b'edge "respond.1" "plunge_tan.1"',
+            id='use -D'
+        ),
+        pytest.param(
+            '05_opts_set_from_rose_suite_conf/', '',
+            {'ROSE_SUITE_OPT_CONF_KEYS': 'Gaelige'},
+            b'edge "gabh.1" "2_auf_deutsch_ist_zwei.1"',
+            id='use env variable to set option config'
+        ),
+    ]
+)
+def test_cylc_graph(monkeypatch, srcdir, option, envvars, expect):
+    """Cylc list can parse folders without installing."""
+    for name, value in envvars.items():
+        monkeypatch.setenv(name, value)
+    srcpath = Path(__file__).parent / srcdir
+    output = run(
+        split(f'cylc graph --reference {srcpath} {option}'),
+        capture_output=True
+    )
+    assert expect in output.stdout
