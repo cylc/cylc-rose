@@ -20,6 +20,7 @@ from pathlib import Path
 import pytest
 import os
 
+from itertools import product
 from shlex import split
 from subprocess import run
 
@@ -142,74 +143,44 @@ def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
     )
 
 
-@pytest.mark.parametrize(
-    'srcdir, option, envvars, expect',
-    [
-        pytest.param(
-            '05_opts_set_from_rose_suite_conf/', '',
-            {}, b'\nfin\nmynd\nprynu\n',
-            id='rose-suite.conf'
-        ),
-        pytest.param(
-            '05_opts_set_from_rose_suite_conf/', '-O Gaelige',
-            {}, b'\ncuir\nfin\ngabh',
-            id='use -O'
-        ),
-        pytest.param(
-            '05_opts_set_from_rose_suite_conf/', '-D opts=""',
-            {}, b'allow\nfin\nplunge_control',
-            id='use -D'
-        ),
-        pytest.param(
-            '05_opts_set_from_rose_suite_conf/', '',
-            {'ROSE_SUITE_OPT_CONF_KEYS': 'Gaelige'},
-            b'\ncuir\nfin\ngabh',
-            id='use env variable to set option config'
-        ),
-    ]
-)
-def test_cylc_list(monkeypatch, srcdir, option, envvars, expect):
-    """Cylc list can parse folders without installing."""
-    for name, value in envvars.items():
-        monkeypatch.setenv(name, value)
-    srcpath = Path(__file__).parent / srcdir
-    output = run(split(f'cylc list {srcpath} {option}'), capture_output=True)
-    assert expect in output.stdout
+def generate_params():
+    """Generates a list of parameters to test assorted Cylc CLI commands
+    which require rose-cylc parsing.
+    """
+    cmds = {
+        'list': 'cylc list',
+        'graph': 'cylc graph --reference',
+        'config': 'cylc config'
+    }
+    cases = {
+        'No Opts': ['', {}, b'mynd'],
+        'use -O': ['-O Gaelige', {}, b'gabh'],
+        'use -D': ['-D opts=""', {}, b'allow'],
+        'use ROSE_SUITE_OPT_CONF_KEYS': [
+            '', {'ROSE_SUITE_OPT_CONF_KEYS': 'Gaelige'}, b'gabh'
+        ]
+    }
+    for test in product(cmds.items(), cases.items()):
+        ((cmd_n, cmd), (case, [cli_opts, env_opts, result])) = test
+        if case == 'graph':
+            result = b'edge \"{}.1\"'.format(result)
+        if case == 'config':
+            result = b'[[{}]]'.format(result)
+        out = pytest.param(
+            cli_opts, env_opts, cmd, result, id=f'[{cmd_n}] {case}'
+        )
+        yield out
 
 
 @pytest.mark.parametrize(
-    'srcdir, option, envvars, expect',
-    [
-        pytest.param(
-            '05_opts_set_from_rose_suite_conf/flow.cylc', '',
-            {}, b'edge "mynd.1" "bwyta_dau.1"',
-            id='rose-suite.conf'
-        ),
-        pytest.param(
-            '05_opts_set_from_rose_suite_conf/flow.cylc', '-O Gaelige',
-            {}, b'edge "tog_tr\xc3\xac.1" "gabh.1"',
-            id='use -O'
-        ),
-        pytest.param(
-            '05_opts_set_from_rose_suite_conf/flow.cylc', '-D opts=""',
-            {}, b'edge "respond.1" "plunge_tan.1"',
-            id='use -D'
-        ),
-        pytest.param(
-            '05_opts_set_from_rose_suite_conf/', '',
-            {'ROSE_SUITE_OPT_CONF_KEYS': 'Gaelige'},
-            b'edge "gabh.1" "2_auf_deutsch_ist_zwei.1"',
-            id='use env variable to set option config'
-        ),
-    ]
+    'option, envvars, cmd, expect',
+    generate_params()
 )
-def test_cylc_graph(monkeypatch, srcdir, option, envvars, expect):
-    """Cylc list can parse folders without installing."""
+def test_cylc_script(monkeypatch, option, envvars, cmd, expect):
+    """Cylc scripts can parse folders without installing."""
     for name, value in envvars.items():
         monkeypatch.setenv(name, value)
-    srcpath = Path(__file__).parent / srcdir
-    output = run(
-        split(f'cylc graph --reference {srcpath} {option}'),
-        capture_output=True
-    )
+    srcpath = Path(__file__).parent / (
+        '05_opts_set_from_rose_suite_conf/flow.cylc')
+    output = run(split(f'{cmd} {srcpath} {option}'), capture_output=True)
     assert expect in output.stdout
