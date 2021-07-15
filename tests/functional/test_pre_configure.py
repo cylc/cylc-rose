@@ -17,9 +17,12 @@
 """
 
 from pathlib import Path
-import subprocess
 import pytest
 import os
+
+from itertools import product
+from shlex import split
+from subprocess import run
 
 from cylc.rose.entry_points import get_rose_vars
 
@@ -52,7 +55,7 @@ def envar_exporter(dict_):
 )
 def test_validate_fail(srcdir, expect):
     srcdir = Path(__file__).parent / srcdir
-    sub = subprocess.run(
+    sub = run(
         ['cylc', 'validate', str(srcdir)], capture_output=True
     )
     assert sub.returncode != 0
@@ -89,7 +92,7 @@ def test_validate(tmp_path, srcdir, envvars, args):
     if args:
         script = script + args
     assert (
-        subprocess.run(script, env=envvars)
+        run(script, env=envvars)
     ).returncode == 0
 
 
@@ -115,7 +118,7 @@ def test_process(tmp_path, srcdir, envvars, args):
     if envvars is not None:
         envvars = os.environ.update(envvars)
     srcdir = Path(__file__).parent / srcdir
-    result = subprocess.run(
+    result = run(
         ['cylc', 'view', '-p', '--stdout', str(srcdir)],
         capture_output=True,
         env=envvars
@@ -138,3 +141,46 @@ def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
         'You have set "root-dir", which is not supported at Cylc 8. Use '
         '`[install] symlink dirs` in global.cylc instead.'
     )
+
+
+def generate_params():
+    """Generates a list of parameters to test assorted Cylc CLI commands
+    which require rose-cylc parsing.
+    """
+    cmds = {
+        'list': 'cylc list',
+        'graph': 'cylc graph --reference',
+        'config': 'cylc config'
+    }
+    cases = {
+        'No Opts': ['', {}, b'mynd'],
+        'use -O': ['-O Gaelige', {}, b'gabh'],
+        'use -D': ['-D opts=""', {}, b'allow'],
+        'use ROSE_SUITE_OPT_CONF_KEYS': [
+            '', {'ROSE_SUITE_OPT_CONF_KEYS': 'Gaelige'}, b'gabh'
+        ]
+    }
+    for test in product(cmds.items(), cases.items()):
+        ((cmd_n, cmd), (case, [cli_opts, env_opts, result])) = test
+        if case == 'graph':
+            result = b'edge \"{}.1\"'.format(result)
+        if case == 'config':
+            result = b'[[{}]]'.format(result)
+        out = pytest.param(
+            cli_opts, env_opts, cmd, result, id=f'[{cmd_n}] {case}'
+        )
+        yield out
+
+
+@pytest.mark.parametrize(
+    'option, envvars, cmd, expect',
+    generate_params()
+)
+def test_cylc_script(monkeypatch, option, envvars, cmd, expect):
+    """Cylc scripts can parse folders without installing."""
+    for name, value in envvars.items():
+        monkeypatch.setenv(name, value)
+    srcpath = Path(__file__).parent / (
+        '05_opts_set_from_rose_suite_conf/flow.cylc')
+    output = run(split(f'{cmd} {srcpath} {option}'), capture_output=True)
+    assert expect in output.stdout
