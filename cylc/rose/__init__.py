@@ -41,6 +41,11 @@ The following Cylc commands will read Rose Suite Configurations:
 Rose Config
 -----------
 
+.. attention::
+
+   Rose configurations for Cylc **workflows** continue to be referred to
+   as Rose **suites**.
+
 A fuller description of
 :ref:`rose suite config is available here<Rose Suites>`.
 
