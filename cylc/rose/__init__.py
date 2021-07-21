@@ -150,7 +150,7 @@ At Cylc 8 Rose Stem is a wrapper to ``cylc install`` rather than
 ``rose suite-run``.
 
 Rose Stem is a wrapper around the ``cylc install`` command which
-provides some additional jinja2 variables.
+provides some additional Jinja2 variables.
 
 Cylc 8 stores variables set by rose and rose-stem in the optional
 configuration file ``~/cylc-run/my_workflow/opt/rose-suite-cylc-install.conf``.
