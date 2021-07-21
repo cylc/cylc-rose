@@ -19,12 +19,32 @@ Cylc Rose
 
 Cylc Rose is the bridge between Rose suite configurations and Cylc workflows.
 
-Cylc Rose is a replacement for the ``rose suite-run`` command (present in Rose
-versions 2019.01 and earlier). It reads the ``rose-suite.conf`` file and
-performs the required actions.
+Cylc Rose allows ``cylc install`` to replace the ``rose suite-run``
+command (present in Rose versions 2019.01 and earlier). It reads the
+``rose-suite.conf`` file and:
+
+- Makes environment and template variables available
+  to Cylc.
+- Installs files.
+- Records information in about the configuration installed in
+  ``~/cylc-run/<workflow>/opt/rose-suite-cylc-install.conf``
+
+
+The following Cylc commands will read Rose Suite Configurations:
+
+- ``cylc validate``
+- ``cylc graph``
+- ``cylc list``
+- ``cylc config``
+
 
 Rose Config
 -----------
+
+.. attention::
+
+   Rose configurations for Cylc **workflows** continue to be referred to
+   as Rose **suites**.
 
 A fuller description of
 :ref:`rose suite config is available here<Rose Suites>`.
@@ -113,12 +133,34 @@ Your final workflow would have the variable ``NAME`` inserted:
    +       [[Hello_Mars]]
 
 
+.. _rose-stem:
+
 Rose Stem
 =========
 
+.. seealso::
+
+   `Rose Stem documentation
+   <https://metomi.github.io/rose/2019.01.2/html/tutorial/rose/furthertopics/
+   rose-stem.html>`_
+
+
 Cylc Rose provides a Rose Stem command, if FCM is installed on your system.
-See `the Rose Stem documentation
-<https://metomi.github.io/rose/2019.01.2/html/tutorial/rose/furthertopics/rose-stem.html>`_
+At Cylc 8 Rose Stem is a wrapper to ``cylc install`` rather than
+``rose suite-run``.
+
+Rose Stem is a wrapper around the ``cylc install`` command which
+provides some additional Jinja2 variables.
+
+Cylc 8 stores variables set by rose and rose-stem in the optional
+configuration file ``~/cylc-run/my_workflow/opt/rose-suite-cylc-install.conf``.
+
+.. caution::
+
+   To reinstall a rose stem suite use ``cylc reinstall``.  Cylc can get any
+   options you do not change from the ``rose-suite-cylc-install.conf``` file.
+   Using ``rose stem`` a second time will attempt install a new copy
+   of your rose stem suite.
 
 """
 
