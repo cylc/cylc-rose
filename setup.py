@@ -27,8 +27,8 @@ with open("README.md", "r") as fh:
 
 
 INSTALL_REQUIRES = [
-    'metomi-rose>=2.0b1',
-    'cylc-flow>=8.0b0',
+    'metomi-rose>=2.0b2',
+    'cylc-flow>=8.0b2',
 ]
 EXTRAS_REQUIRE = {
 }
