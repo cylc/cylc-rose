@@ -1,3 +1,4 @@
+#!jinja2
 [meta]
     title = "Workflow Filled in With info from ``rose-suite.conf``"
     description = """

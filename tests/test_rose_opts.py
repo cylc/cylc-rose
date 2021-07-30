@@ -41,6 +41,7 @@ def fixture_provide_flow(tmp_path_factory):
 
     # Create source workflow:
     (srcpath / 'flow.cylc').write_text(
+        '#!jinja2\n'
         '[scheduling]\n'
         '    initial cycle point = 2020\n'
         '    [[graph]]\n'
