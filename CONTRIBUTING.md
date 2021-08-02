@@ -36,6 +36,7 @@ requests_).
  - Oliver Sanders
  - Tim Pillinger
  - Ronnie Dutta
+ - Mel Hall
 
 (All contributors are identifiable with email addresses in the git version
 control logs or otherwise.)
