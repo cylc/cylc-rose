@@ -37,6 +37,7 @@ requests_).
  - Tim Pillinger
  - Ronnie Dutta
  - Mel Hall
+ - Bruno P. Kinoshita
 
 (All contributors are identifiable with email addresses in the git version
 control logs or otherwise.)
