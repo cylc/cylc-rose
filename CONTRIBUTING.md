@@ -36,6 +36,7 @@ requests_).
 <!-- start-shortlog -->
  - Oliver Sanders
  - Tim Pillinger
+ - Tim Pillinger
  - Ronnie Dutta
  - Mel Hall
  - Bruno P. Kinoshita
