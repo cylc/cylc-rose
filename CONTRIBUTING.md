@@ -33,11 +33,13 @@ from outside of NIWA and the Met Office that predate the explicit introduction
 of this Agreement in July 2018; they must be un-parenthesised in future pull
 requests_).
 
+<!-- start-shortlog -->
  - Oliver Sanders
  - Tim Pillinger
  - Ronnie Dutta
  - Mel Hall
  - Bruno P. Kinoshita
+<!-- end-shortlog -->
 
 (All contributors are identifiable with email addresses in the git version
 control logs or otherwise.)
