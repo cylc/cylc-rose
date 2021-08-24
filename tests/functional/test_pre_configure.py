@@ -16,11 +16,13 @@
 """Functional tests for top-level function record_cylc_install_options and
 """
 
-from pathlib import Path
-import pytest
 import os
+import pytest
+import re
 
 from itertools import product
+from pathlib import Path
+from pytest import param
 from shlex import split
 from subprocess import run
 
@@ -35,21 +37,15 @@ def envar_exporter(dict_):
 @pytest.mark.parametrize(
     'srcdir, expect',
     [
-        (
+        param(
             '07_cli_override',
-            (
-                b'Jinja2Error: Jinja2 Assertion Error: failed 1.1\nContext '
-                b'lines:\n\n# 1. This should fail unless cylc validate --set '
-                b'CLI_VAR=42\n{{ assert(CLI_VAR=="Wobble", "failed 1.1") }}\t'
-                b'<-- Exception\n'
-            ),
+            b'CLI_VAR=="Wobble", "failed 1.1"',
+            id='template variable not set'
         ),
-        (
+        param(
             '08_template_engine_conflict',
-            (
-                b'TemplateVarLanguageClash: Plugins set templating engine = '
-                b'empy which does not match #!jinja2 set in flow.cylc.\n'
-            )
+            b'TemplateVarLanguageClash: .*= empy.* #!jinja2.*',
+            id='template engine conflict'
         )
     ]
 )
@@ -60,7 +56,7 @@ def test_validate_fail(srcdir, expect):
     )
     assert sub.returncode != 0
     if expect:
-        assert sub.stderr == expect
+        assert re.findall(expect, sub.stderr)
 
 
 @pytest.mark.parametrize(

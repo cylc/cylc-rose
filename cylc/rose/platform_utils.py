@@ -22,7 +22,7 @@ from typing import Optional, Dict, Any
 
 from cylc.flow.config import WorkflowConfig
 from cylc.flow.rundb import CylcWorkflowDAO
-from cylc.flow.workflow_files import parse_workflow_arg
+from cylc.flow.workflow_files import parse_reg
 from cylc.flow.platforms import get_platform
 
 
@@ -41,7 +41,7 @@ def get_platform_from_task_def(
     Returns:
         Platform Dictionary.
     """
-    flow_name, flow_file = parse_workflow_arg(None, flow)
+    flow_name, flow_file = parse_reg(flow, src=True)
     config = WorkflowConfig(flow, flow_file, None)
     # Get entire task spec to allow Cylc 7 platform from host guessing.
     task_spec = config.pcfg.get(['runtime', task])
@@ -65,7 +65,7 @@ def get_platforms_from_task_jobs(
     Returns:
         Platform Dictionary.
     """
-    flow_name, flow_file = parse_workflow_arg(None, flow)
+    flow_name, flow_file = parse_reg(flow, src=True)
     dbfilepath = Path(flow_file).parent / '.service/db'
     dao = CylcWorkflowDAO(dbfilepath)
     task_platform_map: Dict = {}
