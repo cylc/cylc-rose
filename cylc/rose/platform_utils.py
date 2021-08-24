@@ -17,6 +17,7 @@
 # -----------------------------------------------------------------------------
 """Interfaces for Cylc Platforms for use by rose apps.
 """
+from optparse import Values
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -42,7 +43,7 @@ def get_platform_from_task_def(
         Platform Dictionary.
     """
     flow_name, flow_file = parse_reg(flow, src=True)
-    config = WorkflowConfig(flow, flow_file, None)
+    config = WorkflowConfig(flow, flow_file, Values())
     # Get entire task spec to allow Cylc 7 platform from host guessing.
     task_spec = config.pcfg.get(['runtime', task])
     platform = get_platform(task_spec)
