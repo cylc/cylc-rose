@@ -18,6 +18,7 @@
 import pytest
 
 from metomi.isodatetime.datetimeoper import DateTimeOperator
+from metomi.rose import __version__ as ROSE_VERSION
 from metomi.rose.config import (
     ConfigNode,
 )
@@ -65,6 +66,17 @@ def test_get_rose_vars_from_config_node__unbound_env_var(caplog):
     with pytest.raises(ConfigProcessError) as exc:
         get_rose_vars_from_config_node(ret, node, {})
     assert exc.match('env=X: MYVAR: unbound variable')
+
+
+def test_get_rose_vars_from_config_node__ignores_ROSE_VERSION(caplog):
+    """It should fail if variable unset in environment.
+    """
+    ret = {}
+    node = ConfigNode()
+    node.set(['template variables', 'ROSE_VERSION'], 99)
+    get_rose_vars_from_config_node(ret, node, {})
+    message = caplog.records[0].getMessage()
+    assert f'ROSE_VERSION set: {ROSE_VERSION}' in message
 
 
 @pytest.mark.parametrize(
