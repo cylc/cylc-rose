@@ -19,7 +19,7 @@
 """
 from optparse import Values
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 from cylc.flow.config import WorkflowConfig
 from cylc.flow.rundb import CylcWorkflowDAO
@@ -29,7 +29,7 @@ from cylc.flow.platforms import get_platform
 
 def get_platform_from_task_def(
     flow: str, task: str
-) -> Optional[Dict[str, Any]]:
+) -> Dict[str, Any]:
     """Return the platform dictionary for a particular task.
 
     Uses the flow definition - designed to be used with tasks
@@ -42,7 +42,7 @@ def get_platform_from_task_def(
     Returns:
         Platform Dictionary.
     """
-    flow_name, flow_file = parse_reg(flow, src=True)
+    _, flow_file = parse_reg(flow, src=True)
     config = WorkflowConfig(flow, flow_file, Values())
     # Get entire task spec to allow Cylc 7 platform from host guessing.
     task_spec = config.pcfg.get(['runtime', task])
@@ -52,7 +52,7 @@ def get_platform_from_task_def(
 
 def get_platforms_from_task_jobs(
     flow: str, cyclepoint: str
-) -> Optional[Dict[str, Any]]:
+) -> Dict[str, Any]:
     """Access flow database. Return platform for task at fixed cycle point
 
     Uses the workflow database - designed to be used with tasks where jobs
