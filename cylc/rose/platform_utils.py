@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 from cylc.flow.config import WorkflowConfig
+from cylc.flow.exceptions import PlatformLookupError
 from cylc.flow.rundb import CylcWorkflowDAO
 from cylc.flow.workflow_files import parse_reg
 from cylc.flow.platforms import get_platform
@@ -47,6 +48,11 @@ def get_platform_from_task_def(
     # Get entire task spec to allow Cylc 7 platform from host guessing.
     task_spec = config.pcfg.get(['runtime', task])
     platform = get_platform(task_spec)
+    if platform is None:
+        raise PlatformLookupError(
+            'Platform lookup failed because the platform definition for'
+            f' task {task} is {task_spec["platform"]}.'
+        )
     return platform
 
 
