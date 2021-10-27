@@ -50,8 +50,8 @@ def get_platform_from_task_def(
     platform = get_platform(task_spec)
     if platform is None:
         raise PlatformLookupError(
-            'Platform lookup failed because the platform definition for'
-            f' task {task} is {task_spec["platform"]}.'
+            'Platform lookup failed; platform is a subshell to be evaluated: '
+            f' Task: {task}, platform: {task_spec["platform"]}.'
         )
     return platform
 
