@@ -25,6 +25,7 @@ from pathlib import Path
 from shutil import rmtree
 from subprocess import run
 from uuid import uuid4
+from cylc.flow.exceptions import PlatformLookupError
 
 from cylc.rose.platform_utils import (
     get_platform_from_task_def,
@@ -125,6 +126,8 @@ def fake_flow():
             [[qux]]
                 [[[remote]]]
                     host = cheese
+            [[kanga]]
+                platform = $(echo "myplatform")
             [[BAR]]
                 platform = milk
             [[child_of_bar]]
@@ -178,6 +181,20 @@ def test_get_platform_from_task_def(
     mock_glbl_cfg(*MOCK_GLBL_CFG)
     platform = get_platform_from_task_def(fake_flow[0], task_name)
     assert platform['name'] == expected_platform_n
+
+
+def test_get_platform_from_task_def_raises(
+    mock_glbl_cfg, fake_flow
+):
+    """Test getting platform from task definition.
+
+    This is approaching an integration test, because
+    although it's only testing one unit of Cylc Rose, that unit
+    is calling lots of Cylc Parts, which aren't mocked.
+    """
+    mock_glbl_cfg(*MOCK_GLBL_CFG)
+    with pytest.raises(PlatformLookupError, match='Platform lookup failed.*'):
+        get_platform_from_task_def(fake_flow[0], 'kanga')
 
 
 @pytest.mark.parametrize(
