@@ -447,8 +447,8 @@ class StemRunner:
             self.reporter(SuiteSelectionEvent(thissuite))
 
         # Create a default name for the suite; allow override by user
-        if not self.opts.flow_name:
-            self.opts.flow_name = self._generate_name()
+        if not self.opts.workflow_name:
+            self.opts.workflow_name = self._generate_name()
 
         return self.opts
 
