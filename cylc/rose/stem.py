@@ -448,7 +448,7 @@ class StemRunner:
 
         # Create a default name for the suite; allow override by user
         if not self.opts.workflow_name:
-            self.opts.flow_name = self._generate_name()
+            self.opts.workflow_name = self._generate_name()
 
         return self.opts
 
