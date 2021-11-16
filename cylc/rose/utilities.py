@@ -189,10 +189,11 @@ def rose_config_exists(
 
     # If _any_ of the following are true we want to return True.
     if (
-        Path(srcdir, 'rose-suite.conf').is_file() or
-        opts and opts.opt_conf_keys or
-        opts and opts.defines or
-        opts and opts.rose_template_vars
+        Path(srcdir, 'rose-suite.conf').is_file() or (
+            getattr(opts, 'opt_conf_keys', False) or
+            getattr(opts, 'defines', False) or
+            getattr(opts, 'rose_template_vars', False)
+        )
     ):
         return True
     return False
