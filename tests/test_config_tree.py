@@ -58,25 +58,6 @@ def test_rose_config_exists_no_rose_suite_conf(tmp_path):
     ) is False
 
 
-@pytest.mark.parametrize(
-    'opts',
-    [
-        SimpleNamespace(opt_conf_keys='A', defines=[], rose_template_vars=[]),
-        SimpleNamespace(
-            opt_conf_keys='', defines=['[env]Foo=Bar'], rose_template_vars=[]
-        ),
-        SimpleNamespace(
-            opt_conf_keys='', defines=[], rose_template_vars=['Foo=Bar']
-        ),
-    ]
-)
-def test_rose_config_exists_conf_set_by_options(tmp_path, opts):
-    assert rose_config_exists(
-        tmp_path,
-        opts,
-    ) is True
-
-
 def test_rose_config_exists_nonexistant_dir(tmp_path):
     assert rose_config_exists(
         tmp_path / "non-existant-folder", SimpleNamespace(
