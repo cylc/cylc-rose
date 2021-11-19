@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
   push:
     branches: [master]
+  schedule:
+    - cron: '53 0 * * *'
 
 jobs:
   test:
