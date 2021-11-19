@@ -90,7 +90,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
         if 'ROSE_VERSION' in config_node[section].value:
             user_rose_version = config_node[section].value['ROSE_VERSION']
             LOG.warning(
-                f'ROSE_VERSION {user_rose_version.value} '
+                f'[{section}]ROSE_VERSION={user_rose_version.value} '
                 'from rose-suite.conf will be ignored: '
                 f'ROSE_VERSION set: {ROSE_VERSION}'
             )
