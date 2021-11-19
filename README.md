@@ -1,5 +1,7 @@
 # Cylc-Rose Plugin
 
+[![tests](https://github.com/cylc/cylc-rose/actions/workflows/tests.yml/badge.svg)](https://github.com/cylc/cylc-rose/actions/workflows/tests.yml)
+
 A [Cylc](https://github.com/cylc/cylc-flow) plugin providing support for the
 [Rose](https://github.com/metomi/rose) `rose-suite.conf` file.
 
