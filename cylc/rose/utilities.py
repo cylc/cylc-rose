@@ -95,6 +95,15 @@ def get_rose_vars_from_config_node(config, config_node, environ):
                 f'ROSE_VERSION set: {ROSE_VERSION}'
             )
         config_node[section].set(['ROSE_VERSION'], ROSE_VERSION)
+
+        if 'CYLC_VERSION' in config_node[section].value:
+            user_cylc_version = config_node[section].value['CYLC_VERSION']
+            LOG.warning(
+                f'[{section}]CYLC_VERSION={user_cylc_version.value} '
+                'from rose-suite.conf will be ignored.'
+            )
+        config_node[section].unset(['CYLC_VERSION'])
+
         if rose_orig_host:
             config_node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
 
