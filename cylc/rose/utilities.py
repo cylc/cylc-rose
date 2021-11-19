@@ -187,15 +187,8 @@ def rose_config_exists(
     if srcdir is None:
         return False
 
-    # If _any_ of the following are true we want to return True.
-    if (
-        Path(srcdir, 'rose-suite.conf').is_file() or
-        opts and opts.opt_conf_keys or
-        opts and opts.defines or
-        opts and opts.rose_template_vars
-    ):
-        return True
-    return False
+    # Return true if and only if the rose suite.conf exists.
+    return Path(srcdir, 'rose-suite.conf').is_file()
 
 
 def rose_config_tree_loader(srcdir=None, opts=None):
