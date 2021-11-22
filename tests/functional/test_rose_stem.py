@@ -24,25 +24,25 @@ Tests for cylc.rose.stem
 Structure
 ---------
 
-#. ``setup_stem_repo`` is a module scoped fixture which creates a Rose-Stem
+#. ``setup_stem_repo`` is a module scoped fixture which creates a Rose Stem
    repository which is used for all the tests.
 #. ``rose_stem_run_template`` is a class scoped fixture, which runs a rose
    stem command. Most of the tests are encapsulated in classes to allow
    this expensive fixture to be run only once per class. Most of the tests
-   check that the rose-stem has returned 0, and then check that variables
+   check that the ``rose stem`` has returned 0, and then check that variables
    have been written to a job file.
 #. For each test class there is a fixture encapsulating the test to be run.
 
 .. code::
 
     ┌───────┬──────────┬───────────┬───────────┬───────────────┐
-    │       │          │           │           │Test rose-stem │
-    │       │ test     │ rose-stem │ Class     │returned 0     │
+    │       │          │           │           │Test rose stem │
+    │       │ test     │ rose stem │ Class     │returned 0     │
     │set-up │ specific │ runner    │ container ├───────────────┤
     │repo   │ fixture  │ fixture   │           │Test for output│
     │fixture│ (set up  │           │ Only run  │strings "foo"  │
-    │       │ rose-stem│ (run      │ class     ├───────────────┤
-    │       │ command) │ rose-stem)│ fixture   │Test for output│
+    │       │ rose stem│ (run      │ class     ├───────────────┤
+    │       │ command) │ rose stem)│ fixture   │Test for output│
     │       │          │           │ once      │strings "bar"  │
     │       ├──────────┼─ ── ── ── ├───────────┼───────────────┤
     │       │          │           │           │               │
