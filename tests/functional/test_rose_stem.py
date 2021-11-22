@@ -231,7 +231,7 @@ def rose_stem_run_template(setup_stem_repo):
 @pytest.fixture(scope='class')
 def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
     rose_stem_cmd = (
-        "rose-stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
+        "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=\"fcm:foo.x_tr\"@head "
         f"--flow-name {setup_stem_repo['suitename']}"
@@ -271,7 +271,7 @@ def project_override(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        "rose-stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
+        "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source=bar={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
         f"--flow-name {setup_stem_repo['suitename']}"
@@ -319,7 +319,7 @@ def suite_redirection(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        "rose-stem --group=lapsang "
+        "rose stem --group=lapsang "
         f"-C {setup_stem_repo['workingcopy']}/rose-stem "
         "--source=\"fcm:foo.x_tr\"@head "
         f"--flow-name {setup_stem_repo['suitename']}"
@@ -356,7 +356,7 @@ def subdirectory(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        "rose-stem --group=assam "
+        "rose stem --group=assam "
         f"--source={setup_stem_repo['workingcopy']}/rose-stem "
         f"--flow-name {setup_stem_repo['suitename']}"
     )
@@ -395,7 +395,7 @@ def relative_path(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        f"rose-stem --group=ceylon -C rose-stem "
+        f"rose stem --group=ceylon -C rose-stem "
         f"--flow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
@@ -436,7 +436,7 @@ def with_config(
     """test for successful execution with site/user configuration
     """
     rose_stem_cmd = (
-        "rose-stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
+        "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
         f"--flow-name {setup_stem_repo['suitename']}"
@@ -489,7 +489,7 @@ def with_config2(
     """test for successful execution with site/user configuration
     """
     rose_stem_cmd = (
-        "rose-stem --group=assam "
+        "rose stem --group=assam "
         f"--source={setup_stem_repo['workingcopy']}/rose-stem "
         f"--flow-name {setup_stem_repo['suitename']}"
     )
@@ -536,7 +536,7 @@ def incompatible_versions(setup_stem_repo):
     )
     shutil.copy2(src, dest)
     rose_stem_cmd = (
-        "rose-stem --group=earl_grey "
+        "rose stem --group=earl_grey "
         "--task=milk,sugar"
         " --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
@@ -573,7 +573,7 @@ def project_not_in_keywords(setup_stem_repo, monkeymodule):
     # Copy suite into working copy.
     monkeymodule.delenv('FCM_CONF_PATH')
     rose_stem_cmd = (
-        "rose-stem --group=earl_grey "
+        "rose stem --group=earl_grey "
         "--task=milk,sugar"
         " --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
