@@ -70,6 +70,9 @@ from shlex import split
 from uuid import uuid4
 
 from cylc.flow.pathutil import get_workflow_run_dir
+from cylc.flow.hostuserutil import get_host
+
+HOST = get_host().split('.')[0]
 
 
 class SubprocessesError(Exception):
@@ -261,7 +264,7 @@ class TestBasic():
         else:
             expected = expected.format(
                 workingcopy=rose_stem_run_basic['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in rose_stem_run_basic['jobout_content']
 
@@ -309,7 +312,7 @@ class TestProjectOverride():
         else:
             expected = expected.format(
                 workingcopy=project_override['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in project_override['jobout_content']
 
@@ -346,7 +349,7 @@ class TestSuiteRedirection:
         else:
             expected = expected.format(
                 workingcopy=suite_redirection['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in suite_redirection['jobout_content']
 
@@ -385,7 +388,7 @@ class TestSubdirectory:
         else:
             expected = expected.format(
                 workingcopy=subdirectory['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in subdirectory['jobout_content']
 
@@ -424,7 +427,7 @@ class TestRelativePath:
         else:
             expected = expected.format(
                 workingcopy=relative_path['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in relative_path['jobout_content']
 
@@ -477,7 +480,7 @@ class TestWithConfig:
         else:
             expected = expected.format(
                 workingcopy=with_config['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in with_config['jobout_content']
 
@@ -521,7 +524,7 @@ class TestWithConfig2:
         else:
             expected = expected.format(
                 workingcopy=with_config2['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in with_config2['jobout_content']
 
