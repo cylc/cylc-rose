@@ -27,7 +27,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Checkout FCM
-        if: startsWith(matrix.os, 'ubuntu')
         uses: actions/checkout@v2
         with:
           repository: ${{ github.event.inputs.fcm_repo || 'metomi/fcm' }}
@@ -35,7 +34,6 @@ jobs:
           path: 'fcm'
 
       - name: Install FCM
-        if: startsWith(matrix.os, 'ubuntu')
         run: |
           # install FCM deps
           sudo apt-get install -y \
