@@ -26,12 +26,16 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install
+      - name: Install Cylc
         run: |
-          pip install -e \
+          pip install \
             'cylc-flow[all] @ git+https://github.com/cylc/cylc-flow@master' \
-            'metomi-rose[all] @ git+https://github.com/metomi/rose@master'
           pip install ."[all]"
+
+      - name: Install Rose
+        run: |
+          git clone https://github.com/metomi/rose@master
+          pip install -e rose
 
       - name: Style
         run: |
