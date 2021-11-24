@@ -39,7 +39,7 @@ jobs:
 
       - name: Style
         run: |
-          flake8
+          flake8 --exclude rose
 
       - name: Mypy
         run: mypy
