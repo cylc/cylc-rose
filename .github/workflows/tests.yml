@@ -34,7 +34,7 @@ jobs:
 
       - name: Install Rose
         run: |
-          git clone https://github.com/metomi/rose.git@master
+          git clone https://github.com/metomi/rose.git
           pip install -e rose
 
       - name: Style
