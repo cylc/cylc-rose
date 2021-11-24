@@ -34,12 +34,12 @@ jobs:
 
       - name: Install Rose
         run: |
-          git clone https://github.com/metomi/rose.git
-          pip install -e rose
+          git clone https://github.com/metomi/rose.git ../rose
+          pip install -e ../rose
 
       - name: Style
         run: |
-          flake8 --exclude rose
+          flake8
 
       - name: Mypy
         run: mypy
