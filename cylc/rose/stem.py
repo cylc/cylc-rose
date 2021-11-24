@@ -18,6 +18,8 @@
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
 """Install a rose-stem suite using cylc install.
+
+To run a rose-stem suite use "cylc play".
 """
 
 from contextlib import suppress
