@@ -30,15 +30,52 @@ jobs:
         run: |
           pip install \
             'cylc-flow[all] @ git+https://github.com/cylc/cylc-flow@master' \
-            'metomi-rose[all] @ git+https://github.com/metomi/rose@master'
           pip install ."[all]"
+
+      - name: Install Rose
+        run: |
+          git clone https://github.com/metomi/rose.git
+          pip install -e rose
 
       - name: Style
         run: |
-          flake8
+          flake8 --exclude rose
 
       - name: Mypy
         run: mypy
+
+      - name: Checkout FCM
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.event.inputs.fcm_repo || 'metomi/fcm' }}
+          ref: ${{ github.event.inputs.fcm_ref || 'master' }}
+          path: 'fcm'
+
+      - name: Install FCM
+        run: |
+          # install FCM deps
+          sudo apt-get install -y \
+            subversion \
+            build-essential \
+            gfortran \
+            libxml-parser-perl \
+            libconfig-inifiles-perl \
+            libdbi-perl \
+            libdbd-sqlite3-perl
+
+          # install wandisco
+          sudo sh -c 'echo "deb http://opensource.wandisco.com/ubuntu \
+            `lsb_release -cs` svn19" \
+            >> /etc/apt/sources.list.d/subversion19.list'
+          sudo wget -q http://opensource.wandisco.com/wandisco-debian.gpg -O- \
+            | sudo apt-key add -
+
+          # prepend FCM bin to $PATH
+          FCM_PATH="$GITHUB_WORKSPACE/fcm/bin"
+          # the github actions way (needed for cylc jobs)
+          echo "$FCM_PATH" >> "${GITHUB_PATH}"
+          # the bashrc wat (needed for subsequent gh action steps)
+          echo "export PATH=\"$FCM_PATH:\$PATH\"" >> "$HOME/.bashrc"
 
       - name: Test
         run: |
