@@ -92,7 +92,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             LOG.warning(
                 f'[{section}]ROSE_VERSION={user_rose_version.value} '
                 'from rose-suite.conf will be ignored: '
-                f'ROSE_VERSION set: {ROSE_VERSION}'
+                f'Using Rose: {ROSE_VERSION}'
             )
         config_node[section].set(['ROSE_VERSION'], ROSE_VERSION)
 
@@ -100,7 +100,8 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             user_cylc_version = config_node[section].value['CYLC_VERSION']
             LOG.warning(
                 f'[{section}]CYLC_VERSION={user_cylc_version.value} '
-                'from rose-suite.conf will be ignored.'
+                'from rose-suite.conf will be ignored: '
+                f'Using Cylc: {CYLC_VERSION}'
             )
         config_node[section].unset(['CYLC_VERSION'])
 
