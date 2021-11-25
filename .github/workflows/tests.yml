@@ -71,7 +71,7 @@ jobs:
           FCM_PATH="$GITHUB_WORKSPACE/fcm/bin"
           # the github actions way (needed for cylc jobs)
           echo "$FCM_PATH" >> "${GITHUB_PATH}"
-          # the bashrc wat (needed for subsequent gh action steps)
+          # the bashrc way (needed for subsequent gh action steps)
           echo "export PATH=\"$FCM_PATH:\$PATH\"" >> "$HOME/.bashrc"
 
       - name: Test
