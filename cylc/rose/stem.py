@@ -17,9 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-"""Cylc 8 implementation of 'rose stem'
-
-Provide a wrapper around "cylc install" for rose-stem suites.
+"""Install a rose-stem suite using cylc install.
 
 To run a rose-stem suite use "cylc play".
 """

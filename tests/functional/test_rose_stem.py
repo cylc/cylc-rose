@@ -24,25 +24,25 @@ Tests for cylc.rose.stem
 Structure
 ---------
 
-#. ``setup_stem_repo`` is a module scoped fixture which creates a Rose-Stem
+#. ``setup_stem_repo`` is a module scoped fixture which creates a Rose Stem
    repository which is used for all the tests.
 #. ``rose_stem_run_template`` is a class scoped fixture, which runs a rose
    stem command. Most of the tests are encapsulated in classes to allow
    this expensive fixture to be run only once per class. Most of the tests
-   check that the rose-stem has returned 0, and then check that variables
+   check that the ``rose stem`` has returned 0, and then check that variables
    have been written to a job file.
 #. For each test class there is a fixture encapsulating the test to be run.
 
 .. code::
 
     ┌───────┬──────────┬───────────┬───────────┬───────────────┐
-    │       │          │           │           │Test rose-stem │
-    │       │ test     │ rose-stem │ Class     │returned 0     │
+    │       │          │           │           │Test rose stem │
+    │       │ test     │ rose stem │ Class     │returned 0     │
     │set-up │ specific │ runner    │ container ├───────────────┤
     │repo   │ fixture  │ fixture   │           │Test for output│
     │fixture│ (set up  │           │ Only run  │strings "foo"  │
-    │       │ rose-stem│ (run      │ class     ├───────────────┤
-    │       │ command) │ rose-stem)│ fixture   │Test for output│
+    │       │ rose stem│ (run      │ class     ├───────────────┤
+    │       │ command) │ rose stem)│ fixture   │Test for output│
     │       │          │           │ once      │strings "bar"  │
     │       ├──────────┼─ ── ── ── ├───────────┼───────────────┤
     │       │          │           │           │               │
@@ -70,6 +70,9 @@ from shlex import split
 from uuid import uuid4
 
 from cylc.flow.pathutil import get_workflow_run_dir
+from cylc.flow.hostuserutil import get_host
+
+HOST = get_host().split('.')[0]
 
 
 class SubprocessesError(Exception):
@@ -231,7 +234,7 @@ def rose_stem_run_template(setup_stem_repo):
 @pytest.fixture(scope='class')
 def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
     rose_stem_cmd = (
-        "rose-stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
+        "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=\"fcm:foo.x_tr\"@head "
         f"--flow-name {setup_stem_repo['suitename']}"
@@ -261,7 +264,7 @@ class TestBasic():
         else:
             expected = expected.format(
                 workingcopy=rose_stem_run_basic['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in rose_stem_run_basic['jobout_content']
 
@@ -271,7 +274,7 @@ def project_override(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        "rose-stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
+        "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source=bar={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
         f"--flow-name {setup_stem_repo['suitename']}"
@@ -309,7 +312,7 @@ class TestProjectOverride():
         else:
             expected = expected.format(
                 workingcopy=project_override['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in project_override['jobout_content']
 
@@ -319,7 +322,7 @@ def suite_redirection(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        "rose-stem --group=lapsang "
+        "rose stem --group=lapsang "
         f"-C {setup_stem_repo['workingcopy']}/rose-stem "
         "--source=\"fcm:foo.x_tr\"@head "
         f"--flow-name {setup_stem_repo['suitename']}"
@@ -346,7 +349,7 @@ class TestSuiteRedirection:
         else:
             expected = expected.format(
                 workingcopy=suite_redirection['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in suite_redirection['jobout_content']
 
@@ -356,7 +359,7 @@ def subdirectory(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        "rose-stem --group=assam "
+        "rose stem --group=assam "
         f"--source={setup_stem_repo['workingcopy']}/rose-stem "
         f"--flow-name {setup_stem_repo['suitename']}"
     )
@@ -385,7 +388,7 @@ class TestSubdirectory:
         else:
             expected = expected.format(
                 workingcopy=subdirectory['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in subdirectory['jobout_content']
 
@@ -395,7 +398,7 @@ def relative_path(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        f"rose-stem --group=ceylon -C rose-stem "
+        f"rose stem --group=ceylon -C rose-stem "
         f"--flow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
@@ -424,7 +427,7 @@ class TestRelativePath:
         else:
             expected = expected.format(
                 workingcopy=relative_path['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in relative_path['jobout_content']
 
@@ -436,7 +439,7 @@ def with_config(
     """test for successful execution with site/user configuration
     """
     rose_stem_cmd = (
-        "rose-stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
+        "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
         f"--flow-name {setup_stem_repo['suitename']}"
@@ -477,7 +480,7 @@ class TestWithConfig:
         else:
             expected = expected.format(
                 workingcopy=with_config['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in with_config['jobout_content']
 
@@ -489,7 +492,7 @@ def with_config2(
     """test for successful execution with site/user configuration
     """
     rose_stem_cmd = (
-        "rose-stem --group=assam "
+        "rose stem --group=assam "
         f"--source={setup_stem_repo['workingcopy']}/rose-stem "
         f"--flow-name {setup_stem_repo['suitename']}"
     )
@@ -521,7 +524,7 @@ class TestWithConfig2:
         else:
             expected = expected.format(
                 workingcopy=with_config2['workingcopy'],
-                hostname=os.environ['HOSTNAME']
+                hostname=HOST
             )
             assert expected in with_config2['jobout_content']
 
@@ -536,7 +539,7 @@ def incompatible_versions(setup_stem_repo):
     )
     shutil.copy2(src, dest)
     rose_stem_cmd = (
-        "rose-stem --group=earl_grey "
+        "rose stem --group=earl_grey "
         "--task=milk,sugar"
         " --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
@@ -573,7 +576,7 @@ def project_not_in_keywords(setup_stem_repo, monkeymodule):
     # Copy suite into working copy.
     monkeymodule.delenv('FCM_CONF_PATH')
     rose_stem_cmd = (
-        "rose-stem --group=earl_grey "
+        "rose stem --group=earl_grey "
         "--task=milk,sugar"
         " --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
