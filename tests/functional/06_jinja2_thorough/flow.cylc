@@ -32,7 +32,7 @@
 {% do LOG.info("ROSE_VERSION from Cylc-rose is " + ROSE_VERSION) %}
 {% set cli_rose_version = Popen(["rose", "version"], stdout=PIPE).communicate()[0] %}
 {% set cli_rose_version = cli_rose_version.decode() %}
-{% set cli_rose_version = cli_rose_version.replace('Rose ', '') %}  # strip the "Rose " prefix
+{% set cli_rose_version = cli_rose_version.replace('rose ', '') %}  # strip the "Rose " prefix
 {% set cli_rose_version = cli_rose_version.split(' ')[0] %}  # strip the (location) suffix
 {% set cli_rose_version = cli_rose_version.strip() %}
 {% do LOG.info("rose version from CLI: " + cli_rose_version) %}

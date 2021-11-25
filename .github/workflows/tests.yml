@@ -30,8 +30,9 @@ jobs:
         run: |
           pip install \
             'cylc-flow[all] @ git+https://github.com/cylc/cylc-flow@master' \
-            'metomi-rose[all] @ git+https://github.com/metomi/rose@master'
           pip install ."[all]"
+          git clone --depth 1 https://github.com/metomi/rose ../rose
+          pip install -e ../rose[all]
 
       - name: Style
         run: |
