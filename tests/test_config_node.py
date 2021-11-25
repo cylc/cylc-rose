@@ -24,6 +24,7 @@ from metomi.rose.config import (
 )
 from metomi.rose.config_processor import ConfigProcessError
 
+from cylc.flow import __version__ as CYLC_VERSION
 from cylc.rose.utilities import (
     get_rose_vars_from_config_node,
     add_cylc_install_to_rose_conf_node_opts,
@@ -68,15 +69,50 @@ def test_get_rose_vars_from_config_node__unbound_env_var(caplog):
     assert exc.match('env=X: MYVAR: unbound variable')
 
 
-def test_get_rose_vars_from_config_node__ignores_ROSE_VERSION(caplog):
-    """It should fail if variable unset in environment.
+@pytest.fixture
+def override_version_vars(caplog, scope='module'):
+    """Set up config tree and pass to get_rose_vars_from_config_node
+
+    Yields:
+        node: The node after manipulation.
+        message: A string representing the caplog output.
     """
     ret = {}
     node = ConfigNode()
     node.set(['template variables', 'ROSE_VERSION'], 99)
+    node.set(['template variables', 'CYLC_VERSION'], 101)
     get_rose_vars_from_config_node(ret, node, {})
-    message = caplog.records[0].getMessage()
-    assert f'ROSE_VERSION set: {ROSE_VERSION}' in message
+    message = '\n'.join([i.message for i in caplog.records])
+    yield (node, message)
+
+
+def test_get_vars_from_config_node__ignores_user_ROSE_VERSION(
+    override_version_vars
+):
+    """It should warn that user ROSE_VERSION will be changed."""
+    assert f'Using Rose: {ROSE_VERSION}' in override_version_vars[1]
+
+
+def test_get_vars_from_config_node__sets_right_ROSE_VERSION(
+    override_version_vars
+):
+    """It should replace user ROSE_VERSION with rose.__version__"""
+    assert override_version_vars[
+        0]['template variables']['ROSE_VERSION'].value == ROSE_VERSION
+
+
+def test_get_vars_from_config_node__ignores_user_CYLC_VERSION(
+    override_version_vars
+):
+    """It should warn that user CYLC_VERSION will be unset."""
+    assert f'Using Cylc: {CYLC_VERSION}' in override_version_vars[1]
+
+
+def test_get_vars_from_config_node__unsets_CYLC_VERSION(
+    override_version_vars
+):
+    """It should tell user what cylc.__version__ is."""
+    assert 'CYLC_VERSION' not in override_version_vars[0]['template variables']
 
 
 @pytest.mark.parametrize(

@@ -24,7 +24,7 @@ import shlex
 from typing import TYPE_CHECKING, Union
 
 from cylc.flow.hostuserutil import get_host
-from cylc.flow import LOG
+from cylc.flow import LOG, __version__ as CYLC_VERSION
 from cylc.rose.jinja2_parser import Parser
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.isodatetime.datetimeoper import DateTimeOperator
