@@ -28,18 +28,14 @@ jobs:
 
       - name: Install
         run: |
-          pip install \
+          pip install -e \
+            'metomi-rose[all] @ git+https://github.com/metomi/rose@master'
             'cylc-flow[all] @ git+https://github.com/cylc/cylc-flow@master' \
           pip install ."[all]"
 
-      - name: Install Rose
-        run: |
-          git clone https://github.com/metomi/rose.git
-          pip install -e rose
-
       - name: Style
         run: |
-          flake8 --exclude rose
+          flake8
 
       - name: Mypy
         run: mypy
