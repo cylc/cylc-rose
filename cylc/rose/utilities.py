@@ -24,7 +24,7 @@ import shlex
 from typing import TYPE_CHECKING, Union
 
 from cylc.flow.hostuserutil import get_host
-from cylc.flow import LOG
+from cylc.flow import LOG, __version__ as CYLC_VERSION
 from cylc.rose.jinja2_parser import Parser
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.isodatetime.datetimeoper import DateTimeOperator
@@ -87,7 +87,24 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     for section in ['env', templating]:
         # Add standard ROSE_VARIABLES
         config_node[section].set(['ROSE_SITE'], rose_site)
+        if 'ROSE_VERSION' in config_node[section].value:
+            user_rose_version = config_node[section].value['ROSE_VERSION']
+            LOG.warning(
+                f'[{section}]ROSE_VERSION={user_rose_version.value} '
+                'from rose-suite.conf will be ignored: '
+                f'Using Rose: {ROSE_VERSION}'
+            )
         config_node[section].set(['ROSE_VERSION'], ROSE_VERSION)
+
+        if 'CYLC_VERSION' in config_node[section].value:
+            user_cylc_version = config_node[section].value['CYLC_VERSION']
+            LOG.warning(
+                f'[{section}]CYLC_VERSION={user_cylc_version.value} '
+                'from rose-suite.conf will be ignored: '
+                f'Using Cylc: {CYLC_VERSION}'
+            )
+        config_node[section].unset(['CYLC_VERSION'])
+
         if rose_orig_host:
             config_node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
 
