@@ -6,7 +6,7 @@ on:
   push:
     branches: [master]
   schedule:
-    - cron: '53 0 * * *'
+    - cron: '53 0 * * 1-5' # 00:53 Mon-Fri
 
 jobs:
   test:
