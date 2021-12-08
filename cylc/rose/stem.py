@@ -219,7 +219,7 @@ class StemRunner:
             raise ProjectNotFoundException(item, stderr)
 
         ret = {}
-        for line in output.decode().splitlines():
+        for line in output.splitlines():
             if ":" not in line:
                 continue
             key, value = line.split(":", 1)
@@ -234,7 +234,7 @@ class StemRunner:
         if source_dict['project']:
             repo += '/' + source_dict['project']
 
-        kpoutput = self.popen.run('fcm', 'kp', source_dict['url'])[1].decode()
+        kpoutput = self.popen.run('fcm', 'kp', source_dict['url'])[1]
         project = None
         for line in kpoutput.splitlines():
             if line.rstrip().endswith(repo):
