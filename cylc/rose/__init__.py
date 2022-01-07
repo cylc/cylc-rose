@@ -70,6 +70,26 @@ permitted in the ``rose-suite.conf`` files:
    for ease of porting Cylc 7 workflows.
 
 
+Special Variables
+-----------------
+
+The Cylc Rose plugin has specific logic for handling a small group of special
+variables in the ``rose-suite.conf`` file:
+
+``ROSE_VERSION``
+   The plugin provides ``ROSE_VERSION`` from your installed Rose Version
+   in the environment section and any templating sections you have defined. If
+   you set ``ROSE_VERSION`` in your ``rose-suite.conf`` it will be replaced.
+
+``ROSE_ORIG_HOST``
+   The plugin provides the hostname of the computer where the plugin runs as an
+   evironment variable it is not already defined.
+
+``CYLC_VERSION``
+   The plugin will remove ``CYLC_VERSION`` from your config as it is provided
+   by Cylc's config processing.
+
+
 Additional CLI options
 ----------------------
 You can use command line options to set or override
