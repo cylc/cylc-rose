@@ -212,7 +212,6 @@ def test_get_rose_vars_ROSE_VARS(tmp_path):
     assert list(rose_vars['env'].keys()) == [
         'ROSE_ORIG_HOST',
         'ROSE_VERSION',
-        'ROSE_SITE'
     ]
 
 
@@ -227,7 +226,6 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
     ].keys()) == [
         'ROSE_ORIG_HOST',
         'ROSE_VERSION',
-        'ROSE_SITE',
         'ROSE_SUITE_VARIABLES'
     ]
 
