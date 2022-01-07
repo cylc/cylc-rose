@@ -44,7 +44,6 @@ def test_blank():
     }
     assert set(ret['env'].keys()) == {
         'ROSE_ORIG_HOST',
-        'ROSE_SITE',
         'ROSE_VERSION',
     }
 
