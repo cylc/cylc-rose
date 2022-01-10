@@ -74,7 +74,7 @@ Special Variables
 -----------------
 
 The Cylc Rose plugin has specific logic for handling a small group of special
-variables in the ``rose-suite.conf`` file:
+environment / template variables in the ``rose-suite.conf`` file:
 
 ``ROSE_ORIG_HOST``
    The plugin provides the hostname of the computer where the plugin runs as
