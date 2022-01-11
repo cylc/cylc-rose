@@ -188,7 +188,7 @@ def record_cylc_install_options(
                 oldconfig, cli_config
             )
 
-    # Get Values for standard ROSE variables (ROSE_ORIG_HOST and ROSE_SITE).
+    # Get Values for standard ROSE variable ROSE_ORIG_HOST.
     rose_orig_host = get_host()
     for section in [
         'env', 'jinja2:suite.rc', 'empy:suite.rc', 'template variables'

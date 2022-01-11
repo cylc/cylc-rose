@@ -31,7 +31,6 @@ from metomi.isodatetime.datetimeoper import DateTimeOperator
 from metomi.rose.config import ConfigDumper, ConfigNodeDiff, ConfigNode
 from metomi.rose.config_processor import ConfigProcessError
 from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
-from metomi.rose.resource import ResourceLocator
 
 if TYPE_CHECKING:
     from optparse import Values
@@ -80,13 +79,10 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     if 'ROSE_ORIG_HOST' not in config_node['env']:
         rose_orig_host = get_host()
 
-    # Get Values for standard ROSE variables (ROSE_ORIG_HOST and ROSE_SITE).
-    rose_site = ResourceLocator().get_conf().get_value(['site'], '')
-
+    # Get Values for standard ROSE variable ROSE_ORIG_HOST.
     # For each section process variables and add standard variables.
     for section in ['env', templating]:
         # Add standard ROSE_VARIABLES
-        config_node[section].set(['ROSE_SITE'], rose_site)
         if 'ROSE_VERSION' in config_node[section].value:
             user_rose_version = config_node[section].value['ROSE_VERSION']
             LOG.warning(

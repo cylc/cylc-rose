@@ -33,7 +33,7 @@ jobs:
           pip install ."[all]"
           git clone --depth 1 https://github.com/metomi/rose ../rose
 
-          pip install -e ../rose[all]
+          pip install -e ../rose[tests]
 
       - name: Style
         run: |
