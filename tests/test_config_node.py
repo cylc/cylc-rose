@@ -24,7 +24,6 @@ from metomi.rose.config import (
 )
 from metomi.rose.config_processor import ConfigProcessError
 
-from cylc.flow import __version__ as CYLC_VERSION
 from cylc.rose.utilities import (
     get_rose_vars_from_config_node,
     add_cylc_install_to_rose_conf_node_opts,
@@ -89,7 +88,7 @@ def test_get_vars_from_config_node__ignores_user_ROSE_VERSION(
     override_version_vars
 ):
     """It should warn that user ROSE_VERSION will be changed."""
-    assert f'Using Rose: {ROSE_VERSION}' in override_version_vars[1]
+    assert f'ROSE_VERSION will be: {ROSE_VERSION}' in override_version_vars[1]
 
 
 def test_get_vars_from_config_node__sets_right_ROSE_VERSION(
@@ -104,7 +103,7 @@ def test_get_vars_from_config_node__ignores_user_CYLC_VERSION(
     override_version_vars
 ):
     """It should warn that user CYLC_VERSION will be unset."""
-    assert f'Using Cylc: {CYLC_VERSION}' in override_version_vars[1]
+    assert 'CYLC_VERSION will be: set by Cylc' in override_version_vars[1]
 
 
 def test_get_vars_from_config_node__unsets_CYLC_VERSION(

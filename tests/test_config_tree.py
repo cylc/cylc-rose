@@ -209,10 +209,10 @@ def test_get_rose_vars_ROSE_VARS(tmp_path):
     """Test that rose variables are available in the environment section.."""
     (tmp_path / "rose-suite.conf").touch()
     rose_vars = get_rose_vars(tmp_path)
-    assert list(rose_vars['env'].keys()) == [
+    assert list(rose_vars['env'].keys()).sort() == [
         'ROSE_ORIG_HOST',
         'ROSE_VERSION',
-    ]
+    ].sort()
 
 
 def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
@@ -223,11 +223,11 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
     rose_vars = get_rose_vars(tmp_path)
     assert list(rose_vars['template_variables'][
         'ROSE_SUITE_VARIABLES'
-    ].keys()) == [
-        'ROSE_ORIG_HOST',
+    ].keys()).sort() == [
         'ROSE_VERSION',
+        'ROSE_ORIG_HOST',
         'ROSE_SUITE_VARIABLES'
-    ]
+    ].sort()
 
 
 def test_get_rose_vars_fail_if_empy_AND_jinja2(tmp_path):
