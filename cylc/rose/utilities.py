@@ -75,13 +75,20 @@ def get_rose_vars_from_config_node(config, config_node, environ):
         config_node.set([templating])
 
     # Get Rose Orig host if it's not in definition.
-    rose_orig_host = None
-    if 'ROSE_ORIG_HOST' not in config_node['env']:
-        rose_orig_host = get_host()
+    rose_orig_host = get_host()
 
     # Get Values for standard ROSE variable ROSE_ORIG_HOST.
     # For each section process variables and add standard variables.
     for section in ['env', templating]:
+        if 'ROSE_ORIG_HOST' in config_node[section]:
+            user_rose_orig_host = config_node[section].value['ROSE_ORIG_HOST']
+            LOG.warning(
+                f'[{section}]ROSE_VERSION={user_rose_orig_host.value} '
+                'from rose-suite.conf will be ignored: '
+                f'Using Rose: {rose_orig_host}'
+            )
+        config_node[section].set(['ROSE_VERSION'], rose_orig_host)
+
         # Add standard ROSE_VARIABLES
         if 'ROSE_VERSION' in config_node[section].value:
             user_rose_version = config_node[section].value['ROSE_VERSION']
