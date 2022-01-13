@@ -24,7 +24,7 @@ import shlex
 from typing import TYPE_CHECKING, Union
 
 from cylc.flow.hostuserutil import get_host
-from cylc.flow import LOG, __version__ as CYLC_VERSION
+from cylc.flow import LOG
 from cylc.rose.jinja2_parser import Parser
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.isodatetime.datetimeoper import DateTimeOperator
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 
 
 SECTIONS = {'jinja2:suite.rc', 'empy:suite.rc', 'template variables'}
+SET_BY_CYLC = 'set by Cylc'
 
 
 class MultipleTemplatingEnginesError(Exception):
@@ -74,35 +75,27 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     if templating not in config_node.value:
         config_node.set([templating])
 
-    # Get Rose Orig host if it's not in definition.
-    rose_orig_host = None
-    if 'ROSE_ORIG_HOST' not in config_node['env']:
-        rose_orig_host = get_host()
+    # Get Rose Orig host:
+    rose_orig_host = get_host()
 
-    # Get Values for standard ROSE variable ROSE_ORIG_HOST.
     # For each section process variables and add standard variables.
     for section in ['env', templating]:
-        # Add standard ROSE_VARIABLES
-        if 'ROSE_VERSION' in config_node[section].value:
-            user_rose_version = config_node[section].value['ROSE_VERSION']
-            LOG.warning(
-                f'[{section}]ROSE_VERSION={user_rose_version.value} '
-                'from rose-suite.conf will be ignored: '
-                f'Using Rose: {ROSE_VERSION}'
-            )
-        config_node[section].set(['ROSE_VERSION'], ROSE_VERSION)
-
-        if 'CYLC_VERSION' in config_node[section].value:
-            user_cylc_version = config_node[section].value['CYLC_VERSION']
-            LOG.warning(
-                f'[{section}]CYLC_VERSION={user_cylc_version.value} '
-                'from rose-suite.conf will be ignored: '
-                f'Using Cylc: {CYLC_VERSION}'
-            )
-        config_node[section].unset(['CYLC_VERSION'])
-
-        if rose_orig_host:
-            config_node[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
+        for var_name, replace_with in [
+            ('ROSE_ORIG_HOST', rose_orig_host),
+            ('ROSE_VERSION', ROSE_VERSION),
+            ('CYLC_VERSION', SET_BY_CYLC)
+        ]:
+            if var_name in config_node[section]:
+                user_var = config_node[section].value[var_name]
+                LOG.warning(
+                    f'[{section}]{var_name}={user_var.value} '
+                    'from rose-suite.conf will be ignored: '
+                    f'{var_name} will be: {replace_with}'
+                )
+            if replace_with == SET_BY_CYLC:
+                config_node[section].unset([var_name])
+            else:
+                config_node[section].set([var_name], replace_with)
 
         # Use env_var_process to process variables which may need expanding.
         for key, node in config_node.value[section].value.items():

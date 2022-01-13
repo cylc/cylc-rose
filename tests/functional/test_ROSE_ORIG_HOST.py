@@ -169,11 +169,8 @@ def test_cylc_validate_rundir(fixture_install_flow):
     validate = subprocess.run(
         ['cylc', 'validate', str(flowpath)], capture_output=True
     )
-    search = re.findall(
-        r'WARNING - ROSE_ORIG_HOST \(.*\) is: (.*)', validate.stderr.decode()
-    )
     assert validate.returncode == 0
-    assert search == ['foo', 'foo']
+    assert 'ROSE_ORIG_HOST (env) is:' in validate.stderr.decode()
 
 
 def test_cylc_install_run(fixture_install_flow):
