@@ -38,6 +38,9 @@ if TYPE_CHECKING:
 
 SECTIONS = {'jinja2:suite.rc', 'empy:suite.rc', 'template variables'}
 SET_BY_CYLC = 'set by Cylc'
+ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING = (
+    ' ROSE_ORIG_HOST set by cylc install.'
+)
 
 
 class MultipleTemplatingEnginesError(Exception):
@@ -85,7 +88,23 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             ('ROSE_VERSION', ROSE_VERSION),
             ('CYLC_VERSION', SET_BY_CYLC)
         ]:
-            if var_name in config_node[section]:
+            if (
+                var_name in config_node[section]
+                and (
+                    (
+                        var_name == 'ROSE_ORIG_HOST'
+                        and (
+                            not config_node[section][var_name].comments
+                            or (
+                                config_node[section][var_name].comments[0]
+                                != ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
+                            )
+                        )
+                    ) or (
+                        var_name != 'ROSE_ORIG_HOST'
+                    )
+                )
+            ):
                 user_var = config_node[section].value[var_name]
                 LOG.warning(
                     f'[{section}]{var_name}={user_var.value} '
