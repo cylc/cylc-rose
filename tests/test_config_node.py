@@ -239,3 +239,10 @@ def test_identify_templating_section(node_, expect, raises):
     if raises is not None:
         with pytest.raises(raises):
             identify_templating_section(node)
+
+
+def test_ROSE_ORIG_HOST_replacement_behaviour():
+    ret = {}
+    node = ConfigNode()
+    node.set(['env', 'ROSE_ORIG_HOST'], 99)
+    breakpoint()

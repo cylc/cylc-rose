@@ -90,20 +90,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
         ]:
             if (
                 var_name in config_node[section]
-                and (
-                    (
-                        var_name == 'ROSE_ORIG_HOST'
-                        and (
-                            not config_node[section][var_name].comments
-                            or (
-                                config_node[section][var_name].comments[0]
-                                != ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
-                            )
-                        )
-                    ) or (
-                        var_name != 'ROSE_ORIG_HOST'
-                    )
-                )
+                and var_name != 'ROSE_ORIG_HOST'
             ):
                 user_var = config_node[section].value[var_name]
                 LOG.warning(
@@ -111,6 +98,18 @@ def get_rose_vars_from_config_node(config, config_node, environ):
                     'from rose-suite.conf will be ignored: '
                     f'{var_name} will be: {replace_with}'
                 )
+            elif (
+                var_name in config_node[section]
+                and ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING in
+                config_node[section][var_name].comments
+            ):
+                user_var = config_node[section].value[var_name]
+                LOG.warning(
+                    f'[{section}]{var_name}={user_var.value} '
+                    'from rose-suite.conf will be ignored: '
+                    f'{var_name} will be: {replace_with}'
+                )
+                replace_with = config_node[section].value[var_name].value
             if replace_with == SET_BY_CYLC:
                 config_node[section].unset([var_name])
             else:
