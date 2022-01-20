@@ -25,6 +25,7 @@ from metomi.rose.config import (
 from metomi.rose.config_processor import ConfigProcessError
 
 from cylc.rose.utilities import (
+    ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
     get_rose_vars_from_config_node,
     add_cylc_install_to_rose_conf_node_opts,
     dump_rose_log,
@@ -241,8 +242,38 @@ def test_identify_templating_section(node_, expect, raises):
             identify_templating_section(node)
 
 
-def test_ROSE_ORIG_HOST_replacement_behaviour():
-    ret = {}
-    node = ConfigNode()
-    node.set(['env', 'ROSE_ORIG_HOST'], 99)
-    breakpoint()
+@pytest.fixture
+def node_with_ROSE_ORIG_HOST():
+    def _inner(comment=''):
+        ret = {}
+        node = ConfigNode()
+        node.set(['env', 'ROSE_ORIG_HOST'], 'IMPLAUSIBLE_HOST_NAME')
+        node['env']['ROSE_ORIG_HOST'].comments = [comment]
+        get_rose_vars_from_config_node(ret, node, {})
+        return node
+    yield _inner
+
+
+@pytest.mark.parametrize('ROSE_ORIG_HOST_overridden', [True, False])
+def test_ROSE_ORIG_HOST_replacement_behaviour(
+    caplog, node_with_ROSE_ORIG_HOST, ROSE_ORIG_HOST_overridden
+):
+    """It ignores ROSE_ORIG_HOST set in config.
+
+    Except when the comment ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING has been
+    added to ``rose-suite-cylc-install.conf``.
+    """
+    if ROSE_ORIG_HOST_overridden is True:
+        node = node_with_ROSE_ORIG_HOST()
+        log_str = (
+            '[env]ROSE_ORIG_HOST=IMPLAUSIBLE_HOST_NAME from rose-suite.conf'
+            ' will be ignored'
+        )
+        assert log_str in caplog.records[0].message
+        assert node['env']['ROSE_ORIG_HOST'].value != 'IMPLAUSIBLE_HOST_NAME'
+
+    else:
+        node = node_with_ROSE_ORIG_HOST(
+            ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING)
+        assert not caplog.records
+        assert node['env']['ROSE_ORIG_HOST'].value == 'IMPLAUSIBLE_HOST_NAME'

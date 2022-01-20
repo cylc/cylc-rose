@@ -77,18 +77,14 @@ The Cylc Rose plugin provides two environment/template variables
 to the Cylc scheduler:
 
 ``ROSE_ORIG_HOST``
-   Cylc scripts will provide this as the name of the host the script is run
-   on, unless it is set in the ``[env]`` section of the configuration file.
-
-   ``cylc install`` will set ``ROSE_ORIG_HOST`` in
-   ``opt/rose-suite-cylc-install.conf``.
+   Cylc scripts will provide the name of the host on which the script is run,
+   unless the workflow has been installed using ``cylc install``. If this is
+   the case the value set in ``opt/rose-suite-cylc-install.conf`` will be used.
 
    .. caution::
 
-      Therefore, if you use ``cylc install``, ``ROSE_ORIG_HOST`` will always
-      be that computer for Cylc commands run on installed workflows.
-      Cylc commands run on uninstalled workflows may produce inconsistent
-      values.
+      Therefore, Cylc commands run on uninstalled workflows may produce
+      inconsistent values for ``ROSE_ORIG_HOST``.
 
 
 ``ROSE_VERSION``

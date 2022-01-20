@@ -83,36 +83,32 @@ def get_rose_vars_from_config_node(config, config_node, environ):
 
     # For each section process variables and add standard variables.
     for section in ['env', templating]:
+
+        # This loop handles standard variables.
+        # CYLC_VERSION - If it's in the config, remove it.
+        # ROSE_VERSION - If it's in the config, replace it.
+        # ROSE_ORIG_HOST - If it's the config, replace it, unless it has a
+        # comment marking it as having been saved by ``cylc install``.
+        # In all cases warn users if the value in their config is not used.
         for var_name, replace_with in [
             ('ROSE_ORIG_HOST', rose_orig_host),
             ('ROSE_VERSION', ROSE_VERSION),
             ('CYLC_VERSION', SET_BY_CYLC)
         ]:
-            if (
-                var_name in config_node[section]
-                and var_name != 'ROSE_ORIG_HOST'
-            ):
-                user_var = config_node[section].value[var_name]
+            # Warn if we're we're going to override a variable:
+            if override_this_variable(config_node, section, var_name):
+                user_var = config_node[section].value[var_name].value
                 LOG.warning(
-                    f'[{section}]{var_name}={user_var.value} '
-                    'from rose-suite.conf will be ignored: '
-                    f'{var_name} will be: {replace_with}'
+                    f'[{section}]{var_name}={user_var} from rose-suite.conf '
+                    f'will be ignored: {var_name} will be: {replace_with}'
                 )
-            elif (
-                var_name in config_node[section]
-                and ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING in
-                config_node[section][var_name].comments
-            ):
-                user_var = config_node[section].value[var_name]
-                LOG.warning(
-                    f'[{section}]{var_name}={user_var.value} '
-                    'from rose-suite.conf will be ignored: '
-                    f'{var_name} will be: {replace_with}'
-                )
-                replace_with = config_node[section].value[var_name].value
+
+            # Handle replacement of stored variable if appropriate:
             if replace_with == SET_BY_CYLC:
                 config_node[section].unset([var_name])
-            else:
+            elif not rose_orig_host_set_by_cylc_install(
+                config_node, section, var_name
+            ):
                 config_node[section].set([var_name], replace_with)
 
         # Use env_var_process to process variables which may need expanding.
@@ -534,3 +530,81 @@ def paths_to_pathlib(paths):
         else None
         for path in paths
     ]
+
+
+def override_this_variable(node, section, variable):
+    """Variable exists in this section of the config and should be replaced
+    because it is a standard variable.
+
+    Examples:
+        Setup:
+        >>> from metomi.rose.config import ConfigNode
+        >>> from cylc.rose.utilities import (
+        ... ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as rohios
+        ... )
+        >>> node = ConfigNode()
+        >>> node = node.set(['env'])
+
+        1. Variable not in node[section]:
+        >>> override_this_variable(node, 'env', 'foo')
+        False
+
+        2. Variable is not ROSE_ORIG_HOST:
+        >>> node = node.set(['env', 'ROSE_VERSION'], '123.456')
+        >>> override_this_variable(node, 'env', 'ROSE_VERSION')
+        True
+
+        3. Variable is ROSE_ORIG_HOST and override string unset:
+        >>> node = node.set(['env', 'ROSE_ORIG_HOST'], '123.456.789.10')
+        >>> override_this_variable(node, 'env', 'ROSE_ORIG_HOST')
+        True
+
+        4. Variable is ROSE_ORIG_HOST and override string set:
+        >>> node['env']['ROSE_ORIG_HOST'].comments = [rohios]
+        >>> override_this_variable(node, 'env', 'ROSE_ORIG_HOST')
+        False
+    """
+    if variable not in node[section]:
+        return False
+    elif (
+        variable != 'ROSE_ORIG_HOST'
+        or (
+            variable in node[section]
+            and ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING not in
+            node[section][variable].comments
+        )
+    ):
+        return True
+    return False
+
+
+def rose_orig_host_set_by_cylc_install(node, section, var):
+    """ROSE_ORIG_HOST exists in node and is commented by Cylc Install to avoid
+    it being overridden by Cylc Rose.
+
+    Examples:
+        Setup:
+        >>> from metomi.rose.config import ConfigNode
+        >>> from cylc.rose.utilities import (
+        ... ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as rohios
+        ... )
+        >>> node = ConfigNode()
+
+        ROSE_ORIG_HOST set by user, without the comment which Cylc install
+        would add:
+        >>> node = node.set(['env', 'ROSE_ORIG_HOST'], 'IMPLAUSIBLE_HOST_NAME')
+        >>> rose_orig_host_set_by_cylc_install(node, 'env', 'ROSE_ORIG_HOST')
+        False
+
+        ROSE_ORIG_HOST set by Cylc install, with a comment saying so:
+        >>> node['env']['ROSE_ORIG_HOST'].comments = rohios
+        >>> rose_orig_host_set_by_cylc_install(node, 'env', 'ROSE_ORIG_HOST')
+        True
+    """
+    if (
+        var in node[section]
+        and ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING in
+        node[section][var].comments
+    ):
+        return True
+    return False
