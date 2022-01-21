@@ -88,7 +88,9 @@ to the Cylc scheduler:
 
 
 ``ROSE_VERSION``
-   The plugin provides the version number of your installed Rose Version.
+   When running Cylc scripts such as `cylc install`, `cylc play` and `cylc validate`
+   the plugin provides the version number of your installed Rose Version in
+   workflow scheduler's environment.
 
    .. deprecated:: 8.0.0
 
