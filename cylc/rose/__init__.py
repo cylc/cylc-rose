@@ -99,7 +99,7 @@ to the Cylc scheduler:
       ``ROSE_VERSION`` in your suite configuration it will be ignored.
 
 
-.. caution::
+.. deprecated:: 8.0.0
 
    ``CYLC_VERSION`` will be removed from your configuration by the
    Cylc-Rose plugin, as it is now set by Cylc.
