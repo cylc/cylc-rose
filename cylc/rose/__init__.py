@@ -79,8 +79,9 @@ to the Cylc scheduler:
 ``ROSE_ORIG_HOST``
    Cylc scripts (such as ``cylc validate`` and ``cylc play``)
    will provide the name of the host on which the script is run,
-   unless the workflow has been installed using ``cylc install``. If this is
-   the case the value set in ``opt/rose-suite-cylc-install.conf`` will be used.
+   unless the workflow has been installed using ``cylc install``.
+   If this is the case the value set in
+   ``opt/rose-suite-cylc-install.conf`` will be used.
 
    .. caution::
 
@@ -89,7 +90,8 @@ to the Cylc scheduler:
 
 
 ``ROSE_VERSION``
-   When running Cylc scripts such as `cylc install`, `cylc play` and `cylc validate`
+   When running Cylc scripts such as ``cylc install``,
+   ``cylc play`` and ``cylc validate``
    the plugin provides the version number of your installed Rose Version in
    workflow scheduler's environment.
 
