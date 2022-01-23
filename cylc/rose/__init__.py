@@ -98,16 +98,16 @@ to the Cylc scheduler:
    .. deprecated:: 8.0.0
 
       Setting ``[env]ROSE_VERSION`` in ``rose-suite.conf``.
-
       With Cylc 7 / Rose2019 users could set ``ROSE_VERSION`` for their
       suites. This is no longer possible, and if set in your
       ``ROSE_VERSION`` in your suite configuration it will be ignored.
 
 
-.. deprecated:: 8.0.0
+``CYLC_VERSION``
+   .. deprecated:: 8.0.0
 
-   ``CYLC_VERSION`` will be removed from your configuration by the
-   Cylc-Rose plugin, as it is now set by Cylc.
+      ``CYLC_VERSION`` will be removed from your configuration by the
+      Cylc-Rose plugin, as it is now set by Cylc.
 
 Additional CLI options
 ----------------------
