@@ -569,8 +569,7 @@ def override_this_variable(node, section, variable):
     elif (
         variable != 'ROSE_ORIG_HOST'
         or (
-            variable in node[section]
-            and ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING not in
+            ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING not in
             node[section][variable].comments
         )
     ):
