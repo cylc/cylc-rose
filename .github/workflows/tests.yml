@@ -11,10 +11,12 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9']
+    env:
+      PYTEST_ADDOPTS: --cov --cov-append --color=yes
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -22,7 +24,7 @@ jobs:
           fetch-depth: 2  # required by codecov
 
       - name: Configure Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -77,13 +79,22 @@ jobs:
 
       - name: Test
         run: |
+          pytest -n 5 tests/
+
+      - name: Doctest
+        run: |
           # note: not configuring this via a pytest.ini file
           # due to strange behaviour when using --doctest-modules
           # in the tests/ directory
-          pytest --cov --cov-append --doctest-modules cylc/
-          pytest --cov --cov-append tests/
+          pytest --doctest-modules cylc/
 
-      - name: Coverage
+      - name: Coverage report
         run: |
+          coverage xml
           coverage report
-          bash <(curl -s https://codecov.io/bash)
+
+      - name: Codecov upload
+        uses: codecov/codecov-action@v2
+        with:
+          name: '"${{ github.workflow }} py-${{ matrix.python-version }}"'
+          fail_ci_if_error: true
