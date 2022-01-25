@@ -86,7 +86,7 @@ to the Cylc scheduler:
    e.g. ``cylc play``.
 
    Using ``cylc install`` should produce a more consistent value
-   for ``ROSE_ORIG_HOST``; running Cylc commands on uninstalled
+   for ``ROSE_ORIG_HOST``; running Cylc commands on non-installed
    workflows may produce inconsistent values because the host
    is identified each time you run a command.
 
