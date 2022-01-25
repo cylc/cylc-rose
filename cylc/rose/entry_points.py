@@ -26,6 +26,7 @@ from pathlib import Path
 
 from metomi.rose.config import ConfigLoader, ConfigDumper
 from cylc.rose.utilities import (
+    ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
     dump_rose_log,
     get_rose_vars_from_config_node,
     identify_templating_section,
@@ -195,6 +196,9 @@ def record_cylc_install_options(
     ]:
         if section in cli_config:
             cli_config[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
+            cli_config[section]['ROSE_ORIG_HOST'].comments = [
+                ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
+            ]
 
     cli_config.comments = [' This file records CLI Options.']
     identify_templating_section(cli_config)

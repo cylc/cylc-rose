@@ -37,6 +37,8 @@ from uuid import uuid4
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
+from cylc.rose.utilities import (
+    ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as ROHIOS)
 
 
 HOST = get_host()
@@ -124,8 +126,8 @@ def test_cylc_install_run(fixture_install_flow):
             'run1/opt/rose-suite-cylc-install.conf', (
                 '# This file records CLI Options.\n\n'
                 '!opts=b c\n'
-                f'\n[env]\nROSE_ORIG_HOST={HOST}\n'
-                f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
             )
         )
     ]
@@ -179,8 +181,8 @@ def test_cylc_reinstall_run(fixture_reinstall_flow):
             'run1/opt/rose-suite-cylc-install.conf', (
                 '# This file records CLI Options.\n\n'
                 '!opts=b c d\n'
-                f'\n[env]\nROSE_ORIG_HOST={HOST}\n'
-                f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
             )
         )
     ]
@@ -239,8 +241,8 @@ def test_cylc_reinstall_run2(fixture_reinstall_flow2):
             'run1/opt/rose-suite-cylc-install.conf', (
                 '# This file records CLI Options.\n\n'
                 '!opts=b c d\n'
-                f'\n[env]\nROSE_ORIG_HOST={HOST}\n'
-                f'\n[template variables]\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
             )
         )
     ]

@@ -73,39 +73,43 @@ permitted in the ``rose-suite.conf`` files:
 Special Variables
 -----------------
 
-The Cylc Rose plugin has specific logic for handling a small group of special
-environment / template variables in the ``rose-suite.conf`` file:
+The Cylc Rose plugin provides two environment/template variables
+to the Cylc scheduler:
 
 ``ROSE_ORIG_HOST``
-   The plugin provides the hostname of the computer where the plugin runs as
-   an evironment variable.
+   Cylc commands (such as ``cylc install``, ``cylc validate`` and
+   ``cylc play``)
+   will provide the name of the host on which the command is run.
+
+   If the workflow is installed the value of ``ROSE_ORIG_HOST`` will be
+   set in ``opt/rose-suite-cylc-install.conf`` and used by future commands
+   e.g. ``cylc play``.
+
+   Using ``cylc install`` should produce a more consistent value
+   for ``ROSE_ORIG_HOST``; running Cylc commands on non-installed
+   workflows may produce inconsistent values because the host
+   is identified each time you run a command.
+
 
 ``ROSE_VERSION``
-   The plugin provides ``ROSE_VERSION`` from your installed Rose Version
-   in the environment section and any templating sections you have defined.
+   When running Cylc commands such as ``cylc install``,
+   ``cylc play`` and ``cylc validate``
+   the plugin provides the version number of your installed Rose Version in
+   workflow scheduler's environment.
 
    .. deprecated:: 8.0.0
 
       Setting ``[env]ROSE_VERSION`` in ``rose-suite.conf``.
-
-      With Cylc 7 / Rose2019 users could set ``ROSE_VERSION`` for thier
+      With Cylc 7 / Rose2019 users could set ``ROSE_VERSION`` for their
       suites. This is no longer possible, and if set in your
-      ``ROSE_VERSION`` in your suite configuration it will be overwritten.
+      ``ROSE_VERSION`` in your suite configuration it will be ignored.
 
-   you set ``ROSE_VERSION`` in your ``rose-suite.conf`` it will be replaced.
 
 ``CYLC_VERSION``
-   The plugin will remove ``CYLC_VERSION`` from your config as it is provided
-   by Cylc's config processing.
-
    .. deprecated:: 8.0.0
 
-      Setting ``[env]CYLC_VERSION`` in ``rose-suite.conf``.
-
-      With Cylc 7 / Rose2019 users could set ``CYLC_VERSION`` for thier
-      suites. This is no longer possible, and if you set ``CYLC_VERSION``
-      in your suite configuration will be overwritten.
-
+      ``CYLC_VERSION`` will be removed from your configuration by the
+      Cylc-Rose plugin, as it is now set by Cylc.
 
 Additional CLI options
 ----------------------
