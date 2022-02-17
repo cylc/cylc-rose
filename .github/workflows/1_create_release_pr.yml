@@ -10,6 +10,10 @@ on:
         description: The branch to open the PR against
         required: false
         default: 'master'
+      check_shortlog:
+        description: Check contributors list against the mailmap
+        required: true
+        default: true
 
 jobs:
   create-release-pr:
@@ -27,6 +31,7 @@ jobs:
         fetch-depth: 0  # need to fetch all commits to check contributors
 
     - name: Check CONTRIBUTING.md
+      if: github.event.inputs.check_shortlog == 'true'
       uses: cylc/release-actions/check-shortlog@v1
 
     - name: Setup Python
