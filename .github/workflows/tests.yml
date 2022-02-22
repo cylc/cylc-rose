@@ -30,7 +30,7 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install 'cylc-flow @ git+https://github.com/cylc/cylc-flow@master'
+          pip install 'cylc-flow[empy] @ git+https://github.com/cylc/cylc-flow@master'
           pip install 'metomi-rose @ git+https://github.com/metomi/rose@master'
 
       - name: Install cylc-rose
