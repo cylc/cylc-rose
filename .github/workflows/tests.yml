@@ -28,19 +28,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install cylc-flow
+      - name: Install deps
         run: |
-          pip install 'cylc-flow[all] @ git+https://github.com/cylc/cylc-flow@master'
+          pip install 'cylc-flow[empy] @ git+https://github.com/cylc/cylc-flow@master'
+          pip install 'metomi-rose @ git+https://github.com/metomi/rose@master'
 
       - name: Install cylc-rose
         run: |
           pip install -e .[all]
-
-      - name: Install Rose
-        run: |
-          # Use 'git clone' because actions/checkout doesn't allow installation in ../
-          git clone --depth 1 https://github.com/metomi/rose ../metomi-rose
-          pip install -e ../metomi-rose[tests]
 
       - name: Style
         run: |
