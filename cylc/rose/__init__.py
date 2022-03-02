@@ -17,25 +17,23 @@
 Cylc Rose
 =========
 
-Cylc Rose is the bridge between Rose suite configurations and Cylc workflows.
-
-Cylc Rose allows ``cylc install`` to replace the ``rose suite-run``
-command (present in Rose versions 2019.01 and earlier). It reads the
-``rose-suite.conf`` file and:
-
-- Makes environment and template variables available
-  to Cylc.
+- Makes environment and template variables available to Cylc.
 - Installs files.
 - Records information in about the configuration installed in
   ``~/cylc-run/<workflow>/opt/rose-suite-cylc-install.conf``
 
-
 The following Cylc commands will read Rose Suite Configurations:
 
+- ``cylc install``
 - ``cylc validate``
 - ``cylc graph``
 - ``cylc list``
 - ``cylc config``
+
+.. Note::
+
+   Cylc Rose allows ``cylc install`` to replace the ``rose suite-run``
+   command (present in Rose versions 2019.01 and earlier).
 
 
 Rose Config
