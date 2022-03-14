@@ -41,6 +41,18 @@ from cylc.flow import LOG
 from cylc.flow.hostuserutil import get_host
 
 
+class NotARoseSuiteException(Exception):
+    def __str__(self):
+        msg = (
+            'Cylc-Rose CLI arguments only used '
+            'if a rose-suite.conf file is present:'
+            '\n * "--opt-conf-key" or "-O"'
+            '\n * "--define" or "-D"'
+            '\n * "--rose-template-variable" or "-S"'
+        )
+        return msg
+
+
 def pre_configure(srcdir=None, opts=None, rundir=None):
     srcdir, rundir = paths_to_pathlib([srcdir, rundir])
     return get_rose_vars(srcdir=srcdir, opts=opts)
@@ -100,6 +112,12 @@ def get_rose_vars(srcdir=None, opts=None):
 
     # Return a blank config dict if srcdir does not exist
     if not rose_config_exists(srcdir, opts):
+        if opts and (
+            hasattr(opts, "opt_conf_keys")
+            or hasattr(opts, "defines")
+            or hasattr(opts, "rose_template_vars")
+        ):
+            raise NotARoseSuiteException()
         return config
 
     # Load the raw config tree
