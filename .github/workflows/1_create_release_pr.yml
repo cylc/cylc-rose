@@ -12,6 +12,7 @@ on:
         default: 'master'
       check_shortlog:
         description: Check contributors list against the mailmap
+        type: boolean
         required: true
         default: true
 
@@ -49,12 +50,11 @@ jobs:
         init-file: 'cylc/rose/__init__.py'
         pypi-package-name: 'cylc-rose'
 
-    ## TODO: add changelog file?
-    # - name: Update "released on" date in changelog
-    #   continue-on-error: true
-    #   uses: cylc/release-actions/stage-1/update-changelog-release-date@v1
-    #   with:
-    #     changelog-file: 'CHANGES.md'
+    - name: Update "released on" date in changelog
+      continue-on-error: true
+      uses: cylc/release-actions/stage-1/update-changelog-release-date@v1
+      with:
+        changelog-file: 'CHANGES.md'
 
     - name: Build test
       uses: cylc/release-actions/build-python-package@v1
@@ -63,3 +63,5 @@ jobs:
       uses: cylc/release-actions/stage-1/create-release-pr@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        test-workflows: tests.yml

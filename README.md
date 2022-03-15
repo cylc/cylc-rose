@@ -1,26 +1,26 @@
 # Cylc-Rose Plugin
 
+[![PyPI](https://img.shields.io/pypi/v/cylc-rose)](https://pypi.org/project/cylc-rose/)
 [![tests](https://github.com/cylc/cylc-rose/actions/workflows/tests.yml/badge.svg)](https://github.com/cylc/cylc-rose/actions/workflows/tests.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/cylc/cylc-rose)](https://app.codecov.io/gh/cylc/cylc-rose)
 
 A [Cylc](https://github.com/cylc/cylc-flow) plugin providing support for the
 [Rose](https://github.com/metomi/rose) `rose-suite.conf` file.
 
-This is a work in-progress project for use with the Cylc8 and Rose2.
+For use with Cylc 8 and Rose 2.
 
 ### Installation
 
-> **Note:** This plugin has not yet been relesed on pypi/conda-forge
-
 Install from PyPi:
 
-```console
-$ pip install cylc-rose
+```
+pip install cylc-rose
 ```
 
 Or Conda:
 
-```console
-$ conda install cylc-rose
+```
+conda install cylc-rose
 ```
 
 No further configuration is required, Cylc will load this plugin automatically.
@@ -73,8 +73,8 @@ This plugin provides support for the `rose-suite.conf` file, namely:
 > **Note:** If also developing Cylc and or Rose you may wish to install
   cylc-rose in the same environment before installing cylc-rose.
 
-```console
-$ pip install -e cylc-rose[all]
+```
+pip install -e cylc-rose[all]
 ```
 
 ### Copyright and Terms of Use
