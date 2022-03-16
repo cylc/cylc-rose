@@ -113,9 +113,12 @@ def get_rose_vars(srcdir=None, opts=None):
     # Return a blank config dict if srcdir does not exist
     if not rose_config_exists(srcdir, opts):
         if opts and (
-            hasattr(opts, "opt_conf_keys")
-            or hasattr(opts, "defines")
-            or hasattr(opts, "rose_template_vars")
+            (hasattr(opts, "opt_conf_keys") and opts.opt_conf_keys)
+            or (hasattr(opts, "defines") and opts.defines)
+            or (
+                hasattr(opts, "rose_template_vars")
+                and opts.rose_template_vars
+            )
         ):
             raise NotARoseSuiteException()
         return config
