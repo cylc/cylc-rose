@@ -128,6 +128,9 @@ def fake_flow():
                     host = cheese
             [[kanga]]
                 platform = $(echo "myplatform")
+            [[roo]]
+                [[[remote]]]
+                    host = $(echo "myhost")
             [[BAR]]
                 platform = milk
             [[child_of_bar]]
@@ -195,6 +198,23 @@ def test_get_platform_from_task_def_raises(
     mock_glbl_cfg(*MOCK_GLBL_CFG)
     with pytest.raises(PlatformLookupError, match='Platform lookup failed.*'):
         get_platform_from_task_def(fake_flow[0], 'kanga')
+
+
+@pytest.mark.parametrize(
+    'task, expected',
+    [
+        pytest.param('kanga', '$(echo "myplatform")', id='platform subshell'),
+        pytest.param('roo', '$(echo "myhost")',  id='remote host subshell'),
+    ]
+)
+def test_get_platform_from_task_def_quiet(
+    mock_glbl_cfg, fake_flow, task, expected
+):
+    """Test getting platform from task definition with platform subshell.
+    """
+    mock_glbl_cfg(*MOCK_GLBL_CFG)
+    actual = get_platform_from_task_def(fake_flow[0], task, quiet=True)
+    assert actual == expected
 
 
 @pytest.mark.parametrize(

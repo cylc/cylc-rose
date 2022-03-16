@@ -19,7 +19,7 @@
 """
 from optparse import Values
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Union
 
 from cylc.flow.config import WorkflowConfig
 from cylc.flow.exceptions import PlatformLookupError
@@ -29,8 +29,8 @@ from cylc.flow.platforms import get_platform
 
 
 def get_platform_from_task_def(
-    flow: str, task: str
-) -> Dict[str, Any]:
+    flow: str, task: str, quiet: bool = False
+) -> Union[Dict[str, Any], str]:
     """Return the platform dictionary for a particular task.
 
     Uses the flow definition - designed to be used with tasks
@@ -47,12 +47,24 @@ def get_platform_from_task_def(
     config = WorkflowConfig(flow, flow_file, Values())
     # Get entire task spec to allow Cylc 7 platform from host guessing.
     task_spec = config.pcfg.get(['runtime', task])
-    platform = get_platform(task_spec)
+    try:
+        platform = get_platform(task_spec)
+    except PlatformLookupError:
+        # host is a subshell
+        host = task_spec['remote']['host']
+        if host is not None:
+            return host
+        else:
+            return 'localhost'
     if platform is None:
-        raise PlatformLookupError(
-            'Platform lookup failed; platform is a subshell to be evaluated: '
-            f' Task: {task}, platform: {task_spec["platform"]}.'
-        )
+        if not quiet:
+            raise PlatformLookupError(
+                'Platform lookup failed; platform is a subshell to be'
+                f' evaluated: Task: {task}, platform: {task_spec["platform"]}.'
+            )
+        else:
+            # platform is a subshell
+            return task_spec["platform"]
     return platform
 
 
