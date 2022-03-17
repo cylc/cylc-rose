@@ -25,7 +25,6 @@ from pathlib import Path
 from shutil import rmtree
 from subprocess import run
 from uuid import uuid4
-from cylc.flow.exceptions import PlatformLookupError
 
 from cylc.rose.platform_utils import (
     get_platform_from_task_def,
@@ -45,6 +44,10 @@ MOCK_GLBL_CFG = (
             hosts = milk
         [[dairy]]
             hosts = cheese, eggs
+        [[my-platform]]
+            hosts = ham, mushrooms
+        [[my-host]]
+            hosts = tomato, flour
     ''')
 
 
@@ -127,10 +130,10 @@ def fake_flow():
                 [[[remote]]]
                     host = cheese
             [[kanga]]
-                platform = $(echo "myplatform")
+                platform = $(echo "my-platform")
             [[roo]]
                 [[[remote]]]
-                    host = $(echo "myhost")
+                    host = $(echo "my-host")
             [[BAR]]
                 platform = milk
             [[child_of_bar]]
@@ -186,35 +189,21 @@ def test_get_platform_from_task_def(
     assert platform['name'] == expected_platform_n
 
 
-def test_get_platform_from_task_def_raises(
-    mock_glbl_cfg, fake_flow
-):
-    """Test getting platform from task definition.
-
-    This is approaching an integration test, because
-    although it's only testing one unit of Cylc Rose, that unit
-    is calling lots of Cylc Parts, which aren't mocked.
-    """
-    mock_glbl_cfg(*MOCK_GLBL_CFG)
-    with pytest.raises(PlatformLookupError, match='Platform lookup failed.*'):
-        get_platform_from_task_def(fake_flow[0], 'kanga')
-
-
 @pytest.mark.parametrize(
     'task, expected',
     [
-        pytest.param('kanga', '$(echo "myplatform")', id='platform subshell'),
-        pytest.param('roo', '$(echo "myhost")',  id='remote host subshell'),
+        pytest.param('kanga', "my-platform", id='platform subshell'),
+        pytest.param('roo', "my-host", id='remote host subshell'),
     ]
 )
-def test_get_platform_from_task_def_quiet(
+def test_get_platform_from_task_def_subshell(
     mock_glbl_cfg, fake_flow, task, expected
 ):
     """Test getting platform from task definition with platform subshell.
     """
     mock_glbl_cfg(*MOCK_GLBL_CFG)
-    actual = get_platform_from_task_def(fake_flow[0], task, quiet=True)
-    assert actual == expected
+    platform = get_platform_from_task_def(fake_flow[0], task)
+    assert platform['name'] == expected
 
 
 @pytest.mark.parametrize(
