@@ -68,9 +68,9 @@ def eval_subshell(platform):
     """Evaluates platforms/hosts defined as subshell"""
     match = HOST_REC_COMMAND.match(platform)
     output = subprocess.run(
-        ['bash', '-c', f" {match[2]}"], capture_output=True
+        ['bash', '-c', match[2]], capture_output=True, text=True
     )
-    return output.stdout.strip().decode()
+    return output.stdout.strip()
 
 
 def get_platforms_from_task_jobs(
