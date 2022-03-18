@@ -39,8 +39,8 @@ The following Cylc commands will read Rose Suite Configurations:
    command (present in Rose versions 2019.01 and earlier).
 
 
-Rose Config
------------
+Configuration File
+------------------
 
 .. attention::
 
