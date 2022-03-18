@@ -50,9 +50,10 @@ def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
     # Get entire task spec to allow Cylc 7 platform from host guessing.
     task_spec = config.pcfg.get(['runtime', task])
     # check for subshell and evaluate
-    if 'platform' in task_spec and (
-        task_spec['platform'] is not None) and (
-            is_platform_definition_subshell(task_spec['platform'])):
+    if (
+        task_spec.get('platform', None) is not None and
+        is_platform_definition_subshell(task_spec['platform'])
+    ):
         task_spec['platform'] = eval_subshell(task_spec['platform'])
     elif 'remote' in task_spec and (
         'host' in task_spec['remote']) and (
