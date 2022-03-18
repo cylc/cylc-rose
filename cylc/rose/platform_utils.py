@@ -55,10 +55,10 @@ def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
         is_platform_definition_subshell(task_spec['platform'])
     ):
         task_spec['platform'] = eval_subshell(task_spec['platform'])
-    elif 'remote' in task_spec and (
-        'host' in task_spec['remote']) and (
-        task_spec['remote']['host'] is not None) and (
-            bool(HOST_REC_COMMAND.match(task_spec['remote']['host']))):
+    elif (
+        task_spec.get('remote', {}).get('host', None) is not None and 
+        HOST_REC_COMMAND.match(task_spec['remote']['host'])
+    ):
         task_spec['remote']['host'] = eval_subshell(
             task_spec['remote']['host'])
     platform = get_platform(task_spec)
