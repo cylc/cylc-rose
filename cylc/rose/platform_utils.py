@@ -36,7 +36,7 @@ def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
     """Return the platform dictionary for a particular task.
 
     Uses the flow definition - designed to be used with tasks
-    with unsubmitted jobs.
+    with unsubmitted jobs. Evaluates platform/host defined as subshell.
 
     Args:
         flow: The name of the Cylc flow to be queried.
