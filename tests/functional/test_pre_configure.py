@@ -25,8 +25,9 @@ from pathlib import Path
 from pytest import param
 from shlex import split
 from subprocess import run
+from types import SimpleNamespace
 
-from cylc.rose.entry_points import get_rose_vars
+from cylc.rose.entry_points import get_rose_vars, NotARoseSuiteException
 
 
 def envar_exporter(dict_):
@@ -137,6 +138,25 @@ def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
         'You have set "root-dir", which is not supported at Cylc 8. Use '
         '`[install] symlink dirs` in global.cylc instead.'
     )
+
+
+@pytest.mark.parametrize(
+    'opts',
+    [
+        SimpleNamespace(opt_conf_keys=['Foo']),
+        SimpleNamespace(defines=['Wurble']),
+        SimpleNamespace(rose_template_vars=['X=3'])
+    ]
+)
+def test_fail_if_options_but_no_rose_suite_conf(opts, tmp_path):
+    """Tests for rose only options being used in a Cylc
+    workflow which is not a rose-suite.conf
+    """
+    with pytest.raises(
+        NotARoseSuiteException,
+        match='^Cylc-Rose CLI'
+    ):
+        get_rose_vars(tmp_path, opts)
 
 
 def generate_params():
