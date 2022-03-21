@@ -17,24 +17,26 @@
 # -----------------------------------------------------------------------------
 """Interfaces for Cylc Platforms for use by rose apps.
 """
+import subprocess
 from optparse import Values
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 from cylc.flow.config import WorkflowConfig
-from cylc.flow.exceptions import PlatformLookupError
 from cylc.flow.id_cli import parse_id
+from cylc.flow.platforms import (
+    HOST_REC_COMMAND,
+    get_platform,
+    is_platform_definition_subshell
+)
 from cylc.flow.rundb import CylcWorkflowDAO
-from cylc.flow.platforms import get_platform
 
 
-def get_platform_from_task_def(
-    flow: str, task: str
-) -> Dict[str, Any]:
+def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
     """Return the platform dictionary for a particular task.
 
     Uses the flow definition - designed to be used with tasks
-    with unsubmitted jobs.
+    with unsubmitted jobs. Evaluates platform/host defined as subshell.
 
     Args:
         flow: The name of the Cylc flow to be queried.
@@ -47,13 +49,29 @@ def get_platform_from_task_def(
     config = WorkflowConfig(flow, flow_file, Values())
     # Get entire task spec to allow Cylc 7 platform from host guessing.
     task_spec = config.pcfg.get(['runtime', task])
+    # check for subshell and evaluate
+    if (
+        task_spec.get('platform')
+        and is_platform_definition_subshell(task_spec['platform'])
+    ):
+        task_spec['platform'] = eval_subshell(task_spec['platform'])
+    elif (
+        task_spec.get('remote', {}).get('host')
+        and HOST_REC_COMMAND.match(task_spec['remote']['host'])
+    ):
+        task_spec['remote']['host'] = eval_subshell(
+            task_spec['remote']['host'])
     platform = get_platform(task_spec)
-    if platform is None:
-        raise PlatformLookupError(
-            'Platform lookup failed; platform is a subshell to be evaluated: '
-            f' Task: {task}, platform: {task_spec["platform"]}.'
-        )
     return platform
+
+
+def eval_subshell(platform):
+    """Evaluates platforms/hosts defined as subshell"""
+    match = HOST_REC_COMMAND.match(platform)
+    output = subprocess.run(
+        ['bash', '-c', match[2]], capture_output=True, text=True
+    )
+    return output.stdout.strip()
 
 
 def get_platforms_from_task_jobs(
