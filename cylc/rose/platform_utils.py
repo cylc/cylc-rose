@@ -51,8 +51,8 @@ def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
     task_spec = config.pcfg.get(['runtime', task])
     # check for subshell and evaluate
     if (
-        task_spec.get('platform', None) is not None and
-        is_platform_definition_subshell(task_spec['platform'])
+        task_spec.get('platform')
+        and is_platform_definition_subshell(task_spec['platform'])
     ):
         task_spec['platform'] = eval_subshell(task_spec['platform'])
     elif (
