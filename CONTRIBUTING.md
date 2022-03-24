@@ -35,7 +35,7 @@ below.
  - Tim Pillinger
  - Ronnie Dutta
  - Mel Hall
- - Bruno P. Kinoshita
+ - Bruno Kinoshita
  - Hilary Oliver
 <!-- end-shortlog -->
 
