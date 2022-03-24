@@ -1,6 +1,6 @@
 # Selected Cylc-Rose Changes
 
-## __cylc-rose-1.0.2 (<span actions:bind='release-date'>Upcoming</span>)__
+## __cylc-rose-1.0.2 (<span actions:bind='release-date'>Released 2022-03-24</span>)__
 
 ### Fixes
 
