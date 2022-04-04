@@ -276,6 +276,9 @@ def rose_fileinstall(srcdir=None, opts=None, rundir=None):
             popen = RosePopener(event_handler)
 
             # Get an Asyncio loop if one doesn't exist:
+            #   Rose may need an event loop to invoke async interfaces,
+            #   doing this here incase we want to go async in cylc-rose.
+            # See https://github.com/cylc/cylc-rose/pull/130/files
             try:
                 asyncio.get_event_loop()
             except RuntimeError:
