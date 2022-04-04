@@ -45,7 +45,7 @@ def envar_exporter(dict_):
         ),
         param(
             '08_template_engine_conflict',
-            b'TemplateVarLanguageClash: .*= empy.* #!jinja2.*',
+            b'TemplateVarLanguageClash: .*empy.*#!jinja2.*',
             id='template engine conflict'
         )
     ]
