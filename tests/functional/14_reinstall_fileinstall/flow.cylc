@@ -1,0 +1,28 @@
+#!jinja2
+[meta]
+title = "%(workflow)"
+description = """
+This workflow is designed to stop me having to
+write a pile of boilerplate from scratch.
+"""
+written for cylc version = 8.x
+
+
+
+[scheduler]
+    allow implicit tasks = true
+
+
+[scheduling]
+    cycling mode = integer
+    initial cycle point = 1066
+    final cycle point = 1066
+    [[dependencies]]
+        P1 = foo
+
+[runtime]
+    [[root]]
+        script = """
+            echo $HOSTNAME
+            env
+        """

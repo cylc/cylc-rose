@@ -258,6 +258,7 @@ def rose_fileinstall(srcdir=None, opts=None, rundir=None):
             raise exc
         else:
             # Carry out imports.
+            import asyncio
             from metomi.rose.config_processor import ConfigProcessorsManager
             from metomi.rose.popen import RosePopener
             from metomi.rose.reporter import Reporter
@@ -274,7 +275,13 @@ def rose_fileinstall(srcdir=None, opts=None, rundir=None):
             fs_util = FileSystemUtil(event_handler)
             popen = RosePopener(event_handler)
 
-            # Process files
+            # Get an Asyncio loop if one doesn't exist:
+            try:
+                asyncio.get_event_loop()
+            except RuntimeError:
+                asyncio.set_event_loop(asyncio.new_event_loop())
+
+            # Process fileinstall.
             config_pm = ConfigProcessorsManager(event_handler, popen, fs_util)
             config_pm(config_tree, "file")
         finally:
