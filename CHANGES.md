@@ -1,5 +1,13 @@
 # Selected Cylc-Rose Changes
 
+## __cylc-rose-1.0.3 (<span actions:bind='release-date'></span>)__
+
+### Fixes
+
+[130](https://github.com/cylc/cylc-rose/pull/130) - Fix bug preventing
+``cylc reinstall`` using Rose fileinstall.
+
+
 ## __cylc-rose-1.0.2 (<span actions:bind='release-date'>Released 2022-03-24</span>)__
 
 ### Fixes
