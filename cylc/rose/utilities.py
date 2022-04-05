@@ -36,10 +36,7 @@ if TYPE_CHECKING:
     from optparse import Values
 
 
-JINJA2_SECTION = 'jinja2:suite.rc'
-EMPY_SECTION = 'empy:suite.rc'
-TEMPLATE_VARIABLES = 'template variables'
-SECTIONS = {JINJA2_SECTION, EMPY_SECTION, TEMPLATE_VARIABLES}
+SECTIONS = {'jinja2:suite.rc', 'empy:suite.rc', 'template variables'}
 SET_BY_CYLC = 'set by Cylc'
 ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING = (
     ' ROSE_ORIG_HOST set by cylc install.'
@@ -70,7 +67,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     # Don't allow multiple templating sections.
     templating = identify_templating_section(config_node)
 
-    if templating != TEMPLATE_VARIABLES:
+    if templating != 'template variables':
         config['templating_detected'] = templating.replace(':suite.rc', '')
     else:
         config['templating_detected'] = templating
@@ -140,10 +137,10 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             item[0][1]: item[1].value for item in
             config_node.value[templating].walk()
         }
-    elif TEMPLATE_VARIABLES in config_node.value:
+    elif 'template variables' in config_node.value:
         config['template_variables'] = {
             item[0][1]: item[1].value for item in
-            config_node.value[TEMPLATE_VARIABLES].walk()
+            config_node.value['template variables'].walk()
         }
 
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
@@ -179,12 +176,12 @@ def identify_templating_section(config_node):
             "You should not define more than one templating section. "
             f"You defined:\n\t{'; '.join(defined_sections)}"
         )
-    elif JINJA2_SECTION in defined_sections:
-        templating = JINJA2_SECTION
-    elif EMPY_SECTION in defined_sections:
-        templating = EMPY_SECTION
+    elif 'jinja2:suite.rc' in defined_sections:
+        templating = 'jinja2:suite.rc'
+    elif 'empy:suite.rc' in defined_sections:
+        templating = 'empy:suite.rc'
     else:
-        templating = TEMPLATE_VARIABLES
+        templating = 'template variables'
 
     return templating
 
@@ -356,7 +353,7 @@ def get_cli_opts_node(opts=None, srcdir=None):
         config_node = rose_config_tree_loader(srcdir, opts).node
         templating = identify_templating_section(config_node)
     else:
-        templating = TEMPLATE_VARIABLES
+        templating = 'template variables'
 
     for define in rose_template_vars:
         match = re.match(
