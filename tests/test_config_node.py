@@ -216,7 +216,16 @@ def test_dump_rose_log(monkeypatch, tmp_path):
             ),
             None,
             MultipleTemplatingEnginesError,
-            id="FAILS - clashing template sections set",
+            id="FAILS - empy and jinja2 sections set",
+        ),
+        pytest.param(
+            (
+                (['empy:suite.rc', 'foo'], 'Hello World'),
+                (['template variables', 'foo'], 'Hello World'),
+            ),
+            None,
+            MultipleTemplatingEnginesError,
+            id="FAILS - empy and template variables sections set",
         ),
         pytest.param(
             (
