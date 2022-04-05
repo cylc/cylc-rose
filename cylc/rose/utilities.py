@@ -169,7 +169,8 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             'ROSE_SUITE_VARIABLES'] = config['template_variables']
 
 
-def identify_templating_section(config_node):
+def identify_templating_section(config_node, noisy=False):
+
     defined_sections = SECTIONS.intersection(set(config_node.value.keys()))
     if len(defined_sections) > 1:
         raise MultipleTemplatingEnginesError(
@@ -178,8 +179,18 @@ def identify_templating_section(config_node):
         )
     elif 'jinja2:suite.rc' in defined_sections:
         templating = 'jinja2:suite.rc'
+        if noisy:
+            LOG.warning(
+                "[jinja2:suite.rc] is deprecated."
+                " Use [template variables] instead."
+            )
     elif 'empy:suite.rc' in defined_sections:
         templating = 'empy:suite.rc'
+        if noisy:
+            LOG.warning(
+                "[empy:suite.rc] is deprecated."
+                " Use [template variables] instead."
+            )
     else:
         templating = 'template variables'
 

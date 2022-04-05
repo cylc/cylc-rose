@@ -219,7 +219,7 @@ def record_cylc_install_options(
             ]
 
     cli_config.comments = [' This file records CLI Options.']
-    identify_templating_section(cli_config)
+    identify_templating_section(cli_config, noisy=True)
     dumper.dump(cli_config, str(conf_filepath))
 
     # Merge the opts section of the rose-suite.conf with those set by CLI:
@@ -229,7 +229,7 @@ def record_cylc_install_options(
     rose_suite_conf = add_cylc_install_to_rose_conf_node_opts(
         rose_suite_conf, cli_config
     )
-    identify_templating_section(rose_suite_conf)
+    identify_templating_section(rose_suite_conf, noisy=True)
     dumper(rose_suite_conf, rose_conf_filepath)
 
     return cli_config, rose_suite_conf

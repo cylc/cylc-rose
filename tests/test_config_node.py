@@ -175,7 +175,7 @@ def test_dump_rose_log(monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize(
-    'node_, expect, raises',
+    'node_, expect, raises, warning',
     [
         pytest.param(
             (
@@ -183,6 +183,7 @@ def test_dump_rose_log(monkeypatch, tmp_path):
             ),
             'template variables',
             None,
+            False,
             id="OK - template variables",
         ),
         pytest.param(
@@ -191,6 +192,7 @@ def test_dump_rose_log(monkeypatch, tmp_path):
             ),
             'jinja2:suite.rc',
             None,
+            True,
             id="OK - jinja2:suite.rc",
         ),
         pytest.param(
@@ -199,6 +201,7 @@ def test_dump_rose_log(monkeypatch, tmp_path):
             ),
             'empy:suite.rc',
             None,
+            True,
             id="OK - empy:suite.rc",
         ),
         pytest.param(
@@ -207,6 +210,7 @@ def test_dump_rose_log(monkeypatch, tmp_path):
             ),
             'template variables',
             None,
+            False,
             id="OK - no template variables section set",
         ),
         pytest.param(
@@ -216,6 +220,7 @@ def test_dump_rose_log(monkeypatch, tmp_path):
             ),
             None,
             MultipleTemplatingEnginesError,
+            False,
             id="FAILS - empy and jinja2 sections set",
         ),
         pytest.param(
@@ -225,6 +230,7 @@ def test_dump_rose_log(monkeypatch, tmp_path):
             ),
             None,
             MultipleTemplatingEnginesError,
+            False,
             id="FAILS - empy and template variables sections set",
         ),
         pytest.param(
@@ -234,16 +240,20 @@ def test_dump_rose_log(monkeypatch, tmp_path):
             ),
             'template variables',
             None,
+            False,
             id="OK - No interference with irrelevant sections",
         ),
     ]
 )
-def test_identify_templating_section(node_, expect, raises):
+def test_identify_templating_section(node_, expect, raises, warning, caplog):
     node = ConfigNode()
     for item in node_:
         node.set(item[0], item[1])
     if expect is not None:
-        assert identify_templating_section(node) == expect
+        assert identify_templating_section(node, noisy=True) == expect
+    if warning:
+        msg = "is deprecated. Use [template variables]"
+        assert msg in caplog.records[0].message
     if raises is not None:
         with pytest.raises(raises):
             identify_templating_section(node)
