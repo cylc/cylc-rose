@@ -149,9 +149,7 @@ def test_add_cylc_install_to_rose_conf_node_opts(rose_conf, cli_conf, expect):
 
     assert result.value == expect
 
-    expect_opt = ''
-    if 'opts' in cli_conf:
-        expect_opt = cli_conf.get('opts')
+    expect_opt = cli_conf.get('opts', '')
     expect_opt += ' (cylc-install)'
 
     assert result.comments == [(

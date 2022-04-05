@@ -1,0 +1,23 @@
+[meta]
+title = "Boilerplate"
+description = """
+This workflow is designed to stop me having to
+write a pile of boilerplate from scratch.
+"""
+written for cylc version = 8.x
+
+[scheduler]
+    allow implicit tasks = true
+
+[scheduling]
+    initial cycle point = 1066
+    # final cycle point = 1067
+    [[dependencies]]
+        P1Y = foo
+
+[runtime]
+    [[root]]
+        script = """
+            echo $HOSTNAME
+            env
+        """
