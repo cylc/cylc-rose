@@ -7,6 +7,9 @@
 [130](https://github.com/cylc/cylc-rose/pull/130) - Fix bug preventing
 ``cylc reinstall`` using Rose fileinstall.
 
+[132](https://github.com/cylc/cylc-rose/pull/132) - Fix bug preventing
+Cylc commands (other than `install`) from accessing the content of
+`--rose-template-variable`.
 
 ## __cylc-rose-1.0.2 (<span actions:bind='release-date'>Released 2022-03-24</span>)__
 

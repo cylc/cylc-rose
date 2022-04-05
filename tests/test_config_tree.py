@@ -41,7 +41,34 @@ from cylc.rose.entry_points import (
 from metomi.rose.config import ConfigLoader
 
 
+param = pytest.param
 HOST = get_host()
+
+
+def node_stripper(node):
+    """strip a node and all sub-nodes of non-value items.
+
+    Examples:
+
+    """
+    result = {}
+    if hasattr(node, 'value'):
+        if isinstance(node.value, dict):
+            for key, value in node.value.items():
+                result[key] = node_stripper(value)
+        else:
+            return node.value
+    return result
+
+
+def test_node_stripper():
+    result = node_stripper(
+        SimpleNamespace(
+            value={'foo': SimpleNamespace(value='bar', state='wurble')},
+            comment='This should get binned.'
+        )
+    )
+    assert result == {'foo': 'bar'}
 
 
 def test_rose_config_exists_no_dir(tmp_path):
@@ -322,6 +349,51 @@ def test_rose_config_tree_loader(
         'JINJA2_VAR': f'{exp_JINJA2_VAR}'
     }
     assert results == expected
+
+
+@pytest.mark.parametrize(
+    'expect, file, opts',
+    [
+        param(
+            {'template variables': {'FOO': '"Bar"'}},
+            '',
+            {'rose_template_vars': ['FOO="Bar"']},
+            id="rose_template_vars-set-by--S"
+        ),
+        param(
+            {'template variables': {'FOO': 'Bar'}},
+            '',
+            {'rose_template_vars': ['FOO=Bar']},
+            id="rose_template_vars-set-by--S-(unquoted-will-fail-later)"
+        ),
+        param(
+            {'jinja2:suite.rc': {'FOO': '"Bar"'}},
+            '[jinja2:suite.rc]\n',
+            {'rose_template_vars': ['FOO="Bar"']},
+            id="rose_template_vars-set-by--S-(jinja2 already set in file)"
+        ),
+        param(
+            {'empy:suite.rc': {'FOO': '"Bar"'}},
+            '[empy:suite.rc]\n',
+            {'rose_template_vars': ['FOO="Bar"']},
+            id="rose_template_vars-set-by--S-(empy already set in file)"
+        ),
+        param(
+            {'Any Old Section': {'FOO': '"Bar"'}},
+            '',
+            {'defines': ['[Any Old Section]FOO="Bar"']},
+            id="defines-set-by--D"
+        ),
+    ]
+)
+def test_rose_config_tree_loader_CLI_handling(tmp_path, expect, file, opts):
+    """Test interaction of config tree loader with -S and -D.
+    """
+    source = tmp_path
+    (source / 'rose-suite.conf').write_text(file)
+    opts = SimpleNamespace(**opts)
+    tree = rose_config_tree_loader(source, opts)
+    assert node_stripper(tree.node) == expect
 
 
 @pytest.fixture
