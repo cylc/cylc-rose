@@ -171,10 +171,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
 
 def identify_templating_section(config_node):
     defined_sections = SECTIONS.intersection(set(config_node.value.keys()))
-    if (
-        'jinja2:suite.rc' in defined_sections
-        and 'empy:suite.rc' in defined_sections
-    ):
+    if len(defined_sections) > 1:
         raise MultipleTemplatingEnginesError(
             "You should not define more than one templating section. "
             f"You defined:\n\t{'; '.join(defined_sections)}"

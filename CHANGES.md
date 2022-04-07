@@ -11,6 +11,9 @@
 Cylc commands (other than `install`) from accessing the content of
 `--rose-template-variable`.
 
+[133](https://github.com/cylc/cylc-rose/pull/133) - Fix bug allowing setting
+multiple template variable sections.
+
 ## __cylc-rose-1.0.2 (<span actions:bind='release-date'>Released 2022-03-24</span>)__
 
 ### Fixes
