@@ -7,6 +7,10 @@
 [130](https://github.com/cylc/cylc-rose/pull/130) - Fix bug preventing
 ``cylc reinstall`` using Rose fileinstall.
 
+[132](https://github.com/cylc/cylc-rose/pull/132) - Fix bug preventing
+Cylc commands (other than `install`) from accessing the content of
+`--rose-template-variable`.
+
 [133](https://github.com/cylc/cylc-rose/pull/133) - Fix bug allowing setting
 multiple template variable sections.
 

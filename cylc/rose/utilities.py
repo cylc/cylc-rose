@@ -247,6 +247,21 @@ def rose_config_tree_loader(srcdir=None, opts=None):
         defines=redefinitions,
     )
 
+    # Reload the Config using the suite_ variables.
+    # (we can't do this first time around because we have no idea what the
+    # templating section is.)
+    if getattr(opts, 'rose_template_vars', None):
+        template_section = identify_templating_section(config_tree.node)
+        for template_var in opts.rose_template_vars:
+            redefinitions.append(f'[{template_section}]{template_var}')
+        # Reload the config
+        config_tree = ConfigTreeLoader().load(
+            str(srcdir),
+            'rose-suite.conf',
+            opt_keys=opt_conf_keys,
+            defines=redefinitions,
+        )
+
     return config_tree
 
 
