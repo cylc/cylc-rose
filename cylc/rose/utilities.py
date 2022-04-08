@@ -524,9 +524,9 @@ def dump_rose_log(rundir, node):
     """
     dumper = ConfigDumper()
     timestamp = DateTimeOperator().process_time_point_str(
-        print_format='%Y%m%dT%H%M%S%Z'
+        print_format='%Y%m%dT%H%M%S%z'
     )
-    rel_path = f'log/conf/{timestamp}-rose-suite.conf'
+    rel_path = f'log/config/{timestamp}-rose-suite.conf'
     fpath = rundir / rel_path
     fpath.parent.mkdir(exist_ok=True, parents=True)
     dumper.dump(node, str(fpath))
