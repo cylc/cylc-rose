@@ -141,6 +141,20 @@ def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
 
 
 @pytest.mark.parametrize(
+    'rose_config', [
+        '[empy:suite.rc]',
+        '[jinja2:suite.rc]'
+    ]
+)
+def test_warn_if_old_templating_set(rose_config, tmp_path, caplog):
+    """Test using unsupported root-dir config raises error."""
+    (tmp_path / 'rose-suite.conf').write_text(rose_config)
+    get_rose_vars(srcdir=tmp_path)
+    msg = "is deprecated. Use [template variables]"
+    assert msg in caplog.records[0].message
+
+
+@pytest.mark.parametrize(
     'opts',
     [
         SimpleNamespace(opt_conf_keys=['Foo']),
