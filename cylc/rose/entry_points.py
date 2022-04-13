@@ -27,6 +27,7 @@ from pathlib import Path
 from metomi.rose.config import ConfigLoader, ConfigDumper
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
+    deprecation_warnings,
     dump_rose_log,
     get_rose_vars_from_config_node,
     identify_templating_section,
@@ -37,7 +38,6 @@ from cylc.rose.utilities import (
     get_cli_opts_node,
     add_cylc_install_to_rose_conf_node_opts,
 )
-from cylc.flow import LOG
 from cylc.flow.hostuserutil import get_host
 
 
@@ -136,33 +136,6 @@ def get_rose_vars(srcdir=None, opts=None):
         os.environ[key] = val
 
     return config
-
-
-def deprecation_warnings(config_tree):
-    """Check for deprecated items in config.
-    Logs a warning for deprecated items:
-        - "root-dir"
-        - "jinja2:suite.rc"
-        - "empy:suite.rc"
-
-    """
-
-    deprecations = {
-        'empy:suite.rc': (
-            "'empy:suite.rc' is deprecated."
-            " Use [template variables] instead."),
-        'jinja2:suite.rc': (
-            "'jinja2:suite.rc' is deprecated."
-            " Use [template variables] instead."),
-        'root-dir': (
-            'You have set "root-dir", which is not supported at '
-            'Cylc 8. Use `[install] symlink dirs` in global.cylc '
-            'instead.')
-    }
-    for string in list(config_tree.node):
-        for deprecation in deprecations.keys():
-            if deprecation in string:
-                LOG.warning(deprecations[deprecation])
 
 
 def record_cylc_install_options(
