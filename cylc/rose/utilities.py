@@ -618,3 +618,30 @@ def rose_orig_host_set_by_cylc_install(node, section, var):
     ):
         return True
     return False
+
+
+def deprecation_warnings(config_tree):
+    """Check for deprecated items in config.
+    Logs a warning for deprecated items:
+        - "root-dir"
+        - "jinja2:suite.rc"
+        - "empy:suite.rc"
+
+    """
+
+    deprecations = {
+        'empy:suite.rc': (
+            "'empy:suite.rc' is deprecated."
+            " Use [template variables] instead."),
+        'jinja2:suite.rc': (
+            "'jinja2:suite.rc' is deprecated."
+            " Use [template variables] instead."),
+        'root-dir': (
+            'You have set "root-dir", which is not supported at '
+            'Cylc 8. Use `[install] symlink dirs` in global.cylc '
+            'instead.')
+    }
+    for string in list(config_tree.node):
+        for deprecation in deprecations.keys():
+            if deprecation in string:
+                LOG.warning(deprecations[deprecation])

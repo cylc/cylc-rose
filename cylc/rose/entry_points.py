@@ -27,6 +27,7 @@ from pathlib import Path
 from metomi.rose.config import ConfigLoader, ConfigDumper
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
+    deprecation_warnings,
     dump_rose_log,
     get_rose_vars_from_config_node,
     identify_templating_section,
@@ -37,7 +38,6 @@ from cylc.rose.utilities import (
     get_cli_opts_node,
     add_cylc_install_to_rose_conf_node_opts,
 )
-from cylc.flow import LOG
 from cylc.flow.hostuserutil import get_host
 
 
@@ -122,15 +122,7 @@ def get_rose_vars(srcdir=None, opts=None):
 
     # Load the raw config tree
     config_tree = rose_config_tree_loader(srcdir, opts)
-    # Warn if root-dir set in config
-    for string in list(config_tree.node):
-        if 'root-dir' in string:
-            LOG.warning(
-                'You have set "root-dir", which is not supported at '
-                'Cylc 8. Use `[install] symlink dirs` in global.cylc '
-                'instead.'
-                )
-            break
+    deprecation_warnings(config_tree)
 
     # Extract templatevars from the configuration
     get_rose_vars_from_config_node(
