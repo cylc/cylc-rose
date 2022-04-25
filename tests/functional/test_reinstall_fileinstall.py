@@ -56,8 +56,8 @@ def test_install_flow(fixture_provide_flow):
     result = subprocess.run(
         [
             'cylc', 'install',
-            '--flow-name', fixture_provide_flow['test_flow_name'],
-            '-C', str(fixture_provide_flow['srcpath'])
+            '--workflow-name', fixture_provide_flow['test_flow_name'],
+            str(fixture_provide_flow['srcpath'])
         ],
         capture_output=True,
         env=os.environ

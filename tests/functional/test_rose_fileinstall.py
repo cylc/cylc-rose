@@ -61,7 +61,7 @@ def fixture_provide_flow(tmp_path):
 def fixture_install_flow(fixture_provide_flow):
     srcpath, datapath, flow_name = fixture_provide_flow
     result = subprocess.run(
-        ['cylc', 'install', '--flow-name', flow_name, '-C', f'{str(srcpath)}'],
+        ['cylc', 'install', '--workflow-name', flow_name, f'{str(srcpath)}'],
         capture_output=True,
     )
     destpath = Path(get_workflow_run_dir(flow_name))

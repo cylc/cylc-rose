@@ -88,9 +88,8 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
     monkeymodule.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'b')
     result = subprocess.run(
         [
-            'cylc', 'install', '-O', 'c',
-            '--flow-name', fixture_provide_flow['test_flow_name'],
-            '-C', str(fixture_provide_flow['srcpath'])
+            'cylc', 'install', str(fixture_provide_flow['srcpath']), '-O', 'c',
+            '--workflow-name', fixture_provide_flow['test_flow_name'],
         ],
         capture_output=True,
         env=os.environ
@@ -264,7 +263,7 @@ def test_cylc_reinstall_fail_on_clashing_template_vars(tmp_path):
     test_flow_name = f'cylc-rose-test-{str(uuid4())[:8]}'
     install = subprocess.run(
         [
-            'cylc', 'install', '-C', str(tmp_path), '--flow-name',
+            'cylc', 'install', str(tmp_path), '--workflow-name',
             test_flow_name, '--no-run-name'
         ]
     )
