@@ -237,7 +237,7 @@ def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
         "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=\"fcm:foo.x_tr\"@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
 
@@ -277,7 +277,7 @@ def project_override(
         "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source=bar={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
 
@@ -322,10 +322,11 @@ def suite_redirection(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        "rose stem --group=lapsang "
-        f"-C {setup_stem_repo['workingcopy']}/rose-stem "
+        "rose stem "
+        f"{setup_stem_repo['workingcopy']}/rose-stem "
+        "--group=lapsang "
         "--source=\"fcm:foo.x_tr\"@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
 
@@ -361,7 +362,7 @@ def subdirectory(
     rose_stem_cmd = (
         "rose stem --group=assam "
         f"--source={setup_stem_repo['workingcopy']}/rose-stem "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
 
@@ -398,8 +399,8 @@ def relative_path(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        f"rose stem --group=ceylon -C rose-stem "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"rose stem rose-stem --group=ceylon "
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
 
@@ -442,7 +443,7 @@ def with_config(
         "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     (setup_stem_repo['basetemp'] / 'rose.conf').write_text(
         '[rose-stem]\n'
@@ -494,7 +495,7 @@ def with_config2(
     rose_stem_cmd = (
         "rose stem --group=assam "
         f"--source={setup_stem_repo['workingcopy']}/rose-stem "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     (setup_stem_repo['basetemp'] / 'rose.conf').write_text(
         '[rose-stem]\n'
@@ -544,7 +545,7 @@ def incompatible_versions(setup_stem_repo):
         " --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
 
     run_stem = subprocess.run(
@@ -581,7 +582,7 @@ def project_not_in_keywords(setup_stem_repo, monkeymodule):
         " --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
 
     run_stem = subprocess.run(
