@@ -211,6 +211,6 @@ def test_cylc_script(monkeypatch, option, envvars, cmd, expect):
     for name, value in envvars.items():
         monkeypatch.setenv(name, value)
     srcpath = Path(__file__).parent / (
-        '05_opts_set_from_rose_suite_conf/flow.cylc')
+        '05_opts_set_from_rose_suite_conf')
     output = run(split(f'{cmd} {srcpath} {option}'), capture_output=True)
     assert expect in output.stdout

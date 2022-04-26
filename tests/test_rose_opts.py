@@ -62,7 +62,7 @@ def fixture_provide_flow(tmp_path_factory):
 def fixture_install_flow(fixture_provide_flow):
     srcpath, datapath, flow_name = fixture_provide_flow
     cmd = shlex.split(
-        f'cylc install --flow-name {flow_name} -C {str(srcpath)} '
+        f'cylc install --workflow-name {flow_name} {str(srcpath)} '
         '--no-run-name '  # Avoid having to keep looking a sub-dir.
         '--opt-conf-key="A" -O "B" '
         '--define "[env]FOO=42" -D "[jinja2:suite.rc]BAR=84" '

@@ -115,9 +115,8 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
     """
     result = subprocess.run(
         [
-            'cylc', 'install',
-            '--flow-name', fixture_provide_flow['test_flow_name'],
-            '-C', str(fixture_provide_flow['srcpath'])
+            'cylc', 'install', str(fixture_provide_flow['srcpath']),
+            '--workflow-name', fixture_provide_flow['test_flow_name'],
         ],
         capture_output=True,
         env=os.environ
