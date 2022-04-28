@@ -20,6 +20,11 @@
 """Install a rose-stem suite using cylc install.
 
 To run a rose-stem suite use "cylc play".
+
+Looks for a suite to install either in $PWD/rose-stem, or in a specified
+location - e.g:
+
+rose stem /path/to/rose-stem-suite
 """
 
 from contextlib import suppress
