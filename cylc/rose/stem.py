@@ -24,6 +24,7 @@ To run a rose-stem suite use "cylc play".
 
 from contextlib import suppress
 import os
+from pathlib import Path
 import re
 import sys
 
@@ -451,6 +452,23 @@ class StemRunner:
         return self.opts
 
 
+def get_source_opt_from_args(opts, args):
+    """Convert sourcedir given as arg or implied by no arg to opts.source.
+    """
+    if len(args) == 1:
+        # sourcedir not given:
+        opts.source = str(Path.cwd() / 'rose-stem')
+    elif len(args) == 2 and os.path.isabs(args[-1]):
+        # sourcedir given, and is abspath:
+        opts.source = args[-1]
+    else:
+        # breakpoint()
+        # sourcedir given and is not abspath
+        opts.source = str(Path.cwd() / args[-1])
+
+    return opts
+
+
 def main():
     """Implement rose stem."""
     # use the cylc install option parser
@@ -477,16 +495,17 @@ def main():
     # Hard-set for now, but could be set based upon cylc verbosity levels?
     parser.add_option('--verbosity', default=1)
     parser.add_option('--quietness', default=0)
-
-    parser.n_of_compulsory_args = 0
+    parser.n_optional_args += 1
     parser.usage = __doc__
 
     opts, args = parser.parse_args(sys.argv)
+    opts = get_source_opt_from_args(opts, args)
+
     # modify the CLI options to add whatever rose stem would like to add
     opts = StemRunner(opts).process()
 
     # call cylc install
-    cylc_install(parser, opts)
+    cylc_install(parser, opts, opts.source)
 
 
 if __name__ == "__main__":
