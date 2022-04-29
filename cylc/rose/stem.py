@@ -24,7 +24,12 @@ To run a rose-stem suite use "cylc play".
 Looks for a suite to install either in $PWD/rose-stem, or in a specified
 location - e.g:
 
-rose stem /path/to/rose-stem-suite
+- ``rose stem``:
+        Install a rose-stem suite from PWD/rose-stem
+- ``rose stem relative-path`` :
+        Install a rose-stem suite from PWD/relative-path.
+- ``rose stem /absoulte/path``:
+        Install a rose-stem suite from specified abs path.
 """
 
 from contextlib import suppress
@@ -459,11 +464,22 @@ class StemRunner:
 
 def get_source_opt_from_args(opts, args):
     """Convert sourcedir given as arg or implied by no arg to opts.source.
+
+    Possible outcomes:
+        No args given:
+            Install a rose-stem suite from PWD/rose-stem
+        Relative path given:
+            Install a rose-stem suite from PWD/arg
+        Absolute path given:
+            Install a rose-stem suite from specified abs path.
+
+    Returns:
+        Cylc options with sourch attribute added.
     """
-    if len(args) == 1:
+    if len(args) == 0:
         # sourcedir not given:
         opts.source = str(Path.cwd() / 'rose-stem')
-    elif len(args) == 2 and os.path.isabs(args[-1]):
+    elif os.path.isabs(args[-1]):
         # sourcedir given, and is abspath:
         opts.source = args[-1]
     else:

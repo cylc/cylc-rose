@@ -25,33 +25,43 @@ from cylc.rose.stem import get_source_opt_from_args
 
 
 @pytest.mark.parametrize(
-    'args, relpath',
+    'args',
     [
         pytest.param(
-            ['rose-stem', 'foo'], True,
+            ['foo'],
             id='relative-path'
         ),
         pytest.param(
-            ['rose-stem'], True,
+            [],
             id='no-path'
         ),
         pytest.param(
-            ['rose-stem'], False,
+            ['/foo'],
             id='absolute-path'
         ),
     ]
 )
-def test_get_source_opt_from_args(tmp_path, args, relpath):
+def test_get_source_opt_from_args(tmp_path, args):
+    # Basic setup
     os.chdir(tmp_path)
     opts = SimpleNamespace()
-    if relpath and len(args) > 1:
-        sourcepath = (Path.cwd() / 'foo')
-    elif relpath:
-        sourcepath = (Path.cwd() / 'rose-stem')
+
+    # Set sourcepath, to the location specified by args or otherwise
+    # to $PWD/rose-stem:
+    if len(args) == 1:
+        sourcepath = (Path.cwd() / args[0])
     else:
-        sourcepath = (Path.cwd() / 'foo')
-        args.append(str(sourcepath))
+        sourcepath = Path.cwd() / 'rose-stem'
+
+    # If args[0] is an abspath replace it with an abspath which really exists.
+    if args and os.path.isabs(args[0]):
+        sourcepath = Path.cwd() / 'foo'
+        args[0] = str(sourcepath)
+
+    # Mock up expected output and make source dir:
     expect = SimpleNamespace(source=str(sourcepath))
     sourcepath.mkdir()
+
+    # Run test:
     result = get_source_opt_from_args(opts, args)
     assert result == expect
