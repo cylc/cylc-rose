@@ -226,7 +226,7 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig):
                     f'\n\t{rose_stem_cmd}'
                 )
                 print(msg)
-                breakpoint()  # noqa T100
+                # If you want to debug add a breakpoint here:
             msg = (
                 f'rose-stem command:\n {rose_stem_cmd} failed with'
                 f':\n{run_stem.stderr.decode()}'
