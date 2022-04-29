@@ -41,9 +41,9 @@ from cylc.rose.stem import get_source_opt_from_args
         ),
     ]
 )
-def test_get_source_opt_from_args(tmp_path, args):
+def test_get_source_opt_from_args(tmp_path, args, monkeypatch):
     # Basic setup
-    os.chdir(tmp_path)
+    monkeypatch.chdir(tmp_path)
     opts = SimpleNamespace()
 
     # Set sourcepath, to the location specified by args or otherwise
