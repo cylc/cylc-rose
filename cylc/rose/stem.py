@@ -474,7 +474,7 @@ def get_source_opt_from_args(opts, args):
             Install a rose-stem suite from specified abs path.
 
     Returns:
-        Cylc options with sourch attribute added.
+        Cylc options with source attribute added.
     """
     if len(args) == 0:
         # sourcedir not given:
