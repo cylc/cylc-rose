@@ -500,10 +500,10 @@ def main():
     # Hard-set for now, but could be set based upon cylc verbosity levels?
     parser.add_option('--verbosity', default=1)
     parser.add_option('--quietness', default=0)
-    parser.n_optional_args += 1
     parser.usage = __doc__
 
-    opts, args = parser.parse_args(sys.argv)
+    opts, args = parser.parse_args(sys.argv[1:])
+    # sliced sys.argv to drop 'rose-stem'
     opts = get_source_opt_from_args(opts, args)
 
     # modify the CLI options to add whatever rose stem would like to add
