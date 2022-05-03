@@ -487,7 +487,6 @@ def get_source_opt_from_args(opts, args):
         # sourcedir given, and is abspath:
         opts.source = args[-1]
     else:
-        # breakpoint()
         # sourcedir given and is not abspath
         opts.source = str(Path.cwd() / args[-1])
 
