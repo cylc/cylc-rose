@@ -26,12 +26,14 @@ To run a rose-stem suite use "cylc play".
 Looks for a suite to install either in $PWD/rose-stem, or in a specified
 location - e.g:
 
-- ``rose stem``:
-        Install a rose-stem suite from PWD/rose-stem
-- ``rose stem relative-path`` :
-        Install a rose-stem suite from PWD/relative-path.
-- ``rose stem /absoulte/path``:
-        Install a rose-stem suite from specified abs path.
+# Install a rose-stem suite from PWD/rose-stem
+$ rose stem
+
+# Install a rose-stem suite from PWD/relative-path.
+$ rose stem relative-path
+
+# Install a rose-stem suite from specified abs path.
+$ rose stem /absolute/path
 """
 
 from contextlib import suppress
