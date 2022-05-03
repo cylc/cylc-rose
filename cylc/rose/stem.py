@@ -450,7 +450,7 @@ class StemRunner:
                         elements[0], '"' + elements[1] + '"')
 
         # Change into the suite directory
-        if hasattr(self.opts, 'source') and self.opts.source:
+        if getattr(self.opts, 'source', None):
             self.reporter(SuiteSelectionEvent(self.opts.source))
             self._check_suite_version(
                 os.path.join(self.opts.source, 'rose-suite.conf'))
