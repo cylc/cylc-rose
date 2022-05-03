@@ -16,8 +16,6 @@
 """Functional tests for top-level function record_cylc_install_options and
 """
 
-import os
-from pathlib import Path
 import pytest
 from types import SimpleNamespace
 
@@ -25,43 +23,37 @@ from cylc.rose.stem import get_source_opt_from_args
 
 
 @pytest.mark.parametrize(
-    'args',
+    'args, expect',
     [
         pytest.param(
-            ['foo'],
-            id='relative-path'
-        ),
-        pytest.param(
             [],
+            '',
             id='no-path'
         ),
         pytest.param(
             ['/foo'],
+            '/foo',
+            id='relative-path'
+        ),
+        pytest.param(
+            ['foo'],
+            '{tmp_path}/foo',
             id='absolute-path'
         ),
     ]
 )
-def test_get_source_opt_from_args(tmp_path, args, monkeypatch):
+def test_get_source_opt_from_args(tmp_path, monkeypatch, args, expect):
     # Basic setup
     monkeypatch.chdir(tmp_path)
     opts = SimpleNamespace()
 
-    # Set sourcepath, to the location specified by args or otherwise
-    # to $PWD/rose-stem:
-    if len(args) == 1:
-        sourcepath = (Path.cwd() / args[0])
-    else:
-        sourcepath = Path.cwd() / 'rose-stem'
-
-    # If args[0] is an abspath replace it with an abspath which really exists.
-    if args and os.path.isabs(args[0]):
-        sourcepath = Path.cwd() / 'foo'
-        args[0] = str(sourcepath)
-
-    # Mock up expected output and make source dir:
-    expect = SimpleNamespace(source=str(sourcepath))
-    sourcepath.mkdir()
-
-    # Run test:
+    # Run function
     result = get_source_opt_from_args(opts, args)
-    assert result == expect
+
+    # If an arg is given we are expecting source to be added to the options.
+    # Otherwise options should be returned unchanged.
+    if expect:
+        expect = SimpleNamespace(source=expect.format(tmp_path=tmp_path))
+        assert result == expect
+    else:
+        assert result == opts

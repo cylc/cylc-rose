@@ -450,7 +450,7 @@ class StemRunner:
                         elements[0], '"' + elements[1] + '"')
 
         # Change into the suite directory
-        if self.opts.source:
+        if hasattr(self.opts, 'source') and self.opts.source:
             self.reporter(SuiteSelectionEvent(self.opts.source))
             self._check_suite_version(
                 os.path.join(self.opts.source, 'rose-suite.conf'))
@@ -482,7 +482,7 @@ def get_source_opt_from_args(opts, args):
     """
     if len(args) == 0:
         # sourcedir not given:
-        opts.source = str(Path.cwd() / 'rose-stem')
+        return opts
     elif os.path.isabs(args[-1]):
         # sourcedir given, and is abspath:
         opts.source = args[-1]
@@ -530,7 +530,10 @@ def main():
     opts = StemRunner(opts).process()
 
     # call cylc install
-    cylc_install(parser, opts, opts.source)
+    if hasattr(opts, 'source'):
+        cylc_install(parser, opts, opts.source)
+    else:
+        cylc_install(parser, opts)
 
 
 if __name__ == "__main__":

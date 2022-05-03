@@ -218,7 +218,7 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig):
                     [x.decode() for x in run_stem.stderr.split(b'\n')]
                 ))
             if verbosity > 2:
-                # If -vv print replication instructions and breakpoint.
+                # If -vv print replication instructions.
                 msg = (
                     'To reproduce failure outside test environment:'
                     f'\n\tcd {setup_stem_repo["workingcopy"]}'
