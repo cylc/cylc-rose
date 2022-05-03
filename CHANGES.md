@@ -4,6 +4,10 @@
 
 ### Fixes
 
+[139](https://github.com/cylc/cylc-rose/pull/139) - Make `rose stem` command
+work correctly with changes made to `cylc install` in
+[cylc-flow PR #4823](https://github.com/cylc/cylc-flow/pull/4823)
+
 [130](https://github.com/cylc/cylc-rose/pull/130) - Fix bug preventing
 ``cylc reinstall`` using Rose fileinstall.
 

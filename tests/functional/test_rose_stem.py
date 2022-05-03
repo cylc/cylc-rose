@@ -175,7 +175,7 @@ def setup_stem_repo(tmp_path_factory, monkeymodule):
 
 
 @pytest.fixture(scope='class')
-def rose_stem_run_template(setup_stem_repo):
+def rose_stem_run_template(setup_stem_repo, pytestconfig):
     """Runs rose-stem and Cylc Play.
 
     Uses an inner function to allow inheriting fixtures to run different
@@ -200,7 +200,9 @@ def rose_stem_run_template(setup_stem_repo):
                 ``**setup_stem_repo``:
                     Unpack all yields from setup_stem_repo.
     """
-    def _inner_fn(rose_stem_cmd):
+    verbosity = pytestconfig.getoption('verbose')
+
+    def _inner_fn(rose_stem_cmd, verbosity=verbosity):
         # Run rose-stem
         run_stem = subprocess.run(
             split(rose_stem_cmd), capture_output=True,
@@ -208,9 +210,23 @@ def rose_stem_run_template(setup_stem_repo):
         )
 
         # To assist with debugging fail horribly if the subproc'd rose-stem
-        # command returns non-zero.
-        # You might wish to add breakpoint() here.
+        # command returns non-zero:
         if run_stem.returncode != 0:
+            if verbosity > 1:
+                # If -v print error details
+                print('\n\t'.join(
+                    [x.decode() for x in run_stem.stderr.split(b'\n')]
+                ))
+            if verbosity > 2:
+                # If -vv print replication instructions.
+                msg = (
+                    'To reproduce failure outside test environment:'
+                    f'\n\tcd {setup_stem_repo["workingcopy"]}'
+                    f'\n\texport FCM_CONF_PATH={os.environ["FCM_CONF_PATH"]}'
+                    f'\n\t{rose_stem_cmd}'
+                )
+                print(msg)
+                # If you want to debug add a breakpoint here:
             msg = (
                 f'rose-stem command:\n {rose_stem_cmd} failed with'
                 f':\n{run_stem.stderr.decode()}'
@@ -237,7 +253,7 @@ def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
         "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=\"fcm:foo.x_tr\"@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
 
@@ -277,7 +293,7 @@ def project_override(
         "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source=bar={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
 
@@ -322,10 +338,10 @@ def suite_redirection(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        "rose stem --group=lapsang "
-        f"-C {setup_stem_repo['workingcopy']}/rose-stem "
+        f"rose stem {setup_stem_repo['workingcopy']}/rose-stem "
+        "--group=lapsang "
         "--source=\"fcm:foo.x_tr\"@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
 
@@ -361,7 +377,7 @@ def subdirectory(
     rose_stem_cmd = (
         "rose stem --group=assam "
         f"--source={setup_stem_repo['workingcopy']}/rose-stem "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
 
@@ -398,14 +414,14 @@ def relative_path(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_cmd = (
-        f"rose stem --group=ceylon -C rose-stem "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"rose stem rose-stem --group=ceylon "
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     yield rose_stem_run_template(rose_stem_cmd)
 
 
 class TestRelativePath:
-    """Check relative path with -C is working.
+    """Check relative path with src is working.
     """
     @pytest.mark.parametrize(
         'expected',
@@ -442,7 +458,7 @@ def with_config(
         "rose stem --group=earl_grey --task=milk,sugar --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     (setup_stem_repo['basetemp'] / 'rose.conf').write_text(
         '[rose-stem]\n'
@@ -494,7 +510,7 @@ def with_config2(
     rose_stem_cmd = (
         "rose stem --group=assam "
         f"--source={setup_stem_repo['workingcopy']}/rose-stem "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
     (setup_stem_repo['basetemp'] / 'rose.conf').write_text(
         '[rose-stem]\n'
@@ -544,7 +560,7 @@ def incompatible_versions(setup_stem_repo):
         " --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
 
     run_stem = subprocess.run(
@@ -581,7 +597,7 @@ def project_not_in_keywords(setup_stem_repo, monkeymodule):
         " --group=spoon,cup,milk "
         f"--source={setup_stem_repo['workingcopy']} "
         "--source=fcm:foo.x_tr@head "
-        f"--flow-name {setup_stem_repo['suitename']}"
+        f"--workflow-name {setup_stem_repo['suitename']}"
     )
 
     run_stem = subprocess.run(

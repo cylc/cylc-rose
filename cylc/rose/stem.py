@@ -17,13 +17,28 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-"""Install a rose-stem suite using cylc install.
+"""rose stem [path]
+
+Install a rose-stem suite using cylc install.
 
 To run a rose-stem suite use "cylc play".
+
+Looks for a suite to install either in $PWD/rose-stem, or in a specified
+location - e.g:
+
+# Install a rose-stem suite from PWD/rose-stem
+$ rose stem
+
+# Install a rose-stem suite from PWD/relative-path.
+$ rose stem relative-path
+
+# Install a rose-stem suite from specified abs path.
+$ rose stem /absolute/path
 """
 
 from contextlib import suppress
 import os
+from pathlib import Path
 import re
 import sys
 
@@ -435,7 +450,7 @@ class StemRunner:
                         elements[0], '"' + elements[1] + '"')
 
         # Change into the suite directory
-        if self.opts.source:
+        if getattr(self.opts, 'source', None):
             self.reporter(SuiteSelectionEvent(self.opts.source))
             self._check_suite_version(
                 os.path.join(self.opts.source, 'rose-suite.conf'))
@@ -449,6 +464,33 @@ class StemRunner:
             self.opts.workflow_name = self._generate_name()
 
         return self.opts
+
+
+def get_source_opt_from_args(opts, args):
+    """Convert sourcedir given as arg or implied by no arg to opts.source.
+
+    Possible outcomes:
+        No args given:
+            Install a rose-stem suite from PWD/rose-stem
+        Relative path given:
+            Install a rose-stem suite from PWD/arg
+        Absolute path given:
+            Install a rose-stem suite from specified abs path.
+
+    Returns:
+        Cylc options with source attribute added.
+    """
+    if len(args) == 0:
+        # sourcedir not given:
+        return opts
+    elif os.path.isabs(args[-1]):
+        # sourcedir given, and is abspath:
+        opts.source = args[-1]
+    else:
+        # sourcedir given and is not abspath
+        opts.source = str(Path.cwd() / args[-1])
+
+    return opts
 
 
 def main():
@@ -477,16 +519,20 @@ def main():
     # Hard-set for now, but could be set based upon cylc verbosity levels?
     parser.add_option('--verbosity', default=1)
     parser.add_option('--quietness', default=0)
-
-    parser.n_of_compulsory_args = 0
     parser.usage = __doc__
 
-    opts, args = parser.parse_args(sys.argv)
+    opts, args = parser.parse_args(sys.argv[1:])
+    # sliced sys.argv to drop 'rose-stem'
+    opts = get_source_opt_from_args(opts, args)
+
     # modify the CLI options to add whatever rose stem would like to add
     opts = StemRunner(opts).process()
 
     # call cylc install
-    cylc_install(parser, opts)
+    if hasattr(opts, 'source'):
+        cylc_install(parser, opts, opts.source)
+    else:
+        cylc_install(parser, opts)
 
 
 if __name__ == "__main__":
