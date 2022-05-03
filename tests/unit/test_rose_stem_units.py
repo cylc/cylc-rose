@@ -33,7 +33,7 @@ from cylc.rose.stem import get_source_opt_from_args
         pytest.param(
             ['/foo'],
             '/foo',
-            id='relative-path'
+            id='absolute-path'
         ),
         pytest.param(
             ['foo'],
