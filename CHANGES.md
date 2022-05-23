@@ -1,5 +1,14 @@
 # Selected Cylc-Rose Changes
 
+## __cylc-rose-1.0.4 (<span actions:bind='release-date'></span>)__
+
+### Fixes
+
+[#142](https://github.com/cylc/cylc-rose/pull/142) - Raise exception if
+cylc install finds an existing `rose-suite-cylc-install.conf` during an
+installation.
+
+
 ## __cylc-rose-1.0.3 (<span actions:bind='release-date'>Released 2022-05-20</span>)__
 
 ### Fixes

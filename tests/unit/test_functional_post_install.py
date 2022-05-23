@@ -29,7 +29,8 @@ from metomi.isodatetime.datetimeoper import DateTimeOperator
 
 from cylc.flow.hostuserutil import get_host
 from cylc.rose.entry_points import (
-    record_cylc_install_options, rose_fileinstall, post_install
+    record_cylc_install_options, rose_fileinstall, post_install,
+    PostInstallRecordingException
 )
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
@@ -360,3 +361,21 @@ def test_cylc_no_rose(tmp_path):
     """
     from cylc.rose.entry_points import post_install
     assert post_install(srcdir=tmp_path, rundir=tmp_path) is False
+
+
+def test_installing_over_existing_fails(tmp_path):
+    """Cylc install will fail if it is asked to do a reinstall."""
+    rundir = tmp_path / 'dest'
+    srcdir = tmp_path / 'src'
+    (rundir / "opt").mkdir(exist_ok=True, parents=True)
+    srcdir.mkdir(exist_ok=True)
+    for f in ['rose-suite.conf', 'flow.cylc']:
+        (srcdir / f).touch()
+        (rundir / f).touch()
+    (rundir / "opt/rose-suite-cylc-install.conf").touch()
+    opts = SimpleNamespace()
+    with pytest.raises(
+        PostInstallRecordingException,
+        match=r'rose-suite-cylc-install\.conf'
+    ):
+        record_cylc_install_options(rundir, opts, srcdir)

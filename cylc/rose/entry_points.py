@@ -53,6 +53,10 @@ class NotARoseSuiteException(Exception):
         return msg
 
 
+class PostInstallRecordingException(Exception):
+    ...
+
+
 def pre_configure(srcdir=None, opts=None, rundir=None):
     srcdir, rundir = paths_to_pathlib([srcdir, rundir])
     return get_rose_vars(srcdir=srcdir, opts=opts)
@@ -191,9 +195,15 @@ def record_cylc_install_options(
     # If file exists we need to merge with our new config, over-writing with
     # new items where there are duplicates.
     if conf_filepath.is_file():
-        if opts.clear_rose_install_opts:
+        if not hasattr(opts, "clear_rose_install_opts"):
+            # File exists, but CLI program is not cylc re-install:
+            raise PostInstallRecordingException(
+                f'{rundir}/opt/rose-suite-cylc-install.conf - already '
+                'present. Cylc install will not modify this file.'
+            )
+        elif opts.clear_rose_install_opts is True:
             conf_filepath.unlink()
-        else:
+        elif opts.clear_rose_install_opts is False:
             oldconfig = loader.load(str(conf_filepath))
             cli_config = merge_rose_cylc_suite_install_conf(
                 oldconfig, cli_config
