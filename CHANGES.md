@@ -6,7 +6,7 @@
 
 [#140](https://github.com/cylc/cylc-rose/pull/140) -
 Support integers with leading zeros (e.g `001`) to back support Rose
-configurations for use with cylc-flow>=8.0rc5 which uses Jinja2 v3 which
+configurations for use with cylc-flow>=8.0rc4 which uses Jinja2 v3 which
 no longer supports this.
 
 ## __cylc-rose-1.0.3 (<span actions:bind='release-date'>Released 2022-05-20</span>)__
