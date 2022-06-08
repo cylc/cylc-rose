@@ -1,21 +1,30 @@
 # Selected Cylc-Rose Changes
 
+## __cylc-rose-1.? (<span actions:bind='release-date'>Pending</span>)__
+
+### Fixes
+
+[#140](https://github.com/cylc/cylc-rose/pull/140) -
+Support integers with leading zeros (e.g `001`) to back support Rose
+configurations for use with cylc-flow>=8.0rc4 which uses Jinja2 v3 which
+no longer supports this.
+
 ## __cylc-rose-1.0.3 (<span actions:bind='release-date'>Released 2022-05-20</span>)__
 
 ### Fixes
 
-[139](https://github.com/cylc/cylc-rose/pull/139) - Make `rose stem` command
+[#139](https://github.com/cylc/cylc-rose/pull/139) - Make `rose stem` command
 work correctly with changes made to `cylc install` in
 [cylc-flow PR #4823](https://github.com/cylc/cylc-flow/pull/4823)
 
-[130](https://github.com/cylc/cylc-rose/pull/130) - Fix bug preventing
+[#130](https://github.com/cylc/cylc-rose/pull/130) - Fix bug preventing
 ``cylc reinstall`` using Rose fileinstall.
 
-[132](https://github.com/cylc/cylc-rose/pull/132) - Fix bug preventing
+[#132](https://github.com/cylc/cylc-rose/pull/132) - Fix bug preventing
 Cylc commands (other than `install`) from accessing the content of
 `--rose-template-variable`.
 
-[133](https://github.com/cylc/cylc-rose/pull/133) - Fix bug allowing setting
+[#133](https://github.com/cylc/cylc-rose/pull/133) - Fix bug allowing setting
 multiple template variable sections.
 
 ## __cylc-rose-1.0.2 (<span actions:bind='release-date'>Released 2022-03-24</span>)__
@@ -25,7 +34,7 @@ multiple template variable sections.
 [118](https://github.com/cylc/cylc-rose/pull/118) - Fail if
 a workflow is not a Rose Suite but user provides Rose CLI options.
 
-## cylc-rose-1.0.1 (Released 2022-02-17)
+## __cylc-rose-1.0.1 (Released 2022-02-17)__
 
 First official release of Cylc-Rose.
 
