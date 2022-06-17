@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
-from cylc.rose.jinja2_parser import Parser
+from cylc.rose.jinja2_parser import Parser, patch_jinja2_leading_zeros
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.isodatetime.datetimeoper import DateTimeOperator
 from metomi.rose.config import ConfigDumper, ConfigNodeDiff, ConfigNode
@@ -146,22 +146,26 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
     # access.
     if templating is not None:
-        parser = Parser()
-        for key, value in config['template_variables'].items():
-            # The special variables are already Python variables.
-            if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
-                try:
-                    config['template_variables'][key] = (
-                        parser.literal_eval(value)
-                    )
-                except Exception:
-                    raise ConfigProcessError(
-                        [templating, key],
-                        value,
-                        f'Invalid template variable: {value}'
-                        '\nMust be a valid Python or Jinja2 literal'
-                        ' (note strings "must be quoted").'
-                    ) from None
+        with patch_jinja2_leading_zeros():
+            # BACK COMPAT: patch_jinja2_leading_zeros
+            # back support zero-padded integers for a limited time to help
+            # users migrate before upgrading cylc-flow to Jinja2>=3.1
+            parser = Parser()
+            for key, value in config['template_variables'].items():
+                # The special variables are already Python variables.
+                if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
+                    try:
+                        config['template_variables'][key] = (
+                            parser.literal_eval(value)
+                        )
+                    except Exception:
+                        raise ConfigProcessError(
+                            [templating, key],
+                            value,
+                            f'Invalid template variable: {value}'
+                            '\nMust be a valid Python or Jinja2 literal'
+                            ' (note strings "must be quoted").'
+                        ) from None
 
     # Add ROSE_SUITE_VARIABLES to config of templating engines in use.
     if templating is not None:
