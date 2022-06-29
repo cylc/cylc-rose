@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
+from cylc.flow.flags import cylc7_back_compat
 from cylc.rose.jinja2_parser import Parser, patch_jinja2_leading_zeros
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.isodatetime.datetimeoper import DateTimeOperator
@@ -646,7 +647,8 @@ def deprecation_warnings(config_tree):
             'Cylc 8. Use `[install] symlink dirs` in global.cylc '
             'instead.')
     }
-    for string in list(config_tree.node):
-        for deprecation in deprecations.keys():
-            if deprecation in string:
-                LOG.warning(deprecations[deprecation])
+    if not cylc7_back_compat:
+        for string in list(config_tree.node):
+            for deprecation in deprecations.keys():
+                if deprecation in string:
+                    LOG.warning(deprecations[deprecation])
