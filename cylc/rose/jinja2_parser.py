@@ -46,9 +46,14 @@ def _strip_leading_zeros(string):
         '1'
         >>> _strip_leading_zeros('0001')
         '1'
+        >>> _strip_leading_zeros('0')
+        '0'
+        >>> _strip_leading_zeros('000')
+        '0'
 
     """
-    return string.lstrip('0')
+    ret = string.lstrip('0')
+    return ret or '0'
 
 
 def _lexer_wrap(fcn):
