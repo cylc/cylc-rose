@@ -635,13 +635,14 @@ def deprecation_warnings(config_tree):
 
     deprecations = {
         'empy:suite.rc': (
-            "'empy:suite.rc' is deprecated."
+            "'rose-suite.conf[empy:suite.rc]' is deprecated."
             " Use [template variables] instead."),
         'jinja2:suite.rc': (
-            "'jinja2:suite.rc' is deprecated."
+            "'rose-suite.conf[jinja2:suite.rc]' is deprecated."
             " Use [template variables] instead."),
         'root-dir': (
-            'You have set "root-dir", which is not supported at '
+            'You have set "rose-suite.conf[root-dir]", '
+            'which is not supported at '
             'Cylc 8. Use `[install] symlink dirs` in global.cylc '
             'instead.')
     }

@@ -135,7 +135,8 @@ def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
     (tmp_path / 'rose-suite.conf').write_text(root_dir_config)
     get_rose_vars(srcdir=tmp_path)
     assert caplog.records[0].msg == (
-        'You have set "root-dir", which is not supported at Cylc 8. Use '
+        'You have set "rose-suite.conf[root-dir]", '
+        'which is not supported at Cylc 8. Use '
         '`[install] symlink dirs` in global.cylc instead.'
     )
 
