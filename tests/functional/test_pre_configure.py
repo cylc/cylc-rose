@@ -27,6 +27,7 @@ from shlex import split
 from subprocess import run
 from types import SimpleNamespace
 
+import cylc
 from cylc.rose.entry_points import get_rose_vars, NotARoseSuiteException
 
 
@@ -134,24 +135,37 @@ def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
     """Test using unsupported root-dir config raises error."""
     (tmp_path / 'rose-suite.conf').write_text(root_dir_config)
     get_rose_vars(srcdir=tmp_path)
-    assert caplog.records[0].msg == (
-        'You have set "root-dir", which is not supported at Cylc 8. Use '
-        '`[install] symlink dirs` in global.cylc instead.'
-    )
+    msg = 'rose-suite.conf[root-dir]'
+    assert msg in caplog.records[0].msg
 
 
+@pytest.mark.parametrize(
+    'compat_mode',
+    [
+        pytest.param(True, id='cylc-back-compat-mode'),
+        pytest.param(False, id='no-cylc-back-compat-mode')
+    ]
+)
 @pytest.mark.parametrize(
     'rose_config', [
         '[empy:suite.rc]',
         '[jinja2:suite.rc]'
     ]
 )
-def test_warn_if_old_templating_set(rose_config, tmp_path, caplog):
+def test_warn_if_old_templating_set(
+    compat_mode, rose_config, tmp_path, caplog, monkeypatch
+):
     """Test using unsupported root-dir config raises error."""
+    monkeypatch.setattr(
+        cylc.rose.utilities.flags, 'cylc7_back_compat', compat_mode
+    )
     (tmp_path / 'rose-suite.conf').write_text(rose_config)
     get_rose_vars(srcdir=tmp_path)
     msg = "is deprecated. Use [template variables]"
-    assert msg in caplog.records[0].message
+    if compat_mode:
+        assert not caplog.records
+    else:
+        assert msg in caplog.records[0].message
 
 
 @pytest.mark.parametrize(

@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
+import cylc.flow.flags as flags
 from cylc.rose.jinja2_parser import Parser, patch_jinja2_leading_zeros
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.isodatetime.datetimeoper import DateTimeOperator
@@ -635,17 +636,19 @@ def deprecation_warnings(config_tree):
 
     deprecations = {
         'empy:suite.rc': (
-            "'empy:suite.rc' is deprecated."
+            "'rose-suite.conf[empy:suite.rc]' is deprecated."
             " Use [template variables] instead."),
         'jinja2:suite.rc': (
-            "'jinja2:suite.rc' is deprecated."
+            "'rose-suite.conf[jinja2:suite.rc]' is deprecated."
             " Use [template variables] instead."),
         'root-dir': (
-            'You have set "root-dir", which is not supported at '
+            'You have set "rose-suite.conf[root-dir]", '
+            'which is not supported at '
             'Cylc 8. Use `[install] symlink dirs` in global.cylc '
             'instead.')
     }
-    for string in list(config_tree.node):
-        for deprecation in deprecations.keys():
-            if deprecation in string:
-                LOG.warning(deprecations[deprecation])
+    if not flags.cylc7_back_compat:
+        for string in list(config_tree.node):
+            for deprecation in deprecations.keys():
+                if deprecation in string:
+                    LOG.warning(deprecations[deprecation])
