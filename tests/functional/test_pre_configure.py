@@ -135,11 +135,8 @@ def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
     """Test using unsupported root-dir config raises error."""
     (tmp_path / 'rose-suite.conf').write_text(root_dir_config)
     get_rose_vars(srcdir=tmp_path)
-    assert caplog.records[0].msg == (
-        'You have set "rose-suite.conf[root-dir]", '
-        'which is not supported at Cylc 8. Use '
-        '`global.cylc[install][symlink dirs]` instead.'
-    )
+    msg = 'rose-suite.conf[root-dir]'
+    assert msg in caplog.records[0].msg
 
 
 @pytest.mark.parametrize(
@@ -160,7 +157,7 @@ def test_warn_if_old_templating_set(
 ):
     """Test using unsupported root-dir config raises error."""
     monkeypatch.setattr(
-        cylc.rose.utilities, 'cylc7_back_compat', compat_mode
+        cylc.rose.utilities.flags, 'cylc7_back_compat', compat_mode
     )
     (tmp_path / 'rose-suite.conf').write_text(rose_config)
     get_rose_vars(srcdir=tmp_path)
