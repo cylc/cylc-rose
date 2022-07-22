@@ -142,14 +142,17 @@ def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
 @pytest.mark.parametrize(
     'compat_mode',
     [
-        pytest.param(True, id='cylc-back-compat-mode'),
-        pytest.param(False, id='no-cylc-back-compat-mode')
+        pytest.param(True, id='back-compat'),
+        pytest.param(False, id='no-back-compat')
     ]
 )
 @pytest.mark.parametrize(
     'rose_config', [
-        '[empy:suite.rc]',
-        '[jinja2:suite.rc]'
+        'empy:suite.rc',
+        'jinja2:suite.rc',
+        'empy:flow.cylc',
+        'jinja2:flow.cylc',
+        'JinjA2:flOw.cylC',
     ]
 )
 def test_warn_if_old_templating_set(
@@ -159,9 +162,9 @@ def test_warn_if_old_templating_set(
     monkeypatch.setattr(
         cylc.rose.utilities.flags, 'cylc7_back_compat', compat_mode
     )
-    (tmp_path / 'rose-suite.conf').write_text(rose_config)
+    (tmp_path / 'rose-suite.conf').write_text(f'[{rose_config}]')
     get_rose_vars(srcdir=tmp_path)
-    msg = "is deprecated. Use [template variables]"
+    msg = "Use [template variables]"
     if compat_mode:
         assert not caplog.records
     else:
