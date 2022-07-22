@@ -641,6 +641,12 @@ def deprecation_warnings(config_tree):
         'jinja2:suite.rc': (
             "'rose-suite.conf[jinja2:suite.rc]' is deprecated."
             " Use [template variables] instead."),
+        'empy:flow.cylc': (
+            "'rose-suite.conf[empy:flow.cylc]' is not used by Cylc."
+            " Use [template variables] instead."),
+        'jinja2:flow.cylc': (
+            "'rose-suite.conf[jinja2:flow.cylc]' is not used by Cylc."
+            " Use [template variables] instead."),
         'root-dir': (
             'You have set "rose-suite.conf[root-dir]", '
             'which is not supported at '
@@ -650,5 +656,5 @@ def deprecation_warnings(config_tree):
     if not flags.cylc7_back_compat:
         for string in list(config_tree.node):
             for deprecation in deprecations.keys():
-                if deprecation in string:
+                if deprecation in string.lower():
                     LOG.warning(deprecations[deprecation])
