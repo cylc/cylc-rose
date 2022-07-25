@@ -33,6 +33,9 @@ from cylc.rose.platform_utils import (
 
 from cylc.flow.cfgspec.globalcfg import SPEC
 from cylc.flow.parsec.config import ParsecConfig
+from cylc.flow.pathutil import (
+    get_workflow_run_pub_db_path
+)
 
 MOCK_GLBL_CFG = (
     'cylc.flow.platforms.glbl_cfg',
@@ -105,7 +108,7 @@ def fake_flow():
     """Set up enough of an installed flow for tests in module.
 
     1. Set up an installed ``flow.cylc`` config file.
-    2. Set up a fake flow database in ``.service/db``.
+    2. Set up a fake flow database in ``log/db``.
 
     Returns:
         flow_name: Name of fake workflow.
@@ -141,8 +144,8 @@ def fake_flow():
     """)
 
     # Set up a database
-    service_dir = flow_path / '.service'
-    service_dir.mkdir(parents=True)
+    db_file = get_workflow_run_pub_db_path(flow_name)
+    Path(db_file).parent.mkdir()
     db_script = (
         b"CREATE TABLE task_jobs("
         b"cycle TEXT, name TEXT, submit_num INTEGER, platform_name TEXT);\n"
@@ -156,8 +159,8 @@ def fake_flow():
         b"    VALUES ('2', 'baz', 1, 'milk');\n"
     )
     run(
-        ['sqlite3', f'{str(service_dir / "db")}'],
-        input=db_script
+        ['sqlite3', db_file],
+        input=db_script,
     )
 
     yield flow_name, flow_path
