@@ -19,11 +19,13 @@
 """
 import subprocess
 from optparse import Values
-from pathlib import Path
+import sqlite3
+from time import sleep
 from typing import Any, Dict
 
 from cylc.flow.config import WorkflowConfig
 from cylc.flow.id_cli import parse_id
+from cylc.flow.pathutil import get_workflow_run_pub_db_path
 from cylc.flow.platforms import (
     HOST_REC_COMMAND,
     get_platform,
@@ -90,25 +92,51 @@ def get_platforms_from_task_jobs(
     Returns:
         Platform Dictionary.
     """
-    _, _, flow_file = parse_id(flow, constraint='workflows', src=True)
-    dbfilepath = Path(flow_file).parent / '.service/db'
-    dao = CylcWorkflowDAO(dbfilepath)
-    task_platform_map: Dict = {}
-    stmt = (
-        'SELECT "name", "platform_name", "submit_num" '
-        'FROM task_jobs WHERE cycle=?'
+    parse_id(flow, constraint='workflows', src=True)
+    dao = CylcWorkflowDAO(
+        # NOTE: use the public database (only the scheduler thread/process
+        # should access the private database)
+        get_workflow_run_pub_db_path(flow),
+        is_public=True,
     )
-    for row in dao.connect().execute(stmt, [cyclepoint]):
-        task, platform_n, submit_num = row
-        platform = get_platform(platform_n)
-        if (
-            (
-                task in task_platform_map
-                and task_platform_map[task][0] < submit_num
-            )
-            or task not in task_platform_map
-        ):
-            task_platform_map[task] = [submit_num, platform]
+    task_platform_map: Dict = {}
+    stmt = '''
+        SELECT
+            name, platform_name, submit_num
+        FROM
+            task_jobs
+        WHERE
+            cycle=?
+    '''
+    db_exc: Exception
+    try:
+        for _try in range(10):  # connect/execute retries
+            try:
+                for row in dao.connect().execute(stmt, [cyclepoint]):
+                    task, platform_n, submit_num = row
+                    platform = get_platform(platform_n)
+                    if (
+                        (
+                            task in task_platform_map
+                            and task_platform_map[task][0] < submit_num
+                        )
+                        or task not in task_platform_map
+                    ):
+                        task_platform_map[task] = [submit_num, platform]
+                break
+            except sqlite3.OperationalError as exc:
+                db_exc = exc
+                # sleep between tries to give time for other reads to clear or
+                # for the scheduler to copy the private DB over the public one
+                # (done in the event of DB locking)
+                sleep(0.1)
+        else:
+            # we've run out of retries, raise the error from the last retry
+            raise db_exc
+    finally:
+        # NOTE: only tries to close if the connection was successfully
+        # opened
+        dao.close()
 
     # get rid of the submit number, we don't want it
     task_platform_map = {

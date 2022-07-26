@@ -117,7 +117,7 @@ def test_process(tmp_path, srcdir, envvars, args):
         envvars = os.environ.update(envvars)
     srcdir = Path(__file__).parent / srcdir
     result = run(
-        ['cylc', 'view', '-p', '--stdout', str(srcdir)],
+        ['cylc', 'view', '-p', str(srcdir)],
         capture_output=True,
         env=envvars
     ).stdout.decode()
