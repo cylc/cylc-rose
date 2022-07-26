@@ -20,10 +20,10 @@
 
 import os
 import pytest
-
 from pathlib import Path
 from shutil import rmtree
 from subprocess import run
+import sqlite3
 from uuid import uuid4
 
 from cylc.rose.platform_utils import (
@@ -224,5 +224,53 @@ def test_get_platforms_from_task_jobs(
     """
     mock_glbl_cfg(*MOCK_GLBL_CFG)
     flow_name, flow_path = fake_flow
+    task_platforms_map = get_platforms_from_task_jobs(flow_name, cycle)
+    assert task_platforms_map[task]['name'] == expect
+
+
+def test_get_platforms_db_retry(
+    mock_glbl_cfg, fake_flow, monkeypatch
+):
+    """It should retry if a DB connection/operation fails.
+
+    The public DB can get "locked" as a result of something trying to read from
+    it whilst the scheduler is trying to write to it.
+
+    In the event of error we should wait a little and retry the read. The
+    scheduler will overwrite the public DB to resolve the lock given enough
+    time.
+
+    See https://github.com/cylc/cylc-rose/pull/155
+    """
+    mock_glbl_cfg(*MOCK_GLBL_CFG)
+    flow_name, flow_path = fake_flow
+    task, cycle, expect = ('bar', '1', 'dairy')
+
+    # make the workflow connection raise an error
+    def opp_err(*args, **kwargs):
+        raise sqlite3.OperationalError
+
+    monkeypatch.setattr(
+        'cylc.rose.platform_utils.CylcWorkflowDAO.connect',
+        opp_err,
+    )
+
+    # get_platforms_from_task_jobs should fail after exhausting its retries
+    # because it cannot connect to the database
+    with pytest.raises(sqlite3.OperationalError):
+        get_platforms_from_task_jobs(flow_name, cycle)
+
+    # now we'll allow the second retry to succeed by undoing the patch
+    # (time.sleep is called between retries)
+    def undo():
+        monkeypatch.undo(),
+        mock_glbl_cfg(*MOCK_GLBL_CFG)
+
+    monkeypatch.setattr(
+        'cylc.rose.platform_utils.sleep',
+        undo(),
+    )
+
+    # the first attempt will fail, however, the second attempt should succeed
     task_platforms_map = get_platforms_from_task_jobs(flow_name, cycle)
     assert task_platforms_map[task]['name'] == expect

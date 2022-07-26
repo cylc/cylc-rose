@@ -9,6 +9,10 @@ Support integers with leading zeros (e.g `001`) to back support Rose
 configurations for use with cylc-flow>=8.0rc4 which uses Jinja2 v3 which
 no longer supports this.
 
+[#155](https://github.com/cylc/cylc-rose/pull/155) -
+Use the public rather than private database for platform lookups. This resolves
+a database locking issue with the `rose_prune` built-in app.
+
 ## __cylc-rose-1.0.3 (<span actions:bind='release-date'>Released 2022-05-20</span>)__
 
 ### Fixes
