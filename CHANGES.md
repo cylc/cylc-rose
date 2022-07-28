@@ -1,6 +1,6 @@
 # Selected Cylc-Rose Changes
 
-## __cylc-rose-1.? (<span actions:bind='release-date'>Pending</span>)__
+## __cylc-rose-1.? (<span actions:bind='release-date'>Released 2022-07-28</span>)__
 
 ### Fixes
 
