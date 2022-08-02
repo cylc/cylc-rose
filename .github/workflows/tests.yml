@@ -20,8 +20,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 2  # required by codecov
 
       - name: Configure Python
         uses: actions/setup-python@v2
@@ -34,6 +32,7 @@ jobs:
           pip install 'metomi-rose @ git+https://github.com/metomi/rose@master'
 
       - name: Install cylc-rose
+        # need editable install for coverage
         run: |
           pip install -e .[all]
 
@@ -96,5 +95,5 @@ jobs:
       - name: Codecov upload
         uses: codecov/codecov-action@v2
         with:
-          name: '"${{ github.workflow }} py-${{ matrix.python-version }}"'
-          fail_ci_if_error: true
+          name: '${{ github.workflow }} py-${{ matrix.python-version }}'
+          fail_ci_if_error: false
