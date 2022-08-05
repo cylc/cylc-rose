@@ -19,10 +19,10 @@ jobs:
       PYTEST_ADDOPTS: --cov --cov-append --color=yes
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Configure Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -44,7 +44,7 @@ jobs:
         run: mypy
 
       - name: Checkout FCM
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: ${{ github.event.inputs.fcm_repo || 'metomi/fcm' }}
           ref: ${{ github.event.inputs.fcm_ref || 'master' }}
@@ -93,7 +93,7 @@ jobs:
           coverage report
 
       - name: Codecov upload
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           name: '${{ github.workflow }} py-${{ matrix.python-version }}'
           fail_ci_if_error: false
