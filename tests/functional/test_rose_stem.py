@@ -244,6 +244,7 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig):
             **setup_stem_repo
         }
     yield _inner_fn
+    shutil.rmtree(setup_stem_repo['suite_install_dir'])
 
 
 @pytest.fixture(scope='class')
