@@ -458,14 +458,18 @@ def merge_opts(config, opt_conf_keys):
         'aleph gimmel'
 
         Merge options from defines and environment.
-        >>> import os; os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = 'bet'
-        >>> merge_opts(conf, '')
+        >>> from pytest import MonkeyPatch
+        >>> with MonkeyPatch.context() as mp:
+        ...     mp.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'bet')
+        ...     merge_opts(conf, '')
         'aleph bet'
 
         Merge all three options.
-        >>> merge_opts(conf, 'gimmel')
+        Merge all three options.
+        >>> with MonkeyPatch.context() as mp:
+        ...     mp.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'bet')
+        ...     merge_opts(conf, 'gimmel')
         'aleph bet gimmel'
-        >>> os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = ''
     """
     all_opt_conf_keys = []
     if 'opts' in config:
