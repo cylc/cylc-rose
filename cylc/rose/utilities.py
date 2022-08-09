@@ -465,6 +465,7 @@ def merge_opts(config, opt_conf_keys):
         Merge all three options.
         >>> merge_opts(conf, 'gimmel')
         'aleph bet gimmel'
+        >>> os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = ''
     """
     all_opt_conf_keys = []
     if 'opts' in config:
