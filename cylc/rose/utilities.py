@@ -470,7 +470,6 @@ def merge_opts(config, opt_conf_keys):
         ...     mp.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'bet')
         ...     merge_opts(conf, 'gimmel')
         'aleph bet gimmel'
-        >>> os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = ''
     """
     all_opt_conf_keys = []
     if 'opts' in config:
