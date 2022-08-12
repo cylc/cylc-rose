@@ -97,7 +97,7 @@ def monkeymodule():
 
 
 @pytest.fixture(scope='module')
-def setup_stem_repo(tmp_path_factory, monkeymodule):
+def setup_stem_repo(tmp_path_factory, monkeymodule, request):
     """Setup a Rose Stem Repository for the tests.
 
     creates the following repo structure:
@@ -172,7 +172,8 @@ def setup_stem_repo(tmp_path_factory, monkeymodule):
         'suitename': suitename,
         'suite_install_dir': suite_install_dir
     }
-    shutil.rmtree(suite_install_dir)
+    if not request.session.testsfailed:
+        shutil.rmtree(suite_install_dir)
 
 
 @pytest.fixture(scope='class')
