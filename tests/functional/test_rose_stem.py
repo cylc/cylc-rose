@@ -172,6 +172,7 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
         'suitename': suitename,
         'suite_install_dir': suite_install_dir
     }
+    # Only clean up if all went well.
     if not request.session.testsfailed:
         shutil.rmtree(suite_install_dir)
 
