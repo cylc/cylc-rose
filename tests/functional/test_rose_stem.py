@@ -97,7 +97,7 @@ def monkeymodule():
 
 
 @pytest.fixture(scope='module')
-def setup_stem_repo(tmp_path_factory, monkeymodule):
+def setup_stem_repo(tmp_path_factory, monkeymodule, request):
     """Setup a Rose Stem Repository for the tests.
 
     creates the following repo structure:
@@ -172,6 +172,12 @@ def setup_stem_repo(tmp_path_factory, monkeymodule):
         'suitename': suitename,
         'suite_install_dir': suite_install_dir
     }
+    # Only clean up if all went well.
+    if all([
+        i.outcome == 'passed' or i.outcome == 'skipped'
+        for i in request.node.obj._module_outcomes.values()
+    ]):
+        shutil.rmtree(suite_install_dir)
 
 
 @pytest.fixture(scope='class')
@@ -244,7 +250,6 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig):
             **setup_stem_repo
         }
     yield _inner_fn
-    shutil.rmtree(setup_stem_repo['suite_install_dir'])
 
 
 @pytest.fixture(scope='class')

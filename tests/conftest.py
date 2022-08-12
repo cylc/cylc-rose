@@ -27,3 +27,31 @@ def set_cylc_version():
     mpatch = MonkeyPatch()
     yield mpatch.setenv('CYLC_VERSION', CYLC_VERSION)
     mpatch.undo()
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Expose the result of tests to their fixtures.
+
+    This will add a variable to the "node" object which differs depending on
+    the scope of the test.
+
+    scope=function
+        `_function_outcome` will be set to the result of the test function.
+    scope=module
+        `_module_outcome will be set to a list of all test results in
+        the module.
+
+    https://github.com/pytest-dev/pytest/issues/230#issuecomment-402580536
+
+    """
+    outcome = yield
+    rep = outcome.get_result()
+
+    # scope==function
+    item._function_outcome = rep
+
+    # scope==module
+    _module_outcomes = getattr(item.module, '_module_outcomes', {})
+    _module_outcomes[(item.nodeid, rep.when)] = rep
+    item.module._module_outcomes = _module_outcomes
