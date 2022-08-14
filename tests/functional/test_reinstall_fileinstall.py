@@ -32,7 +32,7 @@ WORKFLOW_SRC = Path(__file__).parent / '14_reinstall_fileinstall'
 
 
 @pytest.fixture(scope='module')
-def fixture_provide_flow(tmp_path_factory):
+def fixture_provide_flow(tmp_path_factory, request):
     """Provide a cylc workflow based on the contents of a folder which can
     be either validated or installed.
     """
@@ -46,8 +46,9 @@ def fixture_provide_flow(tmp_path_factory):
         'flowpath': flowpath,
         'srcpath': srcpath
     }
-    shutil.rmtree(srcpath)
-    shutil.rmtree(flowpath)
+    if not request.session.testsfailed:
+        shutil.rmtree(srcpath)
+        shutil.rmtree(flowpath)
 
 
 def test_install_flow(fixture_provide_flow):

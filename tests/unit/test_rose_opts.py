@@ -59,7 +59,7 @@ def fixture_provide_flow(tmp_path_factory):
 
 
 @pytest.fixture(scope='module')
-def fixture_install_flow(fixture_provide_flow):
+def fixture_install_flow(fixture_provide_flow, request):
     srcpath, datapath, flow_name = fixture_provide_flow
     cmd = shlex.split(
         f'cylc install --workflow-name {flow_name} {str(srcpath)} '
@@ -72,8 +72,8 @@ def fixture_install_flow(fixture_provide_flow):
     destpath = Path(get_workflow_run_dir(flow_name))
 
     yield srcpath, datapath, flow_name, result, destpath
-
-    shutil.rmtree(destpath)
+    if not request.session.testsfailed:
+        shutil.rmtree(destpath)
 
 
 def test_rose_fileinstall_validate(fixture_provide_flow):
