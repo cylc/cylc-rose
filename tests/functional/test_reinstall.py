@@ -53,7 +53,7 @@ def monkeymodule():
 
 
 @pytest.fixture(scope='module')
-def fixture_provide_flow(tmp_path_factory):
+def fixture_provide_flow(tmp_path_factory, request):
     """Provide a cylc workflow based on the contents of a folder which can
     be either validated or installed.
     """
@@ -71,8 +71,9 @@ def fixture_provide_flow(tmp_path_factory):
         'flowpath': flowpath,
         'srcpath': srcpath
     }
-    shutil.rmtree(srcpath)
-    shutil.rmtree(flowpath)
+    if not request.session.testsfailed:
+        shutil.rmtree(srcpath)
+        shutil.rmtree(flowpath)
 
 
 @pytest.fixture(scope='module')
@@ -251,7 +252,7 @@ def test_cylc_reinstall_files2(fixture_reinstall_flow2, file_, expect):
     assert (fpath / file_).read_text() == expect
 
 
-def test_cylc_reinstall_fail_on_clashing_template_vars(tmp_path):
+def test_cylc_reinstall_fail_on_clashing_template_vars(tmp_path, request):
     """If you re-install with a different templating engine in suite.rc
     reinstall should fail.
     """
@@ -282,4 +283,5 @@ def test_cylc_reinstall_fail_on_clashing_template_vars(tmp_path):
         in reinstall.stderr.decode()
     )
     # Clean up run dir:
-    shutil.rmtree(get_workflow_run_dir(test_flow_name))
+    if not request.session.testsfailed:
+        shutil.rmtree(get_workflow_run_dir(test_flow_name))

@@ -58,7 +58,7 @@ def fixture_provide_flow(tmp_path):
 
 
 @pytest.fixture
-def fixture_install_flow(fixture_provide_flow):
+def fixture_install_flow(fixture_provide_flow, request):
     srcpath, datapath, flow_name = fixture_provide_flow
     result = subprocess.run(
         ['cylc', 'install', '--workflow-name', flow_name, f'{str(srcpath)}'],
@@ -67,8 +67,8 @@ def fixture_install_flow(fixture_provide_flow):
     destpath = Path(get_workflow_run_dir(flow_name))
 
     yield srcpath, datapath, flow_name, result, destpath
-
-    shutil.rmtree(destpath)
+    if not request.session.testsfailed:
+        shutil.rmtree(destpath)
 
 
 def test_rose_fileinstall_validate(fixture_provide_flow):
@@ -94,7 +94,7 @@ def test_rose_fileinstall_subfolders(fixture_install_flow):
 
 
 def test_rose_fileinstall_concatenation(fixture_install_flow):
-    """Multiple files concatenated on install (source contained wildcard):
+    """Multiple files concatenated on install(source contained wildcard):
     """
     _, datapath, _, _, destpath = fixture_install_flow
     assert ((destpath / 'runN/data').read_text() ==

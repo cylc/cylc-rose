@@ -173,10 +173,7 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
         'suite_install_dir': suite_install_dir
     }
     # Only clean up if all went well.
-    if all([
-        i.outcome == 'passed' or i.outcome == 'skipped'
-        for i in request.node.obj._module_outcomes.values()
-    ]):
+    if not request.session.testsfailed:
         shutil.rmtree(suite_install_dir)
 
 
