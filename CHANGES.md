@@ -9,6 +9,9 @@ ones in. -->
 
 ### Fixes
 
+[#170](https://github.com/cylc/cylc-rose/pull/170) - Fix support for
+installing workflows using --source.
+
 [#140](https://github.com/cylc/cylc-rose/pull/140) -
 Support integers with leading zeros (e.g `001`) to back support Rose
 configurations for use with cylc-flow>=8.0rc4 which uses Jinja2 v3 which

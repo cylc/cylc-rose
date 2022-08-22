@@ -356,7 +356,6 @@ class StemRunner:
         suitefile = os.path.join(suitedir, "rose-suite.conf")
         if not os.path.isfile(suitefile):
             raise RoseSuiteConfNotFoundException(suitedir)
-        self.opts.suite = suitedir
         self._check_suite_version(suitefile)
         return suitedir
 
@@ -469,27 +468,31 @@ class StemRunner:
 def get_source_opt_from_args(opts, args):
     """Convert sourcedir given as arg or implied by no arg to opts.source.
 
-    Possible outcomes:
-        No args given:
-            Install a rose-stem suite from PWD/rose-stem
-        Relative path given:
-            Install a rose-stem suite from PWD/arg
-        Absolute path given:
-            Install a rose-stem suite from specified abs path.
+    This function replaces Cylc 7 & Rose 2019 logic where users set
+    the workflow source using -C. To keep consistency with other Cylc 8
+    scripts we convert a single arg instead.
+
+    Examples:
+        rose stem:
+            no args, no stem sources, working copy assumed to be pwd/rose-stem
+        rose stem --source somewhere:
+            no args, stem sources - opts.source inferred as
+            sources[0]/rose-stem
+        rose stem location:
+            working copy to be location/rose-stem
 
     Returns:
         Cylc options with source attribute added.
     """
-    if len(args) == 0:
-        # sourcedir not given:
-        return opts
-    elif os.path.isabs(args[-1]):
-        # sourcedir given, and is abspath:
-        opts.source = args[-1]
+    if args:
+        # The arg is eqivelent to rose-stem -C at Rose 2019
+        path = Path(args[0])
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        opts.source = str(path)
     else:
-        # sourcedir given and is not abspath
-        opts.source = str(Path.cwd() / args[-1])
-
+        # Allows us to minimize the changes to the existing Rose Stem logic.
+        opts.source = None
     return opts
 
 
@@ -521,8 +524,9 @@ def main():
     parser.add_option('--quietness', default=0)
     parser.usage = __doc__
 
-    opts, args = parser.parse_args(sys.argv[1:])
     # sliced sys.argv to drop 'rose-stem'
+    opts, args = parser.parse_args(sys.argv[1:])
+
     opts = get_source_opt_from_args(opts, args)
 
     # modify the CLI options to add whatever rose stem would like to add
@@ -532,7 +536,7 @@ def main():
     if hasattr(opts, 'source'):
         cylc_install(parser, opts, opts.source)
     else:
-        cylc_install(parser, opts)
+        cylc_install(parser, opts, Path.cwd() / 'rose-stem')
 
 
 if __name__ == "__main__":

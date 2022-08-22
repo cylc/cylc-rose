@@ -617,3 +617,30 @@ class TestProjectNotInKeywords:
         assert (b'Cannot ascertain project for source tree' in
                 project_not_in_keywords.stderr
                 )
+
+
+class TestFCMFreeRepo:
+    def test_fcm_free_repo(self, tmp_path):
+        """It installs correctly when the first source is a non-fcm repo.
+        """
+        flowname = f"cylc-rose-stem-test-{str(uuid4())[:8]}"
+
+        rose_stem_dir = (
+            tmp_path / flowname / 'rose-stem'
+        )
+        rose_stem_dir.mkdir(parents=True)
+        (rose_stem_dir / 'rose-suite.conf').write_text("ROSE_STEM_VERSION=1")
+        (rose_stem_dir / 'flow.cylc').touch()
+        run_stem = subprocess.run(
+            split(
+                f'rose stem --source=X={rose_stem_dir.parent} ',
+            ),
+            capture_output=True,
+        )
+        try:
+            assert run_stem.returncode == 0
+        except AssertionError as exc:
+            [print(i) for i in run_stem.stderr.decode().split('\n')]
+            raise exc
+        else:
+            subprocess.run(split(f'cylc clean {flowname} -y -q'))

@@ -23,37 +23,50 @@ from cylc.rose.stem import get_source_opt_from_args
 
 
 @pytest.mark.parametrize(
-    'args, expect',
+    'args, opts, expect',
     [
         pytest.param(
             [],
+            {'stem_sources': ['foo']},
             '',
-            id='no-path'
+            id='no-args&sources'
+        ),
+        pytest.param(
+            [],
+            None,
+            '',
+            id='no-args&no-path'
         ),
         pytest.param(
             ['/foo'],
-            '/foo',
-            id='absolute-path'
+            None,
+            None,
+            id='args&absolute-path'
         ),
         pytest.param(
             ['foo'],
-            '{tmp_path}/foo',
-            id='relative-path'
+            None,
+            None,
+            id='args&relative-path'
         ),
     ]
 )
-def test_get_source_opt_from_args(tmp_path, monkeypatch, args, expect):
+def test_get_source_opt_from_args(tmp_path, monkeypatch, args, opts, expect):
     # Basic setup
     monkeypatch.chdir(tmp_path)
-    opts = SimpleNamespace()
+    if opts:
+        opts = SimpleNamespace(**opts)
+    else:
+        opts = SimpleNamespace()
+        opts.stem_sources = []
 
     # Run function
     result = get_source_opt_from_args(opts, args)
-
-    # If an arg is given we are expecting source to be added to the options.
-    # Otherwise options should be returned unchanged.
     if expect:
-        expect = SimpleNamespace(source=expect.format(tmp_path=tmp_path))
+        expect = SimpleNamespace(
+            source=expect.format(tmp_path=tmp_path),
+            stem_sources=[expect.format(tmp_path=tmp_path)]
+        )
         assert result == expect
     else:
         assert result == opts
