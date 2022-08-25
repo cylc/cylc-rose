@@ -485,7 +485,7 @@ def get_source_opt_from_args(opts, args):
         Cylc options with source attribute added.
     """
     if args:
-        # The arg is eqivelent to rose-stem -C at Rose 2019
+        # The arg is equivalent to rose-stem -C at Rose 2019
         path = Path(args[0])
         if not path.is_absolute():
             path = Path.cwd() / path
