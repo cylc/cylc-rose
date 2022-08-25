@@ -129,19 +129,23 @@ def get_rose_vars_from_config_node(config, config_node, environ):
     # For each of the template language sections extract items to a simple
     # dict to be returned.
     if 'env' in config_node.value:
+
         config['env'] = {
             item[0][1]: item[1].value for item in
             config_node.value['env'].walk()
+            if item[1].state == ConfigNode.STATE_NORMAL
         }
     if templating in config_node.value:
         config['template_variables'] = {
             item[0][1]: item[1].value for item in
             config_node.value[templating].walk()
+            if item[1].state == ConfigNode.STATE_NORMAL
         }
     elif 'template variables' in config_node.value:
         config['template_variables'] = {
             item[0][1]: item[1].value for item in
             config_node.value['template variables'].walk()
+            if item[1].state == ConfigNode.STATE_NORMAL
         }
 
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
