@@ -64,6 +64,7 @@ Jinja2 Variables
 
 from ansimarkup import parse as cparse
 from contextlib import suppress
+from optparse import OptionGroup
 import os
 from pathlib import Path
 import re
@@ -528,24 +529,6 @@ def main():
     # use the cylc install option parser
     parser = get_option_parser()
 
-    # TODO: add any rose stem specific CLI args that might exist
-    # On inspection of rose/lib/python/rose/opt_parse.py it turns out that
-    # opts.group is stored by the --task option.
-    parser.add_option(
-        "--task", "--group",
-        help="Specifies a source tree to include in a suite.",
-        action="append",
-        metavar="PATH/TO/FLOW",
-        default=[],
-        dest="stem_groups")
-    parser.add_option(
-        "--source",
-        help="Specifies a source tree to include in a suite.",
-        action="append",
-        metavar="PATH/TO/FLOW",
-        default=[],
-        dest="stem_sources")
-
     # Hard-set for now, but could be set based upon cylc verbosity levels?
     parser.add_option(
         '--verbosity', '-v', default=1,
@@ -555,6 +538,42 @@ def main():
         '--quietness', '-q', default=0,
         help='Decrease the verbosity of logging.'
     )
+
+    # TODO: add any rose stem specific CLI args that might exist
+    # On inspection of rose/lib/python/rose/opt_parse.py it turns out that
+    # opts.group is stored by the --task option.
+    rose_stem_options = OptionGroup(parser, 'Rose Stem Specific Options')
+    rose_stem_options.add_option(
+        "--task", "--group", "-t", "-g",
+        help=(
+            "Specify a group name to run. Additional groups can be specified"
+            "with further `--group` arguments. The suite will then convert the"
+            "groups into a series of tasks to run."
+        ),
+        action="append",
+        metavar="PATH/TO/FLOW",
+        default=[],
+        dest="stem_groups")
+    rose_stem_options.add_option(
+        "--source", '-s',
+        help=(
+            "Specify a source tree to include in a rose-stem suite. The first"
+            "source tree must be a working copy as the location of the suite"
+            "and fcm-make config files are taken from it. Further source"
+            "trees can be added with additional `--source` arguments. "
+            "The project which is associated with a given source is normally "
+            "automatically determined using FCM, however the project can "
+            "be specified by putting the project name as the first part of "
+            "this argument separated by an equals sign as in the third "
+            "example above. Defaults to `.` if not specified."
+        ),
+        action="append",
+        metavar="PATH/TO/FLOW",
+        default=[],
+        dest="stem_sources")
+
+    parser.add_option_group(rose_stem_options)
+
     parser.usage = __doc__
 
     opts, args = parser.parse_args(sys.argv[1:])
