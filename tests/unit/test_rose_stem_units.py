@@ -27,7 +27,7 @@ from cylc.rose.stem import get_source_opt_from_args
     [
         pytest.param(
             [],
-            '',
+            None,
             id='no-path'
         ),
         pytest.param(
@@ -43,17 +43,14 @@ from cylc.rose.stem import get_source_opt_from_args
     ]
 )
 def test_get_source_opt_from_args(tmp_path, monkeypatch, args, expect):
-    # Basic setup
+    """It converts Rose 2 CLI features to options usable by Rose Stem
+    """
     monkeypatch.chdir(tmp_path)
     opts = SimpleNamespace()
 
-    # Run function
-    result = get_source_opt_from_args(opts, args)
+    result = get_source_opt_from_args(opts, args).source
 
-    # If an arg is given we are expecting source to be added to the options.
-    # Otherwise options should be returned unchanged.
-    if expect:
-        expect = SimpleNamespace(source=expect.format(tmp_path=tmp_path))
+    if expect is None:
         assert result == expect
     else:
-        assert result == opts
+        assert result == expect.format(tmp_path=str(tmp_path))

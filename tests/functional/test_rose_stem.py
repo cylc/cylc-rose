@@ -21,6 +21,8 @@
 Tests for cylc.rose.stem
 ========================
 
+These tests are based on the Rose 2019 tests for Rose Stem.
+
 Structure
 ---------
 
@@ -173,7 +175,10 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
         'suite_install_dir': suite_install_dir
     }
     # Only clean up if all went well.
-    if not request.session.testsfailed:
+    if (
+        not request.session.testsfailed
+        and Path(suite_install_dir).exists()
+    ):
         shutil.rmtree(suite_install_dir)
 
 
@@ -613,7 +618,6 @@ class TestProjectNotInKeywords:
     def test_project_not_in_keywords(self, project_not_in_keywords):
         """test for successful execution with site/user configuration
         """
-        assert project_not_in_keywords.returncode == 1
-        assert (b'Cannot ascertain project for source tree' in
-                project_not_in_keywords.stderr
-                )
+        assert project_not_in_keywords.returncode == 0
+        stderr = project_not_in_keywords.stderr.decode()
+        assert 'Cannot ascertain project for source tree' in stderr
