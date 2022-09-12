@@ -529,16 +529,6 @@ def main():
     # use the cylc install option parser
     parser = get_option_parser()
 
-    # Hard-set for now, but could be set based upon cylc verbosity levels?
-    parser.add_option(
-        '--verbosity', '-v', default=1,
-        help='Increase the verbosity of logging.'
-    )
-    parser.add_option(
-        '--quietness', '-q', default=0,
-        help='Decrease the verbosity of logging.'
-    )
-
     # TODO: add any rose stem specific CLI args that might exist
     # On inspection of rose/lib/python/rose/opt_parse.py it turns out that
     # opts.group is stored by the --task option.
@@ -579,6 +569,11 @@ def main():
     opts, args = parser.parse_args(sys.argv[1:])
     # sliced sys.argv to drop 'rose-stem'
     opts = get_source_opt_from_args(opts, args)
+
+    # Verbosity is set using the Cylc options which decrement and increment
+    # verbosity as part of the parser, but rose needs opts.quietness too, so
+    # hard set it.
+    opts.quietness = 0
 
     try:
         # modify the CLI options to add whatever rose stem would like to add
