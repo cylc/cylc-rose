@@ -30,6 +30,9 @@ a database locking issue with the `rose_prune` built-in app.
 
 ### Fixes
 
+[#172](https://github.com/cylc/cylc-rose/pull/172) - Allow getting a workflow
+name when source is not an SVN repo.
+
 [#139](https://github.com/cylc/cylc-rose/pull/139) - Make `rose stem` command
 work correctly with changes made to `cylc install` in
 [cylc-flow PR #4823](https://github.com/cylc/cylc-flow/pull/4823)

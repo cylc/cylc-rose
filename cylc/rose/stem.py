@@ -23,25 +23,54 @@ Install a rose-stem suite using cylc install.
 
 To run a rose-stem suite use "cylc play".
 
-Looks for a suite to install either in $PWD/rose-stem, or in a specified
-location - e.g:
+Install a suitable suite with a specified set of source tree(s).
 
-# Install a rose-stem suite from PWD/rose-stem
-$ rose stem
+Default values of some of these settings are suite-dependent, specified
+in the `rose-suite.conf` file.
 
-# Install a rose-stem suite from PWD/relative-path.
-$ rose stem relative-path
+Examples
 
-# Install a rose-stem suite from specified abs path.
-$ rose stem /absolute/path
+    rose stem --group=developer
+    rose stem --source=/path/to/source --source=/other/source --group=mygroup
+    rose stem --source=foo=/path/to/source --source=bar=fcm:bar_tr@head
+
+Jinja2 Variables
+
+    Note that `<project>` refers to the FCM keyword name of the repository in
+    upper case.
+
+    HOST_SOURCE_<project>
+        The complete list of source trees for a given project. Working copies
+        in this list have their hostname prefixed, e.g. `host:/path/wc`.
+    HOST_SOURCE_<project>_BASE
+        The base of the project specified on the command line. This is
+        intended to specify the location of `fcm-make` config files. Working
+        copies in this list have their hostname prefixed.
+    RUN_NAMES
+        A list of groups to run in the rose-stem suite.
+    SOURCE_<project>
+        The complete list of source trees for a given project. Unlike the
+        `HOST_` variable of similar name, paths to working copies do NOT
+        include the host name.
+    SOURCE_<project>_BASE
+        The base of the project specified on the command line. This is
+        intended to specify the location of `fcm-make` config files. Unlike
+        the `HOST_` variable of similar name, paths to working copies do NOT
+        include the host name.
+    SOURCE_<project>_REV
+        The revision of the project specified on the command line. This
+        is intended to specify the revision of `fcm-make` config files.
 """
 
+from ansimarkup import parse as cparse
 from contextlib import suppress
+from optparse import OptionGroup
 import os
 from pathlib import Path
 import re
 import sys
 
+from cylc.flow.exceptions import CylcError
 from cylc.flow.scripts.install import (
     get_option_parser,
     install as cylc_install
@@ -55,6 +84,7 @@ from metomi.rose.reporter import Reporter, Event
 from metomi.rose.resource import ResourceLocator
 
 
+EXC_EXIT = cparse('<red><bold>{name}: </bold>{exc}</red>')
 DEFAULT_TEST_DIR = 'rose-stem'
 ROSE_STEM_VERSION = 1
 SUITE_RC_PREFIX = '[jinja2:suite.rc]'
@@ -96,7 +126,7 @@ class NameSetEvent(Event):
     __str__ = __repr__
 
 
-class ProjectNotFoundException(Exception):
+class ProjectNotFoundException(CylcError):
 
     """Exception class when unable to determine project a source belongs to."""
 
@@ -482,6 +512,7 @@ def get_source_opt_from_args(opts, args):
     """
     if len(args) == 0:
         # sourcedir not given:
+        opts.source = None
         return opts
     elif os.path.isabs(args[-1]):
         # sourcedir given, and is abspath:
@@ -501,38 +532,69 @@ def main():
     # TODO: add any rose stem specific CLI args that might exist
     # On inspection of rose/lib/python/rose/opt_parse.py it turns out that
     # opts.group is stored by the --task option.
-    parser.add_option(
-        "--task", "--group",
-        help="Specifies a source tree to include in a suite.",
+    rose_stem_options = OptionGroup(parser, 'Rose Stem Specific Options')
+    rose_stem_options.add_option(
+        "--task", "--group", "-t", "-g",
+        help=(
+            "Specify a group name to run. Additional groups can be specified"
+            "with further `--group` arguments. The suite will then convert the"
+            "groups into a series of tasks to run."
+        ),
         action="append",
         metavar="PATH/TO/FLOW",
         default=[],
         dest="stem_groups")
-    parser.add_option(
-        "--source",
-        help="Specifies a source tree to include in a suite.",
+    rose_stem_options.add_option(
+        "--source", '-s',
+        help=(
+            "Specify a source tree to include in a rose-stem suite. The first"
+            "source tree must be a working copy as the location of the suite"
+            "and fcm-make config files are taken from it. Further source"
+            "trees can be added with additional `--source` arguments. "
+            "The project which is associated with a given source is normally "
+            "automatically determined using FCM, however the project can "
+            "be specified by putting the project name as the first part of "
+            "this argument separated by an equals sign as in the third "
+            "example above. Defaults to `.` if not specified."
+        ),
         action="append",
         metavar="PATH/TO/FLOW",
         default=[],
         dest="stem_sources")
 
-    # Hard-set for now, but could be set based upon cylc verbosity levels?
-    parser.add_option('--verbosity', default=1)
-    parser.add_option('--quietness', default=0)
+    parser.add_option_group(rose_stem_options)
+
     parser.usage = __doc__
 
     opts, args = parser.parse_args(sys.argv[1:])
     # sliced sys.argv to drop 'rose-stem'
     opts = get_source_opt_from_args(opts, args)
 
-    # modify the CLI options to add whatever rose stem would like to add
-    opts = StemRunner(opts).process()
+    # Verbosity is set using the Cylc options which decrement and increment
+    # verbosity as part of the parser, but rose needs opts.quietness too, so
+    # hard set it.
+    opts.quietness = 0
 
-    # call cylc install
-    if hasattr(opts, 'source'):
-        cylc_install(parser, opts, opts.source)
-    else:
-        cylc_install(parser, opts)
+    try:
+        # modify the CLI options to add whatever rose stem would like to add
+        opts = StemRunner(opts).process()
+
+        # call cylc install
+        if hasattr(opts, 'source'):
+            cylc_install(parser, opts, opts.source)
+        else:
+            cylc_install(parser, opts)
+
+    except CylcError as exc:
+        if opts.verbosity > 1:
+            raise exc
+        print(
+            EXC_EXIT.format(
+                name=exc.__class__.__name__,
+                exc=exc
+            ),
+            file=sys.stderr
+        )
 
 
 if __name__ == "__main__":
