@@ -227,18 +227,22 @@ class StemRunner:
 
     def __init__(self, opts, reporter=None, popen=None, fs_util=None):
         self.opts = opts
+
         if reporter is None:
             self.reporter = Reporter(opts.verbosity - opts.quietness)
         else:
             self.reporter = reporter
+
         if popen is None:
             self.popen = RosePopener(event_handler=self.reporter)
         else:
             self.popen = popen
+
         if fs_util is None:
             self.fs_util = FileSystemUtil(event_handler=self.reporter)
         else:
             self.fs_util = fs_util
+
         self.host_selector = HostSelector(event_handler=self.reporter,
                                           popen=self.popen)
 
