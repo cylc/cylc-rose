@@ -17,27 +17,23 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-"""rose stem [path]
+"""rose stem [options] [path]
 
-Install a rose-stem suite using cylc install.
+Install a rose stem workflow with a specified set of source tree(s).
+This command acts as a wrapper to "cylc install" by defining a number of
+additional Jinja2 variables.
 
-To run a rose-stem suite use "cylc play".
-
-Install a suitable suite with a specified set of source tree(s).
-
-Default values of some of these settings are suite-dependent, specified
-in the `rose-suite.conf` file.
-
-Examples
-
-    rose stem --group=developer
-    rose stem --source=/path/to/source --source=/other/source --group=mygroup
-    rose stem --source=foo=/path/to/source --source=bar=fcm:bar_tr@head
+The path to the workflow source directory can be specified using PATH.
+Otherwise it must be provided in a directory named
+"rose-stem" in the first source tree.
 
 Jinja2 Variables
 
     Note that `<project>` refers to the FCM keyword name of the repository in
     upper case.
+
+    Default values of some of these settings are suite-dependent, specified
+    in the `rose-suite.conf` file.
 
     HOST_SOURCE_<project>
         The complete list of source trees for a given project. Working copies
@@ -60,6 +56,12 @@ Jinja2 Variables
     SOURCE_<project>_REV
         The revision of the project specified on the command line. This
         is intended to specify the revision of `fcm-make` config files.
+
+Usage examples
+    rose stem --group=developer
+    rose stem --source=/path/to/source --source=/other/source --group=mygroup
+    rose stem --source=foo=/path/to/source --source=bar=fcm:bar_tr@head
+    rose stem --source=A=
 """
 
 from ansimarkup import parse as cparse
@@ -534,28 +536,28 @@ def main():
     # opts.group is stored by the --task option.
     rose_stem_options = OptionGroup(parser, 'Rose Stem Specific Options')
     rose_stem_options.add_option(
-        "--task", "--group", "-t", "-g",
+        "--task", "--group", '-t', '-g',
         help=(
-            "Specify a group name to run. Additional groups can be specified"
-            "with further `--group` arguments. The suite will then convert the"
-            "groups into a series of tasks to run."
+            "Specify a group of tasks to run. "
+            "Additional groups can be "
+            "specified with further `--group` arguments. "
+            "Rose stem adds group names to the RUN_NAMES template variable "
+            "which a workflow can use to enable groups of tasks."
         ),
         action="append",
         metavar="PATH/TO/FLOW",
         default=[],
         dest="stem_groups")
     rose_stem_options.add_option(
-        "--source", '-s',
+        "--source", "-s",
         help=(
-            "Specify a source tree to include in a rose-stem suite. The first"
-            "source tree must be a working copy as the location of the suite"
-            "and fcm-make config files are taken from it. Further source"
-            "trees can be added with additional `--source` arguments. "
-            "The project which is associated with a given source is normally "
-            "automatically determined using FCM, however the project can "
-            "be specified by putting the project name as the first part of "
-            "this argument separated by an equals sign as in the third "
-            "example above. Defaults to `.` if not specified."
+            "Specify a source tree to include in a rose-stem suite. "
+            "Defaults to \".\" if unspecified. "
+            "You can use --source more than once to "
+            "specify any number of sources. "
+            "The first --source argument must be a working "
+            "copy which should contain a workflow definition "
+            "in the rose-stem subdirectory"
         ),
         action="append",
         metavar="PATH/TO/FLOW",
