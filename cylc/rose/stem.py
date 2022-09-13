@@ -153,7 +153,9 @@ class RoseStemVersionException(Exception):
     def __init__(self, version):
         Exception.__init__(self, version)
         if version is None:
-            self.suite_version = "not rose-stem compatible"
+            self.suite_version = (
+                "does not have ROSE_VERSION set in the rose-suite.conf"
+            )
         else:
             self.suite_version = "at version %s" % (version)
 
@@ -225,24 +227,32 @@ class StemRunner:
 
     def __init__(self, opts, reporter=None, popen=None, fs_util=None):
         self.opts = opts
+
         if reporter is None:
             self.reporter = Reporter(opts.verbosity - opts.quietness)
         else:
             self.reporter = reporter
+
         if popen is None:
             self.popen = RosePopener(event_handler=self.reporter)
         else:
             self.popen = popen
+
         if fs_util is None:
             self.fs_util = FileSystemUtil(event_handler=self.reporter)
         else:
             self.fs_util = fs_util
+
         self.host_selector = HostSelector(event_handler=self.reporter,
                                           popen=self.popen)
 
     def _add_define_option(self, var, val):
-        """Add a define option passed to the SuiteRunner."""
+        """Add a define option passed to the SuiteRunner.
 
+        Args:
+            var: Name of variable to set
+            val: Value of variable to set
+        """
         if self.opts.defines:
             self.opts.defines.append(SUITE_RC_PREFIX + var + '=' + val)
         else:
@@ -250,7 +260,7 @@ class StemRunner:
         self.reporter(ConfigVariableSetEvent(var, val))
         return
 
-    def _get_base_dir(self, item):
+    def _get_fcm_loc_layout_info(self, src_tree):
         """Given a source tree return the following from 'fcm loc-layout':
            * url
            * sub_tree
@@ -259,15 +269,17 @@ class StemRunner:
            * project
         """
 
-        ret_code, output, stderr = self.popen.run('fcm', 'loc-layout', item)
+        ret_code, output, stderr = self.popen.run(
+            'fcm', 'loc-layout', src_tree)
         if ret_code != 0:
-            raise ProjectNotFoundException(item, stderr)
+            raise ProjectNotFoundException(src_tree, stderr)
 
         ret = {}
         for line in output.splitlines():
             if ":" not in line:
                 continue
             key, value = line.split(":", 1)
+
             if key and value:
                 ret[key] = value.strip()
 
@@ -289,7 +301,8 @@ class StemRunner:
                     break
         return project
 
-    def _deduce_mirror(self, source_dict, project):
+    @staticmethod
+    def _deduce_mirror(source_dict, project):
         """Deduce the mirror location of this source tree."""
 
         # Root location for project
@@ -331,7 +344,7 @@ class StemRunner:
             print(f"[WARN] Forcing project for '{item}' to be '{project}'")
             return project, item, item, '', ''
 
-        source_dict = self._get_base_dir(item)
+        source_dict = self._get_fcm_loc_layout_info(item)
         project = self._get_project_from_url(source_dict)
         if not project:
             raise ProjectNotFoundException(item)
@@ -602,7 +615,3 @@ def rose_stem(parser, opts):
             ),
             file=sys.stderr
         )
-
-
-if __name__ == "__main__":
-    main()
