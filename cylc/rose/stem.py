@@ -248,7 +248,6 @@ class StemRunner:
 
     def _add_define_option(self, var, val):
         """Add a define option passed to the SuiteRunner."""
-
         if self.opts.defines:
             self.opts.defines.append(SUITE_RC_PREFIX + var + '=' + val)
         else:
