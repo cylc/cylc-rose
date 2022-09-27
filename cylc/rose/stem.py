@@ -557,7 +557,7 @@ def main():
             "specify any number of sources. "
             "The first --source argument must be a working "
             "copy which should contain a workflow definition "
-            "in the rose-stem subdirectory"
+            "in the rose-stem subdirectory."
         ),
         action="append",
         metavar="PATH/TO/FLOW",
