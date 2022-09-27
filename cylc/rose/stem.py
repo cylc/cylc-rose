@@ -23,8 +23,8 @@ Install a rose stem workflow with a specified set of source tree(s).
 This command acts as a wrapper to "cylc install" by defining a number of
 additional Jinja2 variables.
 
-The path to the workflow source directory can be specified using PATH.
-Otherwise it must be provided in a directory named
+The path to the workflow source directory can be specified using the
+"path" argument. Otherwise it must be provided in a directory named
 "rose-stem" in the first source tree.
 
 Jinja2 Variables
