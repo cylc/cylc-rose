@@ -524,7 +524,7 @@ def get_source_opt_from_args(opts, args):
     return opts
 
 
-def main():
+def _get_rose_stem_opts():
     """Implement rose stem."""
     # use the cylc install option parser
     parser = get_option_parser()
@@ -565,7 +565,6 @@ def main():
     parser.add_option_group(rose_stem_options)
 
     parser.usage = __doc__
-
     opts, args = parser.parse_args(sys.argv[1:])
     # sliced sys.argv to drop 'rose-stem'
     opts = get_source_opt_from_args(opts, args)
@@ -574,7 +573,15 @@ def main():
     # verbosity as part of the parser, but rose needs opts.quietness too, so
     # hard set it.
     opts.quietness = 0
+    return parser, opts
 
+
+def main():
+    parser, opts = _get_rose_stem_opts()
+    rose_stem(parser, opts)
+
+
+def rose_stem(parser, opts):
     try:
         # modify the CLI options to add whatever rose stem would like to add
         opts = StemRunner(opts).process()
