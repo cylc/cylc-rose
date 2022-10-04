@@ -6,16 +6,20 @@ creating a new release entry be sure to copy & paste the span tag with the
 updated. Only the first match gets replaced, so it's fine to leave the old
 ones in. -->
 
-## __cylc-rose-1.1.1 (<span actions:bind='release-date'>Upcoming</span>)__
+## __cylc-rose-1.1.2 (<span actions:bind='release-date'>Upcoming</span>)__
 
 ### Fixes
 
 [#180](https://github.com/cylc/cylc-rose/pull/180) - Rose stem gets stem
 suite's basename to use as workflow name when not otherwise set.
 
+## __cylc-rose-1.1.1 (<span actions:bind='release-date'>Released 2022-09-14</span>)__
+
 [#171](https://github.com/cylc/cylc-rose/pull/171) - Fix bug where Cylc Rose
 passed `rose-suite.conf` items commented with `!` or `!!` to Cylc regardless.
 
+[#172](https://github.com/cylc/cylc-rose/pull/172) - Allow getting a workflow
+name when source is not an SVN repo.
 
 ## __cylc-rose-1.1.0 (<span actions:bind='release-date'>Released 2022-07-28</span>)__
 
@@ -33,9 +37,6 @@ a database locking issue with the `rose_prune` built-in app.
 ## __cylc-rose-1.0.3 (<span actions:bind='release-date'>Released 2022-05-20</span>)__
 
 ### Fixes
-
-[#172](https://github.com/cylc/cylc-rose/pull/172) - Allow getting a workflow
-name when source is not an SVN repo.
 
 [#139](https://github.com/cylc/cylc-rose/pull/139) - Make `rose stem` command
 work correctly with changes made to `cylc install` in
