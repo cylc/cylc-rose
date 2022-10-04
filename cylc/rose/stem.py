@@ -17,23 +17,27 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-"""rose stem [options] [path]
+"""rose stem [path]
 
-Install a rose stem workflow with a specified set of source tree(s).
-This command acts as a wrapper to "cylc install" by defining a number of
-additional Jinja2 variables.
+Install a rose-stem suite using cylc install.
 
-The path to the workflow source directory can be specified using the
-"path" argument. Otherwise it must be provided in a directory named
-"rose-stem" in the first source tree.
+To run a rose-stem suite use "cylc play".
+
+Install a suitable suite with a specified set of source tree(s).
+
+Default values of some of these settings are suite-dependent, specified
+in the `rose-suite.conf` file.
+
+Examples
+
+    rose stem --group=developer
+    rose stem --source=/path/to/source --source=/other/source --group=mygroup
+    rose stem --source=foo=/path/to/source --source=bar=fcm:bar_tr@head
 
 Jinja2 Variables
 
     Note that `<project>` refers to the FCM keyword name of the repository in
     upper case.
-
-    Default values of some of these settings are suite-dependent, specified
-    in the `rose-suite.conf` file.
 
     HOST_SOURCE_<project>
         The complete list of source trees for a given project. Working copies
@@ -56,12 +60,6 @@ Jinja2 Variables
     SOURCE_<project>_REV
         The revision of the project specified on the command line. This
         is intended to specify the revision of `fcm-make` config files.
-
-Usage examples
-    rose stem --group=developer
-    rose stem --source=/path/to/source --source=/other/source --group=mygroup
-    rose stem --source=foo=/path/to/source --source=bar=fcm:bar_tr@head
-    rose stem --source=A=
 """
 
 from ansimarkup import parse as cparse
@@ -367,10 +365,11 @@ class StemRunner:
         try:
             basedir = self._ascertain_project(os.getcwd())[1]
         except ProjectNotFoundException:
-            if self.opts.source:
-                basedir = os.path.abspath(self.opts.source)
+            if self.opts.workflow_conf_dir:
+                basedir = os.path.abspath(self.opts.workflow_conf_dir)
             else:
-                basedir = os.getcwd()
+                basedir = os.path.dirname(os.path.abspath(os.getcwd()))
+
         name = os.path.basename(basedir)
         self.reporter(NameSetEvent(name))
         return name
@@ -384,12 +383,17 @@ class StemRunner:
             basedir = self.opts.stem_sources[0]
         else:
             basedir = self._ascertain_project(os.getcwd())[1]
+
         suitedir = os.path.join(basedir, DEFAULT_TEST_DIR)
         suitefile = os.path.join(suitedir, "rose-suite.conf")
+
         if not os.path.isfile(suitefile):
             raise RoseSuiteConfNotFoundException(suitedir)
+
         self.opts.suite = suitedir
+
         self._check_suite_version(suitefile)
+
         return suitedir
 
     def _read_auto_opts(self):
@@ -482,10 +486,10 @@ class StemRunner:
                         elements[0], '"' + elements[1] + '"')
 
         # Change into the suite directory
-        if getattr(self.opts, 'source', None):
-            self.reporter(SuiteSelectionEvent(self.opts.source))
+        if getattr(self.opts, 'workflow_conf_dir', None):
+            self.reporter(SuiteSelectionEvent(self.opts.workflow_conf_dir))
             self._check_suite_version(
-                os.path.join(self.opts.source, 'rose-suite.conf'))
+                os.path.join(self.opts.workflow_conf_dir, 'rose-suite.conf'))
         else:
             thissuite = self._this_suite()
             self.fs_util.chdir(thissuite)
@@ -499,7 +503,8 @@ class StemRunner:
 
 
 def get_source_opt_from_args(opts, args):
-    """Convert sourcedir given as arg or implied by no arg to opts.source.
+    """Convert sourcedir given as arg or implied by no arg to
+    opts.workflow_conf_dir.
 
     Possible outcomes:
         No args given:
@@ -514,14 +519,14 @@ def get_source_opt_from_args(opts, args):
     """
     if len(args) == 0:
         # sourcedir not given:
-        opts.source = None
+        opts.workflow_conf_dir = None
         return opts
     elif os.path.isabs(args[-1]):
         # sourcedir given, and is abspath:
-        opts.source = args[-1]
+        opts.workflow_conf_dir = args[-1]
     else:
         # sourcedir given and is not abspath
-        opts.source = str(Path.cwd() / args[-1])
+        opts.workflow_conf_dir = str(Path.cwd() / args[-1])
 
     return opts
 
@@ -536,28 +541,28 @@ def main():
     # opts.group is stored by the --task option.
     rose_stem_options = OptionGroup(parser, 'Rose Stem Specific Options')
     rose_stem_options.add_option(
-        "--task", "--group", '-t', '-g',
+        "--task", "--group", "-t", "-g",
         help=(
-            "Specify a group of tasks to run. "
-            "Additional groups can be "
-            "specified with further `--group` arguments. "
-            "Rose stem adds group names to the RUN_NAMES template variable "
-            "which a workflow can use to enable groups of tasks."
+            "Specify a group name to run. Additional groups can be specified"
+            "with further `--group` arguments. The suite will then convert the"
+            "groups into a series of tasks to run."
         ),
         action="append",
         metavar="PATH/TO/FLOW",
         default=[],
         dest="stem_groups")
     rose_stem_options.add_option(
-        "--source", "-s",
+        "--source", '-s',
         help=(
-            "Specify a source tree to include in a rose-stem suite. "
-            "Defaults to \".\" if unspecified. "
-            "You can use --source more than once to "
-            "specify any number of sources. "
-            "The first --source argument must be a working "
-            "copy which should contain a workflow definition "
-            "in the rose-stem subdirectory."
+            "Specify a source tree to include in a rose-stem suite. The first"
+            "source tree must be a working copy as the location of the suite"
+            "and fcm-make config files are taken from it. Further source"
+            "trees can be added with additional `--source` arguments. "
+            "The project which is associated with a given source is normally "
+            "automatically determined using FCM, however the project can "
+            "be specified by putting the project name as the first part of "
+            "this argument separated by an equals sign as in the third "
+            "example above. Defaults to `.` if not specified."
         ),
         action="append",
         metavar="PATH/TO/FLOW",
@@ -582,8 +587,8 @@ def main():
         opts = StemRunner(opts).process()
 
         # call cylc install
-        if hasattr(opts, 'source'):
-            cylc_install(parser, opts, opts.source)
+        if opts.workflow_conf_dir:
+            cylc_install(parser, opts, opts.workflow_conf_dir)
         else:
             cylc_install(parser, opts)
 
