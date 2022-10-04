@@ -9,6 +9,7 @@
 # 3.2 - rose-suite.conf[env] vars should be templated into rose-suite.conf[jinja2:suite.rc]
 # 3.3 - Escaped env vars should not be templated
 # 4. Literals should be evaluated
+# Jinja2 sees lowercase booleans as booleans.
 # 5. ROSE_VERSION should be provided
   # strip the "Rose " prefix
   # strip the (location) suffix

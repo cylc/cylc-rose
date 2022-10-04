@@ -24,7 +24,10 @@
 
 # 4. Literals should be evaluated
 {{ assert(INT == 42, "failed 4.1") }}
-{{ assert(BOOL == True, "failed 4.2") }}
+{{ assert(BOOL == True, "failed 4.2a") }}
+# Jinja2 sees lowercase booleans as booleans.
+{{ assert(LOWERBOOL_TRUE == True, "failed 4.2b") }}
+{{ assert(LOWERBOOL_FALSE == False, "failed 4.2c") }}
 {{ assert(LIST == ["a", 1, True], "failed 4.3") }}
 
 # 5. ROSE_VERSION should be provided
