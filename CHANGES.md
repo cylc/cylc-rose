@@ -15,6 +15,8 @@ suite's basename to use as workflow name when not otherwise set.
 
 ## __cylc-rose-1.1.1 (<span actions:bind='release-date'>Released 2022-09-14</span>)__
 
+### Fixes
+
 [#171](https://github.com/cylc/cylc-rose/pull/171) - Fix bug where Cylc Rose
 passed `rose-suite.conf` items commented with `!` or `!!` to Cylc regardless.
 
