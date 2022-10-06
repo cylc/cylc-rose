@@ -317,5 +317,5 @@ def test_reinstall_workflow(tmp_path):
     stdout = reinstall_workflow(
         source_dir, "flow-name", run_dir, dry_run=True)
 
-    expect = sorted(['send rose-suite.conf', 'send flow.cylc'])
+    expect = sorted(['send flow.cylc'])
     assert sorted(stdout.split('\n')) == expect
