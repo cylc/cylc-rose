@@ -32,6 +32,7 @@ import pytest
 import shutil
 import subprocess
 
+from itertools import product
 from pathlib import Path
 from uuid import uuid4
 
@@ -39,6 +40,7 @@ from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as ROHIOS)
+from cylc.flow.workflow_files import reinstall_workflow
 
 
 HOST = get_host()
@@ -285,3 +287,35 @@ def test_cylc_reinstall_fail_on_clashing_template_vars(tmp_path, request):
     # Clean up run dir:
     if not request.session.testsfailed:
         shutil.rmtree(get_workflow_run_dir(test_flow_name))
+
+
+def test_reinstall_workflow(tmp_path):
+    """In dry-run mode it checks whether rose-suite.conf has changed.
+    """
+    # Set up source and run dirs as if installed:
+    cylc_install_dir = (
+        tmp_path /
+        "cylc-run" /
+        "flow-name" /
+        "_cylc-install")
+    cylc_install_dir.mkdir(parents=True)
+    source_dir = (tmp_path / "cylc-source" / "flow-name")
+    source_dir.mkdir(parents=True)
+    (cylc_install_dir / "source").symlink_to(source_dir)
+    run_dir = cylc_install_dir.parent
+
+    # Add empty files to both source and run dir:
+    for path in product(
+        [source_dir, run_dir], ['flow.cylc', 'rose-suite.conf']
+    ):
+        Path(path[0] / path[1]).touch()
+
+    # Modify the rose-suite.conf
+    (source_dir / 'rose-suite.conf').write_text('foo')
+    (source_dir / 'flow.cylc').write_text('foo')
+
+    stdout = reinstall_workflow(
+        source_dir, "flow-name", run_dir, dry_run=True)
+
+    expect = sorted(['send rose-suite.conf', 'send flow.cylc'])
+    assert sorted(stdout.split('\n')) == expect
