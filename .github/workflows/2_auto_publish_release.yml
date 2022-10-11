@@ -69,4 +69,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        init-file: 'cylc/flow/__init__.py'
+        init-file: 'cylc/rose/__init__.py'
