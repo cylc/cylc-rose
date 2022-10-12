@@ -600,10 +600,7 @@ def rose_stem(parser, opts):
         opts = StemRunner(opts).process()
 
         # call cylc install
-        if hasattr(opts, 'source'):
-            cylc_install(parser, opts, opts.source)
-        else:
-            cylc_install(parser, opts)
+        cylc_install(parser, opts, opts.source)
 
     except CylcError as exc:
         if opts.verbosity > 1:
