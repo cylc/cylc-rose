@@ -254,8 +254,8 @@ def test__this_suite(
         stemrunner = get_StemRunner({}, {'stem_sources': stem_sources})
         assert stemrunner._this_suite() == str(stem_suite_subdir)
     else:
+        stemrunner = get_StemRunner({}, {'stem_sources': stem_sources})
         with pytest.raises(RoseSuiteConfNotFoundException):
-            stemrunner = get_StemRunner({}, {'stem_sources': stem_sources})
             stemrunner._this_suite()
 
 
