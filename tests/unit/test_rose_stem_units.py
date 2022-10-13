@@ -16,6 +16,7 @@
 """Functional tests for top-level function record_cylc_install_options and
 """
 
+import cylc
 import pytest
 from pytest import param
 from types import SimpleNamespace
@@ -81,32 +82,28 @@ def get_StemRunner():
         if options is None:
             options = {}
         """Create a StemRunner objects with some options set."""
-        opts = SimpleNamespace(**{'verbosity': 1, 'quietness': 1})
-        for k, v in options.items():
-            setattr(opts, k, v)
+        opts = SimpleNamespace(verbosity=1, quietness=1, **options)
         stemrunner = StemRunner(opts, **kwargs)
         return stemrunner
     return _inner
 
 
-@pytest.mark.parametrize(
-    'attribute, object_, kwargs', [
-        param('reporter', Reporter, {}, id='reporter default'),
-        param('reporter', str, {'reporter': 'foo'}, id='reporter set'),
-        param('popen', RosePopener, {}, id='popen default'),
-        param('popen', str, {'popen': 'foo'}, id='popen set'),
-        param('fs_util', FileSystemUtil, {}, id='fs_util default'),
-        param('fs_util', str, {'fs_util': 'foo'}, id='fs_util set')
-    ]
-)
-def test_StemRunner_init(get_StemRunner, attribute, object_, kwargs):
+def test_StemRunner_init_kwargs_set(get_StemRunner):
     """It handles __init__ with different kwargs."""
-    stemrunner = get_StemRunner(kwargs)
-    item = getattr(stemrunner, attribute)
-    if isinstance(object_, str):
-        assert item == kwargs[attribute]
-    else:
-        assert isinstance(item, object_)
+    stemrunner = get_StemRunner({
+        'reporter': 'foo', 'popen': 'foo', 'fs_util': 'foo'
+    })
+    assert isinstance(stemrunner.reporter, str)
+    assert isinstance(stemrunner.popen, str)
+    assert isinstance(stemrunner.popen, str)
+
+
+def test_StemRunner_init_defaults(get_StemRunner):
+    """It handles __init__ with different kwargs."""
+    stemrunner = get_StemRunner({})
+    assert isinstance(stemrunner.reporter, Reporter)
+    assert isinstance(stemrunner.popen, RosePopener)
+    assert isinstance(stemrunner.fs_util, FileSystemUtil)
 
 
 @pytest.mark.parametrize(
@@ -243,7 +240,6 @@ def test__this_suite(
 
     if stem_sources == 'infer':
         stem_sources = []
-        import cylc
         monkeypatch.setattr(
             cylc.rose.stem.StemRunner,
             '_ascertain_project',
@@ -260,7 +256,7 @@ def test__this_suite(
     else:
         with pytest.raises(RoseSuiteConfNotFoundException):
             stemrunner = get_StemRunner({}, {'stem_sources': stem_sources})
-            assert stemrunner._this_suite() == str(stem_suite_subdir)
+            stemrunner._this_suite()
 
 
 def test__check_suite_version_fails_if_no_stem_source(
