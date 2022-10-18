@@ -17,13 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-"""rose stem [path]
-
-Install a rose-stem suite using cylc install.
-
-To run a rose-stem suite use "cylc play".
+"""rose stem [options] [path]
 
 Install a suitable suite with a specified set of source tree(s).
+
+To run a rose-stem suite use "cylc play".
 
 Default values of some of these settings are suite-dependent, specified
 in the `rose-suite.conf` file.
@@ -544,8 +542,8 @@ def main():
         "--task", "--group", "-t", "-g",
         help=(
             "Specify a group name to run. Additional groups can be specified"
-            "with further `--group` arguments. The suite will then convert the"
-            "groups into a series of tasks to run."
+            " with further `--group` arguments. The suite will then convert"
+            " the groups into a series of tasks to run."
         ),
         action="append",
         metavar="PATH/TO/FLOW",
@@ -555,14 +553,13 @@ def main():
         "--source", '-s',
         help=(
             "Specify a source tree to include in a rose-stem suite. The first"
-            "source tree must be a working copy as the location of the suite"
-            "and fcm-make config files are taken from it. Further source"
-            "trees can be added with additional `--source` arguments. "
-            "The project which is associated with a given source is normally "
-            "automatically determined using FCM, however the project can "
-            "be specified by putting the project name as the first part of "
-            "this argument separated by an equals sign as in the third "
-            "example above. Defaults to `.` if not specified."
+            " source tree must be a working copy, as the location of the suite"
+            " and fcm-make config files are taken from it. Further source"
+            " trees can be added with additional `--source` arguments."
+            " The project which is associated with a given source is normally"
+            " automatically determined using FCM, however the project can"
+            " be specified as '<project-name>=<project-path>'."
+            " Defaults to `.` if not specified."
         ),
         action="append",
         metavar="PATH/TO/FLOW",
