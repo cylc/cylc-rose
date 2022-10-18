@@ -22,6 +22,7 @@ Warning:
 
 import os
 import pytest
+from pytest import param
 
 from types import SimpleNamespace
 from io import StringIO
@@ -41,7 +42,6 @@ from cylc.rose.entry_points import (
 from metomi.rose.config import ConfigLoader
 
 
-param = pytest.param
 HOST = get_host()
 
 
@@ -534,24 +534,37 @@ def test_get_cli_opts_node(opt_confs, defines, rose_template_vars, expect):
     'old, new, expect',
     [
         # An example with only opts:
-        ('opts=a b c', 'opts=c d e', '\nopts=a b c d e\n'),
+        param(
+            'opts=a b c', 'opts=c d e', '\nopts=a b c d e\n',
+            id='only opts'
+        ),
         # An example with lots of options:
-        (
+        param(
             'opts=A B\n[env]\nFOO=Whipton\n[jinja2:suite.rc]\nBAR=Heavitree',
             'opts=B C\n[env]\nFOO=Pinhoe\n[jinja2:suite.rc]\nBAR=Broadclyst',
-            'opts=A B C\n[env]\nFOO=Pinhoe\n[jinja2:suite.rc]\nBAR=Broadclyst'
+            'opts=A B C\n[env]\nFOO=Pinhoe\n[jinja2:suite.rc]\nBAR=Broadclyst',
+            id='lots of options'
+        ),
+        # An example with updated template variables:
+        param(
+            'opts=A B\n[env]\nFOO=Whipton\n[jinja2:suite.rc]\nBAR=Ottery',
+            'opts=B C\n[env]\nFOO=Pinhoe\n[template variables]\nBAR=Whipton',
+            'opts=A B C\n[env]\nFOO=Pinhoe\n[template variables]\nBAR=Whipton',
+            id='changed template vars'
         ),
         # An example with no old opts:
-        (
+        param(
             '',
             'opts=A B\n[env]\nFOO=Whipton\n[jinja2:suite.rc]\nBAR=Heavitree',
-            'opts=A B\n[env]\nFOO=Whipton\n[jinja2:suite.rc]\nBAR=Heavitree'
+            'opts=A B\n[env]\nFOO=Whipton\n[jinja2:suite.rc]\nBAR=Heavitree',
+            id='no old options'
         ),
         # An example with no new opts:
-        (
+        param(
             'opts=A B\n[env]\nFOO=Whipton\n[jinja2:suite.rc]\nBAR=Heavitree',
             '',
-            'opts=A B\n[env]\nFOO=Whipton\n[jinja2:suite.rc]\nBAR=Heavitree'
+            'opts=A B\n[env]\nFOO=Whipton\n[jinja2:suite.rc]\nBAR=Heavitree',
+            id='no new opts'
         )
     ]
 )

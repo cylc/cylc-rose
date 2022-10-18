@@ -5,6 +5,13 @@ creating a new release entry be sure to copy & paste the span tag with the
 `actions:bind` attribute, which is used by a regex to find the text to be
 updated. Only the first match gets replaced, so it's fine to leave the old
 ones in. -->
+## __cylc-rose-1.1.2 (<span actions:bind='release-date'>Upcoming</span>)__
+
+### Fixes
+
+[#192](https://github.com/cylc/cylc-rose/pull/192) - Fix bug where Cylc Rose would prevent change to template language on reinstall.
+
+
 ## __cylc-rose-1.1.1 (<span actions:bind='release-date'>Released 2022-09-14</span>)__
 
 ### Fixes

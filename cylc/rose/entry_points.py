@@ -180,6 +180,8 @@ def record_cylc_install_options(
     # Leave now if there is nothing to do:
     if not cli_config:
         return False
+    # raise error if CLI config has multiple templating sections
+    identify_templating_section(cli_config)
 
     # Construct path objects representing our target files.
     (Path(rundir) / 'opt').mkdir(exist_ok=True)
@@ -195,6 +197,8 @@ def record_cylc_install_options(
             conf_filepath.unlink()
         else:
             oldconfig = loader.load(str(conf_filepath))
+            # Check old config for clashing template variables sections.
+            identify_templating_section(oldconfig)
             cli_config = merge_rose_cylc_suite_install_conf(
                 oldconfig, cli_config
             )
@@ -211,7 +215,6 @@ def record_cylc_install_options(
             ]
 
     cli_config.comments = [' This file records CLI Options.']
-    identify_templating_section(cli_config)
     dumper.dump(cli_config, str(conf_filepath))
 
     # Merge the opts section of the rose-suite.conf with those set by CLI:
@@ -221,7 +224,6 @@ def record_cylc_install_options(
     rose_suite_conf = add_cylc_install_to_rose_conf_node_opts(
         rose_suite_conf, cli_config
     )
-    identify_templating_section(rose_suite_conf)
     dumper(rose_suite_conf, rose_conf_filepath)
 
     return cli_config, rose_suite_conf
