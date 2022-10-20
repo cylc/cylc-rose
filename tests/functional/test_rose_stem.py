@@ -245,6 +245,24 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
 
 
 @pytest.fixture(scope='class')
+def rose_stem_run_really_basic(rose_stem_run_template, setup_stem_repo):
+    rose_stem_opts = {
+        'stem_groups': [],
+        'stem_sources': [
+            str(setup_stem_repo['workingcopy']), "fcm:foo.x_tr@head"
+        ],
+    }
+    yield rose_stem_run_template(rose_stem_opts)
+
+
+class TestReallyBasic():
+    def test_really_basic(self, rose_stem_run_really_basic):
+        """Check that assorted variables have been exported.
+        """
+        assert rose_stem_run_really_basic['run_stem'].returncode == 0
+
+
+@pytest.fixture(scope='class')
 def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
