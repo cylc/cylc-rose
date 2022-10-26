@@ -22,7 +22,6 @@ import os
 import pytest
 from pathlib import Path
 from shutil import rmtree
-from subprocess import run
 import sqlite3
 from uuid import uuid4
 
@@ -146,22 +145,24 @@ def fake_flow():
     # Set up a database
     db_file = get_workflow_run_pub_db_path(flow_name)
     Path(db_file).parent.mkdir()
-    db_script = (
-        b"CREATE TABLE task_jobs("
-        b"cycle TEXT, name TEXT, submit_num INTEGER, platform_name TEXT);\n"
-        b"INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
-        b"    VALUES ('1', 'bar', 1, 'localhost');\n"
-        b"INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
-        b"    VALUES ('1', 'baz', 1, 'dairy');\n"
-        b"INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
-        b"    VALUES ('1', 'bar', 2, 'dairy');\n"
-        b"INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
-        b"    VALUES ('2', 'baz', 1, 'milk');\n"
-    )
-    run(
-        ['sqlite3', db_file],
-        input=db_script,
-    )
+
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    for line in (
+        "CREATE TABLE task_jobs("
+        "cycle TEXT, name TEXT, submit_num INTEGER, platform_name TEXT);",
+        "INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
+        "    VALUES ('1', 'bar', 1, 'localhost');",
+        "INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
+        "    VALUES ('1', 'baz', 1, 'dairy');",
+        "INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
+        "    VALUES ('1', 'bar', 2, 'dairy');",
+        "INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
+        "    VALUES ('2', 'baz', 1, 'milk');",
+    ):
+        cursor.execute(line)
+    conn.commit()
+    conn.close()
 
     yield flow_name, flow_path
 

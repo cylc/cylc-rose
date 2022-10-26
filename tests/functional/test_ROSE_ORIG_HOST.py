@@ -49,21 +49,11 @@ Structure
     │       │          │           │           ├───────────────┤
     │       │          │           │           │               │
 
-Debugging
----------
-Because of the tasks being run in subprocesses debugging can be a little
-tricky. As a result there is a commented ``breakpoint`` in
-``rose_stem_run_template`` indicating a location where it might be useful
-to investigate failing tests.
-
-
 """
 
-import os
 import pytest
 import re
 import shutil
-import subprocess
 
 from pathlib import Path
 from uuid import uuid4
@@ -105,7 +95,9 @@ def fixture_provide_flow(tmp_path_factory, request):
 
 
 @pytest.fixture(scope='module')
-def fixture_install_flow(fixture_provide_flow, monkeymodule):
+def fixture_install_flow(
+    fixture_provide_flow, monkeymodule, mod_cylc_install_cli
+):
     """Run ``cylc install``.
 
     By running in a fixture with modular scope we
@@ -114,13 +106,9 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
     If a test fails then using ``pytest --pdb`` and
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
-    result = subprocess.run(
-        [
-            'cylc', 'install', str(fixture_provide_flow['srcpath']),
-            '--workflow-name', fixture_provide_flow['test_flow_name'],
-        ],
-        capture_output=True,
-        env=os.environ
+    result = mod_cylc_install_cli(
+        fixture_provide_flow['srcpath'],
+        {'workflow_name': fixture_provide_flow['test_flow_name']}
     )
     install_conf_path = (
         fixture_provide_flow['flowpath'] /
@@ -135,44 +123,23 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
     }
 
 
-@pytest.fixture(scope='module')
-def fixture_play_flow(fixture_install_flow):
-    """Run cylc flow in a fixture.
-    """
-    flowname = fixture_install_flow['test_flow_name']
-    flowname = f"{flowname}/runN"
-    play = subprocess.run(
-        ['cylc', 'play', flowname, '--no-detach'],
-        capture_output=True, text=True
-    )
-    return play
-
-
-def test_cylc_validate_srcdir(fixture_install_flow):
+def test_cylc_validate_srcdir(fixture_install_flow, mod_cylc_validate_cli):
     """Sanity check that workflow validates:
     """
     srcpath = fixture_install_flow['srcpath']
-    validate = subprocess.run(
-        ['cylc', 'validate', str(srcpath)], capture_output=True
-    )
-    search = re.findall(
-        r'WARNING - ROSE_ORIG_HOST \(.*\) is: (.*)', validate.stderr.decode()
-    )
-    assert validate.returncode == 0
+    result = mod_cylc_validate_cli(srcpath)
+    search = re.findall(r'ROSE_ORIG_HOST \(.*\) is: (.*)', result.logging)
     assert search == [HOST, HOST]
 
 
-def test_cylc_validate_rundir(fixture_install_flow):
+def test_cylc_validate_rundir(fixture_install_flow, mod_cylc_validate_cli):
     """Sanity check that workflow validates:
     """
     flowpath = fixture_install_flow['flowpath'] / 'runN'
-    validate = subprocess.run(
-        ['cylc', 'validate', str(flowpath)], capture_output=True
-    )
-    assert validate.returncode == 0
-    assert 'ROSE_ORIG_HOST (env) is:' in validate.stderr.decode()
+    result = mod_cylc_validate_cli(flowpath)
+    assert 'ROSE_ORIG_HOST (env) is:' in result.logging
 
 
 def test_cylc_install_run(fixture_install_flow):
     """install flow works."""
-    assert fixture_install_flow['result'].returncode == 0
+    assert fixture_install_flow['result'].ret == 0

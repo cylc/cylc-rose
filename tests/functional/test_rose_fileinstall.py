@@ -18,7 +18,6 @@
 
 import pytest
 import shutil
-import subprocess
 
 from pathlib import Path
 from uuid import uuid4
@@ -58,12 +57,9 @@ def fixture_provide_flow(tmp_path):
 
 
 @pytest.fixture
-def fixture_install_flow(fixture_provide_flow, request):
+def fixture_install_flow(fixture_provide_flow, request, cylc_install_cli):
     srcpath, datapath, flow_name = fixture_provide_flow
-    result = subprocess.run(
-        ['cylc', 'install', '--workflow-name', flow_name, f'{str(srcpath)}'],
-        capture_output=True,
-    )
+    result = cylc_install_cli(str(srcpath), {'workflow_name': flow_name})
     destpath = Path(get_workflow_run_dir(flow_name))
 
     yield srcpath, datapath, flow_name, result, destpath
@@ -71,18 +67,18 @@ def fixture_install_flow(fixture_provide_flow, request):
         shutil.rmtree(destpath)
 
 
-def test_rose_fileinstall_validate(fixture_provide_flow):
+def test_rose_fileinstall_validate(fixture_provide_flow, cylc_validate_cli):
     """Workflow validates:
     """
     srcpath, _, _ = fixture_provide_flow
-    assert subprocess.run(['cylc', 'validate', str(srcpath)]).returncode == 0
+    assert cylc_validate_cli(str(srcpath)).ret == 0
 
 
 def test_rose_fileinstall_run(fixture_install_flow):
     """Workflow installs:
     """
     _, _, _, result, _ = fixture_install_flow
-    assert result.returncode == 0
+    assert result.ret == 0
 
 
 def test_rose_fileinstall_subfolders(fixture_install_flow):

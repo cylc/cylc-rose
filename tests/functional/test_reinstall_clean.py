@@ -27,10 +27,8 @@ At each step it checks the contents of
 - ~/cylc-run/temporary-id/opt/rose-suite-cylc-install.conf
 """
 
-import os
 import pytest
 import shutil
-import subprocess
 
 from pathlib import Path
 from uuid import uuid4
@@ -77,7 +75,9 @@ def fixture_provide_flow(tmp_path_factory, request):
 
 
 @pytest.fixture(scope='module')
-def fixture_install_flow(fixture_provide_flow, monkeymodule):
+def fixture_install_flow(
+    fixture_provide_flow, monkeymodule, mod_cylc_install_cli
+):
     """Run ``cylc install``.
 
     By running in a fixture with modular scope we
@@ -86,14 +86,13 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
     If a test fails using ``pytest --pdb then``
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
-    result = subprocess.run(
-        [
-            'cylc', 'install', '-O', 'bar', '-D', '[env]FOO=1',
-            '--workflow-name', fixture_provide_flow['test_flow_name'],
-            str(fixture_provide_flow['srcpath'])
-        ],
-        capture_output=True,
-        env=os.environ
+    result = mod_cylc_install_cli(
+        fixture_provide_flow['srcpath'],
+        {
+            'workflow_name': fixture_provide_flow['test_flow_name'],
+            'opt_conf_keys': ['bar'],
+            'defines': ['[env]FOO=1']
+        }
     )
     yield {
         'fixture_provide_flow': fixture_provide_flow,
@@ -102,7 +101,7 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
 
 
 def test_cylc_install_run(fixture_install_flow):
-    assert fixture_install_flow['result'].returncode == 0
+    assert fixture_install_flow['result'].ret == 0
 
 
 @pytest.mark.parametrize(
@@ -126,7 +125,9 @@ def test_cylc_install_files(fixture_install_flow, file_, expect):
 
 
 @pytest.fixture(scope='module')
-def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
+def fixture_reinstall_flow(
+    fixture_provide_flow, monkeymodule, mod_cylc_reinstall_cli
+):
     """Run ``cylc reinstall --clear-rose-install-options``.
 
     Ensure that a reinstalled workflow ignores existing
@@ -139,14 +140,13 @@ def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
-    result = subprocess.run(
-        [
-            'cylc', 'reinstall',
-            f'{fixture_provide_flow["test_flow_name"]}/run1',
-            '-O', 'baz', '-D', '[env]BAR=2',
-            '--clear-rose-install-options'
-        ],
-        capture_output=True,
+    result = mod_cylc_reinstall_cli(
+        f'{fixture_provide_flow["test_flow_name"]}/run1',
+        {
+            'opt_conf_keys': ['baz'],
+            'defines': ['[env]BAR=2'],
+            'clear_rose_install_opts': True
+        }
     )
     yield {
         'fixture_provide_flow': fixture_provide_flow,
@@ -155,7 +155,7 @@ def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
 
 
 def test_cylc_reinstall_run(fixture_reinstall_flow):
-    assert fixture_reinstall_flow['result'].returncode == 0
+    assert fixture_reinstall_flow['result'].ret == 0
 
 
 @pytest.mark.parametrize(

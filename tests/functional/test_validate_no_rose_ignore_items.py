@@ -18,11 +18,8 @@
 See https://github.com/cylc/cylc-rose/pull/171
 """
 
-from shlex import split
-from subprocess import run
 
-
-def test_cylc_validate(tmp_path):
+def test_cylc_validate(tmp_path, cylc_view_cli):
     """It doesn't pass commented vars to Cylc.
     """
     (tmp_path / 'flow.cylc').write_text("""#!jinja2
@@ -36,10 +33,9 @@ def test_cylc_validate(tmp_path):
         '!SINGLE="bar"\n'
         '!!DOUBLE="baz"\n'
     )
-    result = run(
-        split(f'cylc view --jinja2 {str(tmp_path)}'), capture_output=True)
+    result = cylc_view_cli(str(tmp_path), {'jinja2': True})
 
-    if result.returncode == 0:
+    if result.ret == 0:
         assert True
     else:
         raise Exception(result.stderr.decode())

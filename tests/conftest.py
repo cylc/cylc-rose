@@ -17,8 +17,52 @@
 """
 
 import pytest
+from types import SimpleNamespace
 
 from cylc.flow import __version__ as CYLC_VERSION
+
+from cylc.flow.scripts.validate import (
+    wrapped_main as cylc_validate,
+    get_option_parser as validate_gop
+)
+
+from cylc.flow.scripts.install import (
+    install_cli as cylc_install,
+    get_option_parser as install_gop
+)
+
+from cylc.flow.scripts.reinstall import (
+    reinstall_cli as cylc_reinstall,
+    get_option_parser as reinstall_gop
+)
+
+from cylc.flow.scripts.view import (
+    _main as cylc_view,
+    get_option_parser as view_gop
+)
+
+
+@pytest.fixture(scope='module')
+def mod_capsys(request):
+    from _pytest.capture import SysCapture
+    capman = request.config.pluginmanager.getplugin("capturemanager")
+    capture_fixture = pytest.CaptureFixture[str](
+        SysCapture, request, _ispytest=True)
+    capman.set_fixture(capture_fixture)
+    capture_fixture._start()
+    yield capture_fixture
+    capture_fixture.close()
+    capman.unset_fixture()
+
+
+@pytest.fixture(scope='module')
+def mod_caplog(request):
+    request.node.add_report_section = lambda *args: None
+    logging_plugin = request.config.pluginmanager.getplugin('logging-plugin')
+    for _ in logging_plugin.pytest_runtest_setup(request.node):
+        caplog = pytest.LogCaptureFixture(request.node, _ispytest=True)
+    yield caplog
+    caplog._finalize()
 
 
 @pytest.fixture(scope='package', autouse=True)
@@ -55,3 +99,105 @@ def pytest_runtest_makereport(item, call):
     _module_outcomes = getattr(item.module, '_module_outcomes', {})
     _module_outcomes[(item.nodeid, rep.when)] = rep
     item.module._module_outcomes = _module_outcomes
+
+
+def _cylc_cli(capsys, caplog, script, gop, parser_reqd=False):
+    """Access the CLI for a cylc script:
+
+    Args:
+        capsys, caplog: Pytest fixtures - use `mod_cap~` to make
+            the fixture calling this function module scoped.
+        script: Script CLI to run
+        gop: get_option parser for a given script.
+        parser_reqd: Many scripts don't require the parser object,
+            just an id/path and the options object. If the parser
+            object is required, set True.
+
+    Returns: An object which looks a bit like the result
+        of running:
+        
+        subprocess.run(
+            ['cylc', 'script']
+            + [f"--{opt}: value" for opt, value in opts.items()]
+        )
+    """
+    def _inner(srcpath, opts=None):
+        parser = gop()
+        options = parser.get_default_values()
+        options.__dict__.update({
+            'templatevars': [], 'templatevars_file': []
+        })
+
+        if opts is not None:
+            options.__dict__.update(opts)
+
+        output = SimpleNamespace()
+
+        try:
+            if parser_reqd:
+                script(parser, options, str(srcpath))
+            else:
+                script(options, str(srcpath))
+            output.ret = 0
+            output.exc = ''
+        except Exception as exc:
+            output.ret = 1
+            output.exc = exc
+
+        output.logging = '\n'.join([i.message for i in caplog.records])
+        output.out, output.err = capsys.readouterr()
+
+        return output
+    return _inner
+
+
+@pytest.fixture
+def cylc_install_cli(capsys, caplog):
+    return _cylc_cli(
+        capsys, caplog,
+        cylc_install, install_gop
+    )
+
+
+@pytest.fixture(scope='module')
+def mod_cylc_install_cli(mod_capsys, mod_caplog):
+    return _cylc_cli(
+        mod_capsys, mod_caplog,
+        cylc_install, install_gop
+    )
+
+@pytest.fixture
+def cylc_reinstall_cli(capsys, caplog):
+    return _cylc_cli(
+        capsys, caplog,
+        cylc_reinstall, reinstall_gop
+    )
+
+
+@pytest.fixture(scope='module')
+def mod_cylc_reinstall_cli(mod_capsys, mod_caplog):
+    return _cylc_cli(
+        mod_capsys, mod_caplog,
+        cylc_reinstall, reinstall_gop
+    )
+
+
+@pytest.fixture
+def cylc_validate_cli(capsys, caplog):
+    return _cylc_cli(
+        capsys, caplog,
+        cylc_validate, validate_gop, parser_reqd=True
+    )
+
+
+@pytest.fixture(scope='module')
+def mod_cylc_validate_cli(mod_capsys, mod_caplog):
+    return _cylc_cli(
+        mod_capsys, mod_caplog,
+        cylc_validate, validate_gop, parser_reqd=True
+    )
+
+
+@pytest.fixture
+def cylc_view_cli(capsys, caplog):
+    return _cylc_cli(capsys, caplog, cylc_view, view_gop)
