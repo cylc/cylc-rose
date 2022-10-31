@@ -250,38 +250,3 @@ def test_cylc_reinstall_run2(fixture_reinstall_flow2):
 def test_cylc_reinstall_files2(fixture_reinstall_flow2, file_, expect):
     fpath = fixture_reinstall_flow2['fixture_provide_flow']['flowpath']
     assert (fpath / file_).read_text() == expect
-
-
-def test_cylc_reinstall_fail_on_clashing_template_vars(tmp_path, request):
-    """If you re-install with a different templating engine in suite.rc
-    reinstall should fail.
-    """
-    (tmp_path / 'rose-suite.conf').write_text(
-        '[jinja2:suite.rc]\n'
-        'Primrose=\'Primula Vulgaris\'\n'
-    )
-    (tmp_path / 'flow.cylc').touch()
-    test_flow_name = f'cylc-rose-test-{str(uuid4())[:8]}'
-    install = subprocess.run(
-        [
-            'cylc', 'install', str(tmp_path), '--workflow-name',
-            test_flow_name, '--no-run-name'
-        ]
-    )
-    assert install.returncode == 0
-    (tmp_path / 'rose-suite.conf').write_text(
-        '[empy:suite.rc]\n'
-        'Primrose=\'Primula Vulgaris\'\n'
-    )
-    reinstall = subprocess.run(
-        ['cylc', 'reinstall', test_flow_name],
-        capture_output=True
-    )
-    assert reinstall.returncode != 0
-    assert (
-        'You should not define more than one templating section'
-        in reinstall.stderr.decode()
-    )
-    # Clean up run dir:
-    if not request.session.testsfailed:
-        shutil.rmtree(get_workflow_run_dir(test_flow_name))

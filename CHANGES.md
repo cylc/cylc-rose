@@ -10,6 +10,8 @@ ones in. -->
 
 ### Fixes
 
+[#192](https://github.com/cylc/cylc-rose/pull/192) - Fix bug where Cylc Rose would prevent change to template language on reinstall.
+
 [#180](https://github.com/cylc/cylc-rose/pull/180) - Rose stem gets stem
 suite's basename to use as workflow name when not otherwise set.
 

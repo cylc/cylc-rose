@@ -16,7 +16,7 @@
 """Cylc support for reading and interpreting ``rose-suite.conf`` workflow
 configuration files.
 """
-
+import itertools
 import os
 from pathlib import Path
 import re
@@ -179,6 +179,11 @@ def get_rose_vars_from_config_node(config, config_node, environ):
 
 
 def identify_templating_section(config_node):
+    """Get the name of the templating section.
+
+    Raises MultipleTemplatingEnginesError if multiple
+    templating sections exist.
+    """
     defined_sections = SECTIONS.intersection(set(config_node.value.keys()))
     if len(defined_sections) > 1:
         raise MultipleTemplatingEnginesError(
@@ -280,6 +285,8 @@ def merge_rose_cylc_suite_install_conf(old, new):
     Opts are merged separately to allow special behaviour.
     The rest is merged using ConfigNodeDiff.
 
+    If the template language has changed, use the new templating language.
+
     Args:
         old, new (ConfigNode):
             Old and new nodes.
@@ -294,6 +301,14 @@ def merge_rose_cylc_suite_install_conf(old, new):
         >>> merge_rose_cylc_suite_install_conf(old, new)['opts']
         {'value': 'a b c d e', 'state': '', 'comments': []}
     """
+    # remove jinja2/empy:suite.rc from old if template variables in new
+    for before, after in itertools.permutations(SECTIONS, 2):
+        if new.value.get(after, '') and old.value.get(before, ''):
+            # Choosing not to warn if user downgrades here because
+            # other checks warn of old sections.
+            old.value[after] = old.value[before]
+            old.value.pop(before)
+
     # Special treatement of opts key:
     if 'opts' in old and 'opts' in new:
         new_opts_str = f'{old["opts"].value} {new["opts"].value}'
@@ -306,6 +321,7 @@ def merge_rose_cylc_suite_install_conf(old, new):
     diff.set_from_configs(old, new)
     diff.delete_removed()
     old.add(diff)
+
     return old
 
 
