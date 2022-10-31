@@ -224,6 +224,8 @@ def record_cylc_install_options(
     rose_suite_conf = add_cylc_install_to_rose_conf_node_opts(
         rose_suite_conf, cli_config
     )
+    identify_templating_section(rose_suite_conf)
+
     dumper(rose_suite_conf, rose_conf_filepath)
 
     return cli_config, rose_suite_conf
