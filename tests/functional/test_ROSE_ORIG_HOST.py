@@ -135,19 +135,6 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
     }
 
 
-@pytest.fixture(scope='module')
-def fixture_play_flow(fixture_install_flow):
-    """Run cylc flow in a fixture.
-    """
-    flowname = fixture_install_flow['test_flow_name']
-    flowname = f"{flowname}/runN"
-    play = subprocess.run(
-        ['cylc', 'play', flowname, '--no-detach'],
-        capture_output=True, text=True
-    )
-    return play
-
-
 def test_cylc_validate_srcdir(fixture_install_flow):
     """Sanity check that workflow validates:
     """
