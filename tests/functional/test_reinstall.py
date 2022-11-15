@@ -91,14 +91,6 @@ def fixture_install_flow(
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
     monkeymodule.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'b')
-    # result = subprocess.run(
-    #     [
-    #         'cylc', 'install', str(fixture_provide_flow['srcpath']), '-O', 'c',
-    #         '--workflow-name', fixture_provide_flow['test_flow_name'],
-    #     ],
-    #     capture_output=True,
-    #     env=os.environ
-    # )
     result = mod_cylc_install_cli(
         fixture_provide_flow['srcpath'], {
             'opt_conf_keys': ['c'],

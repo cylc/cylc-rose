@@ -59,11 +59,9 @@ to investigate failing tests.
 
 """
 
-import os
 import pytest
 import re
 import shutil
-import subprocess
 
 from pathlib import Path
 from uuid import uuid4

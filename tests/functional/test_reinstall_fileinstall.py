@@ -51,19 +51,13 @@ def fixture_provide_flow(tmp_path_factory, request):
         shutil.rmtree(flowpath)
 
 
-def test_install_flow(fixture_provide_flow):
+def test_install_flow(fixture_provide_flow, mod_cylc_install_cli):
     """Run ``cylc install``.
     """
-    result = subprocess.run(
-        [
-            'cylc', 'install',
-            '--workflow-name', fixture_provide_flow['test_flow_name'],
-            str(fixture_provide_flow['srcpath'])
-        ],
-        capture_output=True,
-        env=os.environ
-    )
-    assert result.returncode == 0
+    result = mod_cylc_install_cli(
+        fixture_provide_flow['srcpath'],
+        {'workflow_name': fixture_provide_flow['test_flow_name']})
+    assert result.ret == 0
 
 
 def test_reinstall_flow(fixture_provide_flow):

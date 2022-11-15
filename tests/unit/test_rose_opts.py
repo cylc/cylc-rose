@@ -18,8 +18,6 @@
 
 import pytest
 import shutil
-import shlex
-import subprocess
 
 from pathlib import Path
 from uuid import uuid4
