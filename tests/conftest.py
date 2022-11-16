@@ -126,7 +126,7 @@ def _cylc_validate_cli(capsys, caplog):
 
 
 def _cylc_install_cli(capsys, caplog):
-    """Access the validate CLI"""
+    """Access the install CLI"""
     def _inner(srcpath, args=None):
         """Install a workflow.
 
@@ -160,7 +160,7 @@ def _cylc_install_cli(capsys, caplog):
 
 
 def _cylc_reinstall_cli(capsys, caplog):
-    """Access the validate CLI"""
+    """Access the reinstall CLI"""
     def _inner(workflow_id, opts=None):
         """Install a workflow.
 
