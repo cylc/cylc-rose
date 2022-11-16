@@ -17,10 +17,8 @@
 trouble.
 """
 
-import os
 import pytest
 import shutil
-import subprocess
 
 from pathlib import Path
 from uuid import uuid4
@@ -60,15 +58,9 @@ def test_install_flow(fixture_provide_flow, mod_cylc_install_cli):
     assert result.ret == 0
 
 
-def test_reinstall_flow(fixture_provide_flow):
+def test_reinstall_flow(fixture_provide_flow, mod_cylc_reinstall_cli):
     """Run ``cylc reinstall``.
     """
-    result = subprocess.run(
-        [
-            'cylc', 'reinstall',
-            fixture_provide_flow['test_flow_name'],
-        ],
-        capture_output=True,
-        env=os.environ
-    )
-    assert result.returncode == 0
+    result = mod_cylc_reinstall_cli(
+        fixture_provide_flow['test_flow_name'])
+    assert result.ret == 0

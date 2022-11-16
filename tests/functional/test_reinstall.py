@@ -27,10 +27,8 @@ At each step it checks the contents of
 - ~/cylc-run/temporary-id/opt/rose-suite-cylc-install.conf
 """
 
-import os
 import pytest
 import shutil
-import subprocess
 
 from itertools import product
 from pathlib import Path
@@ -141,7 +139,9 @@ def test_cylc_install_files(fixture_install_flow, file_, expect):
 
 
 @pytest.fixture(scope='module')
-def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
+def fixture_reinstall_flow(
+    fixture_provide_flow, monkeymodule, mod_cylc_reinstall_cli
+):
     """Run ``cylc reinstall``.
 
     By running in a fixture with modular scope we
@@ -151,14 +151,11 @@ def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
-    result = subprocess.run(
-        [
-            'cylc', 'reinstall',
-            f'{fixture_provide_flow["test_flow_name"]}/run1',
-            '-O', 'd'
-        ],
-        capture_output=True,
-        env=os.environ
+    result = mod_cylc_reinstall_cli(
+        f'{fixture_provide_flow["test_flow_name"]}/run1',
+        {
+            'opt_conf_keys': ['d']
+        }
     )
     yield {
         'fixture_provide_flow': fixture_provide_flow,
@@ -167,7 +164,7 @@ def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
 
 
 def test_cylc_reinstall_run(fixture_reinstall_flow):
-    assert fixture_reinstall_flow['result'].returncode == 0
+    assert fixture_reinstall_flow['result'].ret == 0
 
 
 @pytest.mark.parametrize(
@@ -196,7 +193,9 @@ def test_cylc_reinstall_files(fixture_reinstall_flow, file_, expect):
 
 
 @pytest.fixture(scope='module')
-def fixture_reinstall_flow2(fixture_provide_flow, monkeymodule):
+def fixture_reinstall_flow2(
+    fixture_provide_flow, monkeymodule, mod_cylc_reinstall_cli
+):
     """Run ``cylc reinstall``.
 
     This second re-install we change the contents of the source rose-suite.conf
@@ -213,12 +212,8 @@ def fixture_reinstall_flow2(fixture_provide_flow, monkeymodule):
     (fixture_provide_flow['srcpath'] / 'rose-suite.conf').write_text(
         'opts=z\n'
     )
-    result = subprocess.run(
-        [
-            'cylc', 'reinstall',
-            f'{fixture_provide_flow["test_flow_name"]}/run1',
-        ],
-        capture_output=True,
+    result = mod_cylc_reinstall_cli(
+        f'{fixture_provide_flow["test_flow_name"]}/run1'
     )
     yield {
         'fixture_provide_flow': fixture_provide_flow,
@@ -227,7 +222,7 @@ def fixture_reinstall_flow2(fixture_provide_flow, monkeymodule):
 
 
 def test_cylc_reinstall_run2(fixture_reinstall_flow2):
-    assert fixture_reinstall_flow2['result'].returncode == 0
+    assert fixture_reinstall_flow2['result'].ret == 0
 
 
 @pytest.mark.parametrize(
@@ -256,7 +251,7 @@ def test_cylc_reinstall_files2(fixture_reinstall_flow2, file_, expect):
 
 
 def test_cylc_reinstall_fail_on_clashing_template_vars(
-    tmp_path, request, mod_cylc_install_cli
+    tmp_path, request, mod_cylc_install_cli, mod_cylc_reinstall_cli
 ):
     """If you re-install with a different templating engine in suite.rc
     reinstall should fail.
@@ -279,14 +274,11 @@ def test_cylc_reinstall_fail_on_clashing_template_vars(
         '[empy:suite.rc]\n'
         'Primrose=\'Primula Vulgaris\'\n'
     )
-    reinstall = subprocess.run(
-        ['cylc', 'reinstall', test_flow_name],
-        capture_output=True
-    )
-    assert reinstall.returncode != 0
+    reinstall = mod_cylc_reinstall_cli(test_flow_name)
+    assert reinstall.ret != 0
     assert (
         'You should not define more than one templating section'
-        in reinstall.stderr.decode()
+        in str(reinstall.exc)
     )
     # Clean up run dir:
     if not request.session.testsfailed:

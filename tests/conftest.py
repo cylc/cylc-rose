@@ -27,8 +27,13 @@ from cylc.flow.scripts.validate import (
 )
 
 from cylc.flow.scripts.install import (
-    install as cylc_install,
+    install_cli as cylc_install,
     get_option_parser as install_gop
+)
+
+from cylc.flow.scripts.reinstall import (
+    reinstall_cli as cylc_reinstall,
+    get_option_parser as reinstall_gop
 )
 
 
@@ -154,6 +159,40 @@ def _cylc_install_cli(capsys, caplog):
     return _inner
 
 
+def _cylc_reinstall_cli(capsys, caplog):
+    """Access the validate CLI"""
+    def _inner(workflow_id, opts=None):
+        """Install a workflow.
+
+        Args:
+            srcpath:
+            args: Dictionary of arguments.
+        """
+        parser = reinstall_gop()
+        options = parser.get_default_values()
+        options.__dict__.update({
+            'profile_mode': None, 'templatevars': [], 'templatevars_file': [],
+            'output': None
+        })
+
+        if opts is not None:
+            options.__dict__.update(opts)
+
+        output = SimpleNamespace()
+
+        try:
+            cylc_reinstall(options, workflow_id)
+            output.ret = 0
+            output.exc = ''
+        except Exception as exc:
+            output.ret = 1
+            output.exc = exc
+        output.logging = '\n'.join([i.message for i in caplog.records])
+        output.out, output.err = capsys.readouterr()
+        return output
+    return _inner
+
+
 @pytest.fixture
 def cylc_install_cli(capsys, caplog):
     return _cylc_install_cli(capsys, caplog)
@@ -162,6 +201,16 @@ def cylc_install_cli(capsys, caplog):
 @pytest.fixture(scope='module')
 def mod_cylc_install_cli(mod_capsys, mod_caplog):
     return _cylc_install_cli(mod_capsys, mod_caplog)
+
+
+@pytest.fixture
+def cylc_reinstall_cli(capsys, caplog):
+    return _cylc_reinstall_cli(capsys, caplog)
+
+
+@pytest.fixture(scope='module')
+def mod_cylc_reinstall_cli(mod_capsys, mod_caplog):
+    return _cylc_reinstall_cli(mod_capsys, mod_caplog)
 
 
 @pytest.fixture
