@@ -1,4 +1,3 @@
-# THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC WORKFLOW ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -34,6 +33,11 @@ from cylc.flow.scripts.install import (
 from cylc.flow.scripts.reinstall import (
     reinstall_cli as cylc_reinstall,
     get_option_parser as reinstall_gop
+)
+
+from cylc.flow.scripts.view import (
+    _main as cylc_view,
+    get_option_parser as view_gop
 )
 
 
@@ -96,83 +100,31 @@ def pytest_runtest_makereport(item, call):
     item.module._module_outcomes = _module_outcomes
 
 
-def _cylc_validate_cli(capsys, caplog):
-    """Access the validate CLI"""
-    def _inner(srcpath, args=None):
-        parser = validate_gop()
+def _cylc_cli(capsys, caplog, script, gop, parser_reqd=False):
+    """Access the CLI for a cylc script:
+
+    Args:
+        capsys, caplog: Pytest fixtures - use `mod_cap~` to make
+            the fixture calling this function module scoped.
+        script: Script CLI to run
+        gop: get_option parser for a given script.
+        parser_reqd: Many scripts don't require the parser object,
+            just an id/path and the options object. If the parser
+            object is required, set True.
+
+    Returns: An object which looks a bit like the result
+        of running:
+
+        subprocess.run(
+            ['cylc', 'script']
+            + [f"--{opt}: value" for opt, value in opts.items()]
+        )
+    """
+    def _inner(srcpath, opts=None):
+        parser = gop()
         options = parser.get_default_values()
         options.__dict__.update({
             'templatevars': [], 'templatevars_file': []
-        })
-
-        if args is not None:
-            options.__dict__.update(args)
-
-        output = SimpleNamespace()
-
-        try:
-            cylc_validate(parser, options, str(srcpath))
-            output.ret = 0
-            output.exc = ''
-        except Exception as exc:
-            output.ret = 1
-            output.exc = exc
-
-        output.logging = '\n'.join([i.message for i in caplog.records])
-        output.out, output.err = capsys.readouterr()
-
-        return output
-    return _inner
-
-
-def _cylc_install_cli(capsys, caplog):
-    """Access the install CLI"""
-    def _inner(srcpath, args=None):
-        """Install a workflow.
-
-        Args:
-            srcpath:
-            args: Dictionary of arguments.
-        """
-        parser = install_gop()
-        options = parser.get_default_values()
-        options.__dict__.update({
-            'profile_mode': None, 'templatevars': [], 'templatevars_file': [],
-            'output': None
-        })
-
-        if args is not None:
-            options.__dict__.update(args)
-
-        output = SimpleNamespace()
-
-        try:
-            cylc_install(options, str(srcpath))
-            output.ret = 0
-            output.exc = ''
-        except Exception as exc:
-            output.ret = 1
-            output.exc = exc
-        output.logging = '\n'.join([i.message for i in caplog.records])
-        output.out, output.err = capsys.readouterr()
-        return output
-    return _inner
-
-
-def _cylc_reinstall_cli(capsys, caplog):
-    """Access the reinstall CLI"""
-    def _inner(workflow_id, opts=None):
-        """Install a workflow.
-
-        Args:
-            srcpath:
-            args: Dictionary of arguments.
-        """
-        parser = reinstall_gop()
-        options = parser.get_default_values()
-        options.__dict__.update({
-            'profile_mode': None, 'templatevars': [], 'templatevars_file': [],
-            'output': None
         })
 
         if opts is not None:
@@ -181,43 +133,71 @@ def _cylc_reinstall_cli(capsys, caplog):
         output = SimpleNamespace()
 
         try:
-            cylc_reinstall(options, workflow_id)
+            if parser_reqd:
+                script(parser, options, str(srcpath))
+            else:
+                script(options, str(srcpath))
             output.ret = 0
             output.exc = ''
         except Exception as exc:
             output.ret = 1
             output.exc = exc
+
         output.logging = '\n'.join([i.message for i in caplog.records])
         output.out, output.err = capsys.readouterr()
+
         return output
     return _inner
 
 
 @pytest.fixture
 def cylc_install_cli(capsys, caplog):
-    return _cylc_install_cli(capsys, caplog)
+    return _cylc_cli(
+        capsys, caplog,
+        cylc_install, install_gop
+    )
 
 
 @pytest.fixture(scope='module')
 def mod_cylc_install_cli(mod_capsys, mod_caplog):
-    return _cylc_install_cli(mod_capsys, mod_caplog)
+    return _cylc_cli(
+        mod_capsys, mod_caplog,
+        cylc_install, install_gop
+    )
 
 
 @pytest.fixture
 def cylc_reinstall_cli(capsys, caplog):
-    return _cylc_reinstall_cli(capsys, caplog)
+    return _cylc_cli(
+        capsys, caplog,
+        cylc_reinstall, reinstall_gop
+    )
 
 
 @pytest.fixture(scope='module')
 def mod_cylc_reinstall_cli(mod_capsys, mod_caplog):
-    return _cylc_reinstall_cli(mod_capsys, mod_caplog)
+    return _cylc_cli(
+        mod_capsys, mod_caplog,
+        cylc_reinstall, reinstall_gop
+    )
 
 
 @pytest.fixture
 def cylc_validate_cli(capsys, caplog):
-    return _cylc_validate_cli(capsys, caplog)
+    return _cylc_cli(
+        capsys, caplog,
+        cylc_validate, validate_gop, parser_reqd=True
+    )
 
 
 @pytest.fixture(scope='module')
 def mod_cylc_validate_cli(mod_capsys, mod_caplog):
-    return _cylc_validate_cli(mod_capsys, mod_caplog)
+    return _cylc_cli(
+        mod_capsys, mod_caplog,
+        cylc_validate, validate_gop, parser_reqd=True
+    )
+
+
+@pytest.fixture
+def cylc_view_cli(capsys, caplog):
+    return _cylc_cli(capsys, caplog, cylc_view, view_gop)

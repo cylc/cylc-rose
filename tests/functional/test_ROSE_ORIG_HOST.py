@@ -49,14 +49,6 @@ Structure
     │       │          │           │           ├───────────────┤
     │       │          │           │           │               │
 
-Debugging
----------
-Because of the tasks being run in subprocesses debugging can be a little
-tricky. As a result there is a commented ``breakpoint`` in
-``rose_stem_run_template`` indicating a location where it might be useful
-to investigate failing tests.
-
-
 """
 
 import pytest

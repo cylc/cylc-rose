@@ -18,7 +18,6 @@
 
 import os
 import pytest
-import re
 
 from itertools import product
 from pathlib import Path
@@ -37,26 +36,22 @@ def envar_exporter(dict_):
 
 
 @pytest.mark.parametrize(
-    'srcdir, expect',
+    'srcdir',
     [
         param(
             '07_cli_override',
-            'CLI_VAR=="Wobble", "failed 1.1"',
             id='template variable not set'
         ),
         param(
             '08_template_engine_conflict',
-            '.*empy.*#!jinja2.*',
             id='template engine conflict'
         )
     ]
 )
-def test_validate_fail(srcdir, expect, cylc_validate_cli):
+def test_validate_fail(srcdir, cylc_validate_cli):
     srcdir = Path(__file__).parent / srcdir
-    validate = cylc_validate_cli(srcdir)
-    assert validate.ret == 1
-    if expect:
-        assert re.findall(expect, str(validate.exc))
+    result = cylc_validate_cli(str(srcdir))
+    assert result.ret != 0
 
 
 @pytest.mark.parametrize(
@@ -77,9 +72,9 @@ def test_validate_fail(srcdir, expect, cylc_validate_cli):
         ),
         ('06_jinja2_thorough', {'XYZ': 'xyz'}, None),
         (
-            '07_cli_override', {'XYZ': ''},
-            {'templatevars': ["CLI_VAR='Wobble'"]}
-        ),
+            '07_cli_override',
+            {'XYZ': ''},
+            {"templatevars": ["CLI_VAR='Wobble'"]}),
         ('09_template_vars_vanilla', {'XYZ': 'xyz'}, None),
     ],
 )
@@ -87,8 +82,8 @@ def test_validate(tmp_path, srcdir, envvars, args, cylc_validate_cli):
     if envvars is not None:
         envvars = os.environ.update(envvars)
     srcdir = Path(__file__).parent / srcdir
-    validate = cylc_validate_cli(str(srcdir), args)
-    assert validate.ret == 0
+    result = cylc_validate_cli(srcdir, args)
+    assert result.ret == 0
 
 
 @pytest.mark.parametrize(
@@ -109,7 +104,7 @@ def test_validate(tmp_path, srcdir, envvars, args, cylc_validate_cli):
         ('06_jinja2_thorough', {'XYZ': 'xyz'}, None),
     ],
 )
-def test_process(tmp_path, srcdir, envvars, args):
+def test_process(tmp_path, srcdir, envvars, args, cylc_view_cli):
     if envvars is not None:
         envvars = os.environ.update(envvars)
     srcdir = Path(__file__).parent / srcdir
@@ -118,6 +113,8 @@ def test_process(tmp_path, srcdir, envvars, args):
         capture_output=True,
         env=envvars
     ).stdout.decode()
+    # TODO: Fix this - it fails in a way I don't understand.
+    # result = cylc_view_cli(str(srcdir), {'process': True})
     expect = (srcdir / 'processed.conf.control').read_text()
     assert expect == result
 
