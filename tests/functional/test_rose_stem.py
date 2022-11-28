@@ -77,7 +77,9 @@ from cylc.flow.pathutil import get_workflow_run_dir
 from cylc.flow.hostuserutil import get_host
 
 from cylc.rose.stem import (
-    RoseStemVersionException, rose_stem, _get_rose_stem_opts)
+    RoseStemVersionException,
+    rose_stem, _get_rose_stem_opts
+)
 
 from metomi.rose.resource import ResourceLocator
 
@@ -617,3 +619,20 @@ def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
     rose_stem(parser, opts)
 
     assert 'ProjectNotFoundException' in capsys.readouterr().err
+
+
+def test_total_failure_logged(tmp_path):
+    """Top level rose_stem function relays a Cylc Exception in debug mode."""
+    (tmp_path / 'rose-stem').mkdir()
+    (tmp_path / 'rose-stem/rose-suite.conf').write_text(
+        'ROSE_STEM_VERSION=1'
+    )
+
+    result = subprocess.run([
+        'rose', 'stem', f'-s={str(tmp_path)}', '-vvv', '-n', 'foo'
+        ], capture_output=True
+    )
+    verbose_failure_msg = (
+        'raise WorkflowFilesError(NO_FLOW_FILE_MSG'
+        '.format(path))')
+    assert verbose_failure_msg in result.stderr.decode()

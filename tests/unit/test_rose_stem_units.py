@@ -207,7 +207,9 @@ def test__get_project_from_url(
         ('foo/bar', 'some_dir'),
     )
 )
-def test__generate_name(get_StemRunner, monkeypatch, tmp_path, source, expect):
+def test__generate_name(
+    get_StemRunner, monkeypatch, tmp_path, source, expect, caplog, capsys
+):
     """It generates a name if StemRunner._ascertain_project fails.
 
     (This happens if the workflow source is not controlled with FCM)
@@ -219,8 +221,10 @@ def test__generate_name(get_StemRunner, monkeypatch, tmp_path, source, expect):
     # Case: we've not set source:
     expect = tmp_path.name if expect == 'cwd' else expect
 
-    stemrunner = get_StemRunner({}, {'workflow_conf_dir': source})
+    stemrunner = get_StemRunner({}, {'source': source})
+    stemrunner.reporter.contexts['stdout'].verbosity = 5
     assert stemrunner._generate_name() == expect
+    assert 'Suite is named' in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(
@@ -258,6 +262,13 @@ def test__this_suite(
         stemrunner = get_StemRunner({}, {'stem_sources': stem_sources})
         with pytest.raises(RoseSuiteConfNotFoundException):
             stemrunner._this_suite()
+
+
+def test__this_suite_raises_if_no_dir(get_StemRunner):
+    """It raises an exception if there is no suitefile"""
+    stemrunner = get_StemRunner({}, {'stem_sources': ['/foo']})
+    with pytest.raises(RoseSuiteConfNotFoundException):
+        stemrunner._this_suite()
 
 
 def test__check_suite_version_fails_if_no_stem_source(
