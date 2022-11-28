@@ -132,8 +132,8 @@ def test__add_define_option(get_StemRunner, capsys, exisiting_defines):
                 0,
                 'url: file:///worthwhile/foo/bar/baz/trunk@1\n'
                 'project: \n'
-                'some waffle which ought to be ignored',
-                ''
+                'key_with_no_value_ignored:\n',
+                'some waffle which ought to be ignored\n'
             ),
             id='Good fcm output'
         )
@@ -303,3 +303,43 @@ def test__deduce_mirror():
     }
     project = 'someproject'
     StemRunner._deduce_mirror(source_dict, project)
+
+
+def test_RoseSuiteConfNotFoundException_repr():
+    """It handles dirctory not existing _at all_"""
+    result = RoseSuiteConfNotFoundException('/foo').__repr__()
+    expect = 'Suite directory /foo is not a valid directory'
+    assert expect in result
+
+
+def test__ascertain_project(get_StemRunner, monkeypatch):
+    """It doesn't handle sub_tree if not available."""
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner,
+        '_get_project_from_url', lambda _, __: 'foo'
+    )
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner,
+        '_deduce_mirror', lambda _, __, ___: 'foo'
+    )
+    stemrunner = get_StemRunner({'popen': MockPopen((
+        0,
+        (
+            'root: https://foo.com/\n'
+            'url: https://foo.com/helloworld\n'
+            'project: helloworld\n'
+        ),
+        'stderr'
+    ))})
+    result = stemrunner._ascertain_project('')
+    assert result == ('foo', '', '', '', 'foo')
+
+
+def test_process_multiple_auto_opts(monkeypatch, get_StemRunner):
+    stemrunner = get_StemRunner({}, options={'defines': []})
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner, '_read_auto_opts',
+        lambda _: 'foo=bar baz=qux=quiz'
+    )
+    stemrunner._parse_auto_opts()
+    assert 'foo="bar"' in stemrunner.opts.defines[0]
