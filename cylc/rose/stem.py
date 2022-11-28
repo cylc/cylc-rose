@@ -100,18 +100,6 @@ class ConfigVariableSetEvent(Event):
     __str__ = __repr__
 
 
-class ConfigSourceTreeSetEvent(Event):
-
-    """Event to report a source tree for config files."""
-
-    LEVEL = Event.V
-
-    def __repr__(self):
-        return "Using config files from source %s" % (self.args[0])
-
-    __str__ = __repr__
-
-
 class NameSetEvent(Event):
 
     """Event to report a name for the suite being set."""
