@@ -18,7 +18,7 @@ coverage:
         # fail if coverage below this:
         target: '100%'
         # fail if coverage drops by this much:
-        threshold: '2%'
+        threshold: '0%'
     patch:
       default:
         target: '100%'
