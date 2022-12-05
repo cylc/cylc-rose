@@ -33,7 +33,7 @@ from metomi.rose.config import ConfigDumper, ConfigNodeDiff, ConfigNode
 from metomi.rose.config_processor import ConfigProcessError
 from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from optparse import Values
 
 
@@ -63,8 +63,6 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             Dictionary of environment variables
 
     """
-    templating = None
-
     # Don't allow multiple templating sections.
     templating = identify_templating_section(config_node)
 
@@ -356,6 +354,7 @@ def get_cli_opts_node(opts=None, srcdir=None):
 
     # Construct new ouput based on optional Configs:
     newconfig = ConfigNode()
+    newconfig.set(['opts'], ConfigNode())
 
     # For each __define__ determine whether it is an env or template define.
     for define in defines:
