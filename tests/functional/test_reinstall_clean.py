@@ -101,7 +101,7 @@ def fixture_install_flow(
 
 
 def test_cylc_install_run(fixture_install_flow):
-    assert fixture_install_flow['result'].ret == 0
+    assert fixture_install_flow['result']
 
 
 @pytest.mark.parametrize(
@@ -155,7 +155,7 @@ def fixture_reinstall_flow(
 
 
 def test_cylc_reinstall_run(fixture_reinstall_flow):
-    assert fixture_reinstall_flow['result'].ret == 0
+    assert fixture_reinstall_flow['result']
 
 
 @pytest.mark.parametrize(

@@ -50,8 +50,8 @@ def envar_exporter(dict_):
 )
 def test_validate_fail(srcdir, cylc_validate_cli):
     srcdir = Path(__file__).parent / srcdir
-    result = cylc_validate_cli(str(srcdir))
-    assert result.ret != 0
+    with pytest.raises(Exception):
+        cylc_validate_cli(str(srcdir))
 
 
 @pytest.mark.parametrize(
@@ -82,8 +82,7 @@ def test_validate(tmp_path, srcdir, envvars, args, cylc_validate_cli):
     if envvars is not None:
         envvars = os.environ.update(envvars)
     srcdir = Path(__file__).parent / srcdir
-    result = cylc_validate_cli(srcdir, args)
-    assert result.ret == 0
+    cylc_validate_cli(srcdir, args)
 
 
 @pytest.mark.parametrize(
