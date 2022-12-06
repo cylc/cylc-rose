@@ -123,23 +123,33 @@ def fixture_install_flow(
     }
 
 
-def test_cylc_validate_srcdir(fixture_install_flow, mod_cylc_validate_cli):
+def test_cylc_validate_srcdir(
+    fixture_install_flow, mod_cylc_validate_cli, caplog
+):
     """Sanity check that workflow validates:
     """
     srcpath = fixture_install_flow['srcpath']
-    result = mod_cylc_validate_cli(srcpath)
-    search = re.findall(r'ROSE_ORIG_HOST \(.*\) is: (.*)', result.logging)
+    mod_cylc_validate_cli(srcpath)
+    search = re.findall(
+        r'ROSE_ORIG_HOST \(.*\) is: (.*)',
+        '\n'.join([i.message for i in caplog.records])
+    )
     assert search == [HOST, HOST]
 
 
-def test_cylc_validate_rundir(fixture_install_flow, mod_cylc_validate_cli):
+def test_cylc_validate_rundir(
+    fixture_install_flow, mod_cylc_validate_cli, caplog
+):
     """Sanity check that workflow validates:
     """
     flowpath = fixture_install_flow['flowpath'] / 'runN'
-    result = mod_cylc_validate_cli(flowpath)
-    assert 'ROSE_ORIG_HOST (env) is:' in result.logging
+    mod_cylc_validate_cli(flowpath)
+    assert (
+        'ROSE_ORIG_HOST (env) is:' in
+        '\n'.join([i.message for i in caplog.records])
+    )
 
 
 def test_cylc_install_run(fixture_install_flow):
     """install flow works."""
-    assert fixture_install_flow['result'].ret == 0
+    fixture_install_flow['result']

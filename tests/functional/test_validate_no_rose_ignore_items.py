@@ -33,9 +33,7 @@ def test_cylc_validate(tmp_path, cylc_view_cli):
         '!SINGLE="bar"\n'
         '!!DOUBLE="baz"\n'
     )
-    result = cylc_view_cli(str(tmp_path), {'jinja2': True})
-
-    if result.ret == 0:
-        assert True
-    else:
+    try:
+        result = cylc_view_cli(str(tmp_path), {'jinja2': True})
+    except Exception:
         raise Exception(result.stderr.decode())

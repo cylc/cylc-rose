@@ -52,15 +52,13 @@ def fixture_provide_flow(tmp_path_factory, request):
 def test_install_flow(fixture_provide_flow, mod_cylc_install_cli):
     """Run ``cylc install``.
     """
-    result = mod_cylc_install_cli(
+    mod_cylc_install_cli(
         fixture_provide_flow['srcpath'],
         {'workflow_name': fixture_provide_flow['test_flow_name']})
-    assert result.ret == 0
 
 
 def test_reinstall_flow(fixture_provide_flow, mod_cylc_reinstall_cli):
     """Run ``cylc reinstall``.
     """
-    result = mod_cylc_reinstall_cli(
+    mod_cylc_reinstall_cli(
         fixture_provide_flow['test_flow_name'])
-    assert result.ret == 0

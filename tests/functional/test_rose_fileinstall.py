@@ -71,14 +71,13 @@ def test_rose_fileinstall_validate(fixture_provide_flow, cylc_validate_cli):
     """Workflow validates:
     """
     srcpath, _, _ = fixture_provide_flow
-    assert cylc_validate_cli(str(srcpath)).ret == 0
+    cylc_validate_cli(str(srcpath))
 
 
 def test_rose_fileinstall_run(fixture_install_flow):
     """Workflow installs:
     """
-    _, _, _, result, _ = fixture_install_flow
-    assert result.ret == 0
+    fixture_install_flow
 
 
 def test_rose_fileinstall_subfolders(fixture_install_flow):

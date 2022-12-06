@@ -34,6 +34,7 @@ from itertools import product
 from pathlib import Path
 from uuid import uuid4
 
+from cylc.flow.exceptions import PluginError
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
 from cylc.rose.utilities import (
@@ -106,11 +107,11 @@ def test_cylc_validate(fixture_provide_flow, cylc_validate_cli):
     """Sanity check that workflow validates:
     """
     srcpath = fixture_provide_flow['srcpath']
-    assert cylc_validate_cli(str(srcpath)).ret == 0
+    cylc_validate_cli(str(srcpath))
 
 
 def test_cylc_install_run(fixture_install_flow):
-    assert fixture_install_flow['result'].ret == 0
+    fixture_install_flow['result']
 
 
 @pytest.mark.parametrize(
@@ -164,7 +165,7 @@ def fixture_reinstall_flow(
 
 
 def test_cylc_reinstall_run(fixture_reinstall_flow):
-    assert fixture_reinstall_flow['result'].ret == 0
+    assert fixture_reinstall_flow['result']
 
 
 @pytest.mark.parametrize(
@@ -222,7 +223,7 @@ def fixture_reinstall_flow2(
 
 
 def test_cylc_reinstall_run2(fixture_reinstall_flow2):
-    assert fixture_reinstall_flow2['result'].ret == 0
+    assert fixture_reinstall_flow2['result']
 
 
 @pytest.mark.parametrize(
