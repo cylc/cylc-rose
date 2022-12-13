@@ -30,11 +30,6 @@ import cylc
 from cylc.rose.entry_points import get_rose_vars, NotARoseSuiteException
 
 
-def envar_exporter(dict_):
-    for key, val in dict_.items():
-        os.environ[key] = val
-
-
 @pytest.mark.parametrize(
     'srcdir',
     [
@@ -78,9 +73,12 @@ def test_validate_fail(srcdir, cylc_validate_cli):
         ('09_template_vars_vanilla', {'XYZ': 'xyz'}, None),
     ],
 )
-def test_validate(tmp_path, srcdir, envvars, args, cylc_validate_cli):
+def test_validate(
+    tmp_path, srcdir, envvars, args, cylc_validate_cli, monkeypatch
+):
     if envvars is not None:
-        envvars = os.environ.update(envvars)
+        for key, val in envvars.items():
+            monkeypatch.setenv(key, val)
     srcdir = Path(__file__).parent / srcdir
     cylc_validate_cli(srcdir, args)
 
@@ -88,8 +86,7 @@ def test_validate(tmp_path, srcdir, envvars, args, cylc_validate_cli):
 @pytest.mark.parametrize(
     'srcdir, envvars, args',
     [
-        ('00_jinja2_basic', None, None),
-        ('01_empy', None, None),
+        ('00_jinja2_basic', {}, None),
         (
             '04_opts_set_from_env',
             {'ROSE_SUITE_OPT_CONF_KEYS': 'Gaelige'},
@@ -103,19 +100,15 @@ def test_validate(tmp_path, srcdir, envvars, args, cylc_validate_cli):
         ('06_jinja2_thorough', {'XYZ': 'xyz'}, None),
     ],
 )
-def test_process(tmp_path, srcdir, envvars, args, cylc_view_cli):
-    if envvars is not None:
-        envvars = os.environ.update(envvars)
+def test_process(
+    tmp_path, srcdir, envvars, args, cylc_view_cli, monkeypatch, capsys
+):
+    for key, value in envvars.items():
+        monkeypatch.setenv(key, value)
     srcdir = Path(__file__).parent / srcdir
-    result = run(
-        ['cylc', 'view', '-p', str(srcdir)],
-        capture_output=True,
-        env=envvars
-    ).stdout.decode()
-    # TODO: Fix this - it fails in a way I don't understand.
-    # result = cylc_view_cli(str(srcdir), {'process': True})
+    cylc_view_cli(str(srcdir), {'process': True})
     expect = (srcdir / 'processed.conf.control').read_text()
-    assert expect == result
+    assert expect == capsys.readouterr().out
 
 
 @pytest.mark.parametrize(

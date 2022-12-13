@@ -395,7 +395,6 @@ def get_cli_opts_node(opts=None, srcdir=None):
         )
 
     # Specialised treatement of optional configs.
-    newconfig['opts'] = ConfigNode()
     newconfig['opts'].value = ''
     newconfig['opts'].value = merge_opts(newconfig, opt_conf_keys)
     newconfig['opts'].state = '!'
