@@ -64,7 +64,7 @@ def mod_caplog(request):
     caplog._finalize()
 
 
-@pytest.fixture(scope='package', autouse=True)
+@pytest.fixture(scope='module', autouse=True)
 def set_cylc_version():
     from _pytest.monkeypatch import MonkeyPatch
     mpatch = MonkeyPatch()

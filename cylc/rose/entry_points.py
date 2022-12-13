@@ -257,7 +257,6 @@ def rose_fileinstall(srcdir=None, opts=None, rundir=None):
             config_tree.node = config_tree.node.set(
                 keys=["file-install-root"], value=str(rundir)
             )
-
             # Artificially set rose to verbose.
             event_handler = Reporter(3)
             fs_util = FileSystemUtil(event_handler)
