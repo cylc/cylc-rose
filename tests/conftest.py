@@ -17,8 +17,47 @@
 """
 
 import pytest
+from types import SimpleNamespace
 
 from cylc.flow import __version__ as CYLC_VERSION
+
+from cylc.flow.scripts.validate import (
+    wrapped_main as cylc_validate,
+    get_option_parser as validate_gop
+)
+
+from cylc.flow.scripts.install import (
+    install_cli as cylc_install,
+    get_option_parser as install_gop
+)
+
+from cylc.flow.scripts.reinstall import (
+    reinstall_cli as cylc_reinstall,
+    get_option_parser as reinstall_gop
+)
+
+
+@pytest.fixture(scope='module')
+def mod_capsys(request):
+    from _pytest.capture import SysCapture
+    capman = request.config.pluginmanager.getplugin("capturemanager")
+    capture_fixture = pytest.CaptureFixture[str](
+        SysCapture, request, _ispytest=True)
+    capman.set_fixture(capture_fixture)
+    capture_fixture._start()
+    yield capture_fixture
+    capture_fixture.close()
+    capman.unset_fixture()
+
+
+@pytest.fixture(scope='module')
+def mod_caplog(request):
+    request.node.add_report_section = lambda *args: None
+    logging_plugin = request.config.pluginmanager.getplugin('logging-plugin')
+    for _ in logging_plugin.pytest_runtest_setup(request.node):
+        caplog = pytest.LogCaptureFixture(request.node, _ispytest=True)
+    yield caplog
+    caplog._finalize()
 
 
 @pytest.fixture(scope='package', autouse=True)
@@ -55,3 +94,130 @@ def pytest_runtest_makereport(item, call):
     _module_outcomes = getattr(item.module, '_module_outcomes', {})
     _module_outcomes[(item.nodeid, rep.when)] = rep
     item.module._module_outcomes = _module_outcomes
+
+
+def _cylc_validate_cli(capsys, caplog):
+    """Access the validate CLI"""
+    def _inner(srcpath, args=None):
+        parser = validate_gop()
+        options = parser.get_default_values()
+        options.__dict__.update({
+            'templatevars': [], 'templatevars_file': []
+        })
+
+        if args is not None:
+            options.__dict__.update(args)
+
+        output = SimpleNamespace()
+
+        try:
+            cylc_validate(parser, options, str(srcpath))
+            output.ret = 0
+            output.exc = ''
+        except Exception as exc:
+            output.ret = 1
+            output.exc = exc
+
+        output.logging = '\n'.join([i.message for i in caplog.records])
+        output.out, output.err = capsys.readouterr()
+
+        return output
+    return _inner
+
+
+def _cylc_install_cli(capsys, caplog):
+    """Access the install CLI"""
+    def _inner(srcpath, args=None):
+        """Install a workflow.
+
+        Args:
+            srcpath:
+            args: Dictionary of arguments.
+        """
+        parser = install_gop()
+        options = parser.get_default_values()
+        options.__dict__.update({
+            'profile_mode': None, 'templatevars': [], 'templatevars_file': [],
+            'output': None
+        })
+
+        if args is not None:
+            options.__dict__.update(args)
+
+        output = SimpleNamespace()
+
+        try:
+            cylc_install(options, str(srcpath))
+            output.ret = 0
+            output.exc = ''
+        except Exception as exc:
+            output.ret = 1
+            output.exc = exc
+        output.logging = '\n'.join([i.message for i in caplog.records])
+        output.out, output.err = capsys.readouterr()
+        return output
+    return _inner
+
+
+def _cylc_reinstall_cli(capsys, caplog):
+    """Access the reinstall CLI"""
+    def _inner(workflow_id, opts=None):
+        """Install a workflow.
+
+        Args:
+            srcpath:
+            args: Dictionary of arguments.
+        """
+        parser = reinstall_gop()
+        options = parser.get_default_values()
+        options.__dict__.update({
+            'profile_mode': None, 'templatevars': [], 'templatevars_file': [],
+            'output': None
+        })
+
+        if opts is not None:
+            options.__dict__.update(opts)
+
+        output = SimpleNamespace()
+
+        try:
+            cylc_reinstall(options, workflow_id)
+            output.ret = 0
+            output.exc = ''
+        except Exception as exc:
+            output.ret = 1
+            output.exc = exc
+        output.logging = '\n'.join([i.message for i in caplog.records])
+        output.out, output.err = capsys.readouterr()
+        return output
+    return _inner
+
+
+@pytest.fixture
+def cylc_install_cli(capsys, caplog):
+    return _cylc_install_cli(capsys, caplog)
+
+
+@pytest.fixture(scope='module')
+def mod_cylc_install_cli(mod_capsys, mod_caplog):
+    return _cylc_install_cli(mod_capsys, mod_caplog)
+
+
+@pytest.fixture
+def cylc_reinstall_cli(capsys, caplog):
+    return _cylc_reinstall_cli(capsys, caplog)
+
+
+@pytest.fixture(scope='module')
+def mod_cylc_reinstall_cli(mod_capsys, mod_caplog):
+    return _cylc_reinstall_cli(mod_capsys, mod_caplog)
+
+
+@pytest.fixture
+def cylc_validate_cli(capsys, caplog):
+    return _cylc_validate_cli(capsys, caplog)
+
+
+@pytest.fixture(scope='module')
+def mod_cylc_validate_cli(mod_capsys, mod_caplog):
+    return _cylc_validate_cli(mod_capsys, mod_caplog)

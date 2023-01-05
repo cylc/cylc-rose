@@ -27,11 +27,10 @@ At each step it checks the contents of
 - ~/cylc-run/temporary-id/opt/rose-suite-cylc-install.conf
 """
 
-import os
 import pytest
 import shutil
-import subprocess
 
+from itertools import product
 from pathlib import Path
 from uuid import uuid4
 
@@ -39,6 +38,7 @@ from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as ROHIOS)
+from cylc.flow.workflow_files import reinstall_workflow
 
 
 HOST = get_host()
@@ -77,7 +77,9 @@ def fixture_provide_flow(tmp_path_factory, request):
 
 
 @pytest.fixture(scope='module')
-def fixture_install_flow(fixture_provide_flow, monkeymodule):
+def fixture_install_flow(
+    fixture_provide_flow, monkeymodule, mod_cylc_install_cli
+):
     """Run ``cylc install``.
 
     By running in a fixture with modular scope we
@@ -87,29 +89,28 @@ def fixture_install_flow(fixture_provide_flow, monkeymodule):
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
     monkeymodule.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'b')
-    result = subprocess.run(
-        [
-            'cylc', 'install', str(fixture_provide_flow['srcpath']), '-O', 'c',
-            '--workflow-name', fixture_provide_flow['test_flow_name'],
-        ],
-        capture_output=True,
-        env=os.environ
+    result = mod_cylc_install_cli(
+        fixture_provide_flow['srcpath'], {
+            'opt_conf_keys': ['c'],
+            'workflow_name': fixture_provide_flow['test_flow_name']
+        }
     )
+
     yield {
         'fixture_provide_flow': fixture_provide_flow,
         'result': result
     }
 
 
-def test_cylc_validate(fixture_provide_flow):
+def test_cylc_validate(fixture_provide_flow, cylc_validate_cli):
     """Sanity check that workflow validates:
     """
     srcpath = fixture_provide_flow['srcpath']
-    assert subprocess.run(['cylc', 'validate', str(srcpath)]).returncode == 0
+    assert cylc_validate_cli(str(srcpath)).ret == 0
 
 
 def test_cylc_install_run(fixture_install_flow):
-    assert fixture_install_flow['result'].returncode == 0
+    assert fixture_install_flow['result'].ret == 0
 
 
 @pytest.mark.parametrize(
@@ -138,7 +139,9 @@ def test_cylc_install_files(fixture_install_flow, file_, expect):
 
 
 @pytest.fixture(scope='module')
-def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
+def fixture_reinstall_flow(
+    fixture_provide_flow, monkeymodule, mod_cylc_reinstall_cli
+):
     """Run ``cylc reinstall``.
 
     By running in a fixture with modular scope we
@@ -148,14 +151,11 @@ def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
-    result = subprocess.run(
-        [
-            'cylc', 'reinstall',
-            f'{fixture_provide_flow["test_flow_name"]}/run1',
-            '-O', 'd'
-        ],
-        capture_output=True,
-        env=os.environ
+    result = mod_cylc_reinstall_cli(
+        f'{fixture_provide_flow["test_flow_name"]}/run1',
+        {
+            'opt_conf_keys': ['d']
+        }
     )
     yield {
         'fixture_provide_flow': fixture_provide_flow,
@@ -164,7 +164,7 @@ def fixture_reinstall_flow(fixture_provide_flow, monkeymodule):
 
 
 def test_cylc_reinstall_run(fixture_reinstall_flow):
-    assert fixture_reinstall_flow['result'].returncode == 0
+    assert fixture_reinstall_flow['result'].ret == 0
 
 
 @pytest.mark.parametrize(
@@ -193,7 +193,9 @@ def test_cylc_reinstall_files(fixture_reinstall_flow, file_, expect):
 
 
 @pytest.fixture(scope='module')
-def fixture_reinstall_flow2(fixture_provide_flow, monkeymodule):
+def fixture_reinstall_flow2(
+    fixture_provide_flow, monkeymodule, mod_cylc_reinstall_cli
+):
     """Run ``cylc reinstall``.
 
     This second re-install we change the contents of the source rose-suite.conf
@@ -210,12 +212,8 @@ def fixture_reinstall_flow2(fixture_provide_flow, monkeymodule):
     (fixture_provide_flow['srcpath'] / 'rose-suite.conf').write_text(
         'opts=z\n'
     )
-    result = subprocess.run(
-        [
-            'cylc', 'reinstall',
-            f'{fixture_provide_flow["test_flow_name"]}/run1',
-        ],
-        capture_output=True,
+    result = mod_cylc_reinstall_cli(
+        f'{fixture_provide_flow["test_flow_name"]}/run1'
     )
     yield {
         'fixture_provide_flow': fixture_provide_flow,
@@ -224,7 +222,7 @@ def fixture_reinstall_flow2(fixture_provide_flow, monkeymodule):
 
 
 def test_cylc_reinstall_run2(fixture_reinstall_flow2):
-    assert fixture_reinstall_flow2['result'].returncode == 0
+    assert fixture_reinstall_flow2['result'].ret == 0
 
 
 @pytest.mark.parametrize(
@@ -250,3 +248,35 @@ def test_cylc_reinstall_run2(fixture_reinstall_flow2):
 def test_cylc_reinstall_files2(fixture_reinstall_flow2, file_, expect):
     fpath = fixture_reinstall_flow2['fixture_provide_flow']['flowpath']
     assert (fpath / file_).read_text() == expect
+
+
+def test_reinstall_workflow(tmp_path):
+    """In dry-run mode it checks whether rose-suite.conf has changed.
+    """
+    # Set up source and run dirs as if installed:
+    cylc_install_dir = (
+        tmp_path /
+        "cylc-run" /
+        "flow-name" /
+        "_cylc-install")
+    cylc_install_dir.mkdir(parents=True)
+    source_dir = (tmp_path / "cylc-source" / "flow-name")
+    source_dir.mkdir(parents=True)
+    (cylc_install_dir / "source").symlink_to(source_dir)
+    run_dir = cylc_install_dir.parent
+
+    # Add empty files to both source and run dir:
+    for path in product(
+        [source_dir, run_dir], ['flow.cylc', 'rose-suite.conf']
+    ):
+        Path(path[0] / path[1]).touch()
+
+    # Modify the rose-suite.conf
+    (source_dir / 'rose-suite.conf').write_text('foo')
+    (source_dir / 'flow.cylc').write_text('foo')
+
+    stdout = reinstall_workflow(
+        source_dir, "flow-name", run_dir, dry_run=True)
+
+    expect = sorted(['send rose-suite.conf', 'send flow.cylc'])
+    assert sorted(stdout.split('\n')) == expect
