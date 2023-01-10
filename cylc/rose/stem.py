@@ -379,7 +379,7 @@ class StemRunner:
             if self.opts.workflow_conf_dir:
                 basedir = os.path.abspath(self.opts.workflow_conf_dir)
             else:
-                basedir = os.path.dirname(os.path.abspath(os.getcwd()))
+                basedir = os.path.abspath(os.getcwd())
 
         name = os.path.basename(basedir)
         self.reporter(NameSetEvent(name))
