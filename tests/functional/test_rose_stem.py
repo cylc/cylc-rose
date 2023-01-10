@@ -355,7 +355,7 @@ def suite_redirection(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_opts = {
-        'source': f'{setup_stem_repo["workingcopy"]}/rose-stem',
+        'workflow_conf_dir': f'{setup_stem_repo["workingcopy"]}/rose-stem',
         'stem_groups': ['lapsang'],
         'stem_sources': ["fcm:foo.x_tr@head"],
         'workflow_name': setup_stem_repo['suitename']
@@ -431,7 +431,7 @@ def relative_path(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_opts = {
-        'source': './rose-stem',
+        'workflow_conf_dir': './rose-stem',
         'stem_groups': ['ceylon'],
         'workflow_name': setup_stem_repo['suitename']
     }

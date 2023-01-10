@@ -17,13 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-"""rose stem [path]
-
-Install a rose-stem suite using cylc install.
-
-To run a rose-stem suite use "cylc play".
+"""rose stem [options] [path]
 
 Install a suitable suite with a specified set of source tree(s).
+
+To run a rose-stem suite use "cylc play".
 
 Default values of some of these settings are suite-dependent, specified
 in the `rose-suite.conf` file.
@@ -378,10 +376,11 @@ class StemRunner:
         try:
             basedir = self._ascertain_project(os.getcwd())[1]
         except ProjectNotFoundException:
-            if self.opts.source:
-                basedir = os.path.abspath(self.opts.source)
+            if self.opts.workflow_conf_dir:
+                basedir = os.path.abspath(self.opts.workflow_conf_dir)
             else:
-                basedir = os.getcwd()
+                basedir = os.path.abspath(os.getcwd())
+
         name = os.path.basename(basedir)
         self.reporter(NameSetEvent(name))
         return name
@@ -395,12 +394,17 @@ class StemRunner:
             basedir = self.opts.stem_sources[0]
         else:
             basedir = self._ascertain_project(os.getcwd())[1]
+
         suitedir = os.path.join(basedir, DEFAULT_TEST_DIR)
         suitefile = os.path.join(suitedir, "rose-suite.conf")
+
         if not os.path.isfile(suitefile):
             raise RoseSuiteConfNotFoundException(suitedir)
+
         self.opts.suite = suitedir
+
         self._check_suite_version(suitefile)
+
         return suitedir
 
     def _read_auto_opts(self):
@@ -493,10 +497,10 @@ class StemRunner:
                         elements[0], '"' + elements[1] + '"')
 
         # Change into the suite directory
-        if getattr(self.opts, 'source', None):
-            self.reporter(SuiteSelectionEvent(self.opts.source))
+        if getattr(self.opts, 'workflow_conf_dir', None):
+            self.reporter(SuiteSelectionEvent(self.opts.workflow_conf_dir))
             self._check_suite_version(
-                os.path.join(self.opts.source, 'rose-suite.conf'))
+                os.path.join(self.opts.workflow_conf_dir, 'rose-suite.conf'))
         else:
             thissuite = self._this_suite()
             self.fs_util.chdir(thissuite)
@@ -510,7 +514,8 @@ class StemRunner:
 
 
 def get_source_opt_from_args(opts, args):
-    """Convert sourcedir given as arg or implied by no arg to opts.source.
+    """Convert sourcedir given as arg or implied by no arg to
+    opts.workflow_conf_dir.
 
     Possible outcomes:
         No args given:
@@ -525,14 +530,14 @@ def get_source_opt_from_args(opts, args):
     """
     if len(args) == 0:
         # sourcedir not given:
-        opts.source = None
+        opts.workflow_conf_dir = None
         return opts
     elif os.path.isabs(args[-1]):
         # sourcedir given, and is abspath:
-        opts.source = args[-1]
+        opts.workflow_conf_dir = args[-1]
     else:
         # sourcedir given and is not abspath
-        opts.source = str(Path.cwd() / args[-1])
+        opts.workflow_conf_dir = str(Path.cwd() / args[-1])
 
     return opts
 
@@ -550,8 +555,8 @@ def _get_rose_stem_opts():
         "--task", "--group", "-t", "-g",
         help=(
             "Specify a group name to run. Additional groups can be specified"
-            "with further `--group` arguments. The suite will then convert the"
-            "groups into a series of tasks to run."
+            " with further `--group` arguments. The suite will then convert"
+            " the groups into a series of tasks to run."
         ),
         action="append",
         metavar="PATH/TO/FLOW",
@@ -561,14 +566,13 @@ def _get_rose_stem_opts():
         "--source", '-s',
         help=(
             "Specify a source tree to include in a rose-stem suite. The first"
-            "source tree must be a working copy as the location of the suite"
-            "and fcm-make config files are taken from it. Further source"
-            "trees can be added with additional `--source` arguments. "
-            "The project which is associated with a given source is normally "
-            "automatically determined using FCM, however the project can "
-            "be specified by putting the project name as the first part of "
-            "this argument separated by an equals sign as in the third "
-            "example above. Defaults to `.` if not specified."
+            " source tree must be a working copy, as the location of the suite"
+            " and fcm-make config files are taken from it. Further source"
+            " trees can be added with additional `--source` arguments."
+            " The project which is associated with a given source is normally"
+            " automatically determined using FCM, however the project can"
+            " be specified as '<project-name>=<project-path>'."
+            " Defaults to `.` if not specified."
         ),
         action="append",
         metavar="PATH/TO/FLOW",
@@ -600,7 +604,7 @@ def rose_stem(parser, opts):
         opts = StemRunner(opts).process()
 
         # call cylc install
-        cylc_install(opts, opts.source)
+        cylc_install(opts, opts.workflow_conf_dir)
 
     except CylcError as exc:
         if opts.verbosity > 1:

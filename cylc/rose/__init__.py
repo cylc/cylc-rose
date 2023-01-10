@@ -182,7 +182,7 @@ Rose Stem
 .. seealso::
 
    `Rose Stem documentation
-   <https://metomi.github.io/rose/2019.01.2/html/tutorial/rose/furthertopics/
+   <https://metomi.github.io/rose/2019.01.8/html/tutorial/rose/furthertopics/
    rose-stem.html>`_
 
 

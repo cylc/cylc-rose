@@ -16,7 +16,7 @@
 """Functional tests for top-level function record_cylc_install_options and
 """
 
-import cylc
+import cylc.rose
 import pytest
 from pytest import param
 from types import SimpleNamespace
@@ -25,7 +25,8 @@ from cylc.rose.stem import (
     ProjectNotFoundException,
     RoseStemVersionException,
     RoseSuiteConfNotFoundException,
-    StemRunner, SUITE_RC_PREFIX,
+    StemRunner,
+    SUITE_RC_PREFIX,
     get_source_opt_from_args
 )
 
@@ -68,7 +69,7 @@ def test_get_source_opt_from_args(tmp_path, monkeypatch, args, expect):
     monkeypatch.chdir(tmp_path)
     opts = SimpleNamespace()
 
-    result = get_source_opt_from_args(opts, args).source
+    result = get_source_opt_from_args(opts, args).workflow_conf_dir
 
     if expect is None:
         assert result == expect
@@ -218,7 +219,7 @@ def test__generate_name(get_StemRunner, monkeypatch, tmp_path, source, expect):
     # Case: we've not set source:
     expect = tmp_path.name if expect == 'cwd' else expect
 
-    stemrunner = get_StemRunner({}, {'source': source})
+    stemrunner = get_StemRunner({}, {'workflow_conf_dir': source})
     assert stemrunner._generate_name() == expect
 
 
@@ -264,7 +265,7 @@ def test__check_suite_version_fails_if_no_stem_source(
 ):
     """It fails if path of first stem source is not a file"""
     stemrunner = get_StemRunner(
-        {}, {'stem_sources': str(tmp_path), 'source': None})
+        {}, {'stem_sources': str(tmp_path), 'workflow_conf_dir': None})
     stem_suite_subdir = tmp_path / 'rose-stem'
     stem_suite_subdir.mkdir()
     with pytest.raises(RoseSuiteConfNotFoundException, match='^\nCannot'):
@@ -275,7 +276,7 @@ def test__check_suite_version_incompatible(get_StemRunner, tmp_path):
     """It fails if path of first stem source is not a file"""
     (tmp_path / 'rose-suite.conf').write_text('')
     stemrunner = get_StemRunner(
-        {}, {'stem_sources': [], 'source': str(tmp_path)})
+        {}, {'stem_sources': [], 'workflow_conf_dir': str(tmp_path)})
     with pytest.raises(
         RoseStemVersionException, match='ROSE_VERSION'
     ):
