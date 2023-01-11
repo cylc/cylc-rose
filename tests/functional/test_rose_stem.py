@@ -70,7 +70,6 @@ import subprocess
 
 from pathlib import Path
 from shlex import split
-from types import SimpleNamespace
 from uuid import uuid4
 
 from cylc.flow.pathutil import get_workflow_run_dir
@@ -224,18 +223,9 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
         parser, opts = _get_rose_stem_opts()
         [setattr(opts, key, val) for key, val in rose_stem_opts.items()]
 
-        run_stem = SimpleNamespace()
-        run_stem.stdout = ''
-        try:
-            rose_stem(parser, opts)
-            run_stem.returncode = 0
-            run_stem.stderr = ''
-        except Exception as exc:
-            run_stem.returncode = 1
-            run_stem.stderr = exc
+        rose_stem(parser, opts)
 
         return {
-            'run_stem': run_stem,
             'jobout_content': (
                 Path(setup_stem_repo['suite_install_dir']) /
                 'runN/opt/rose-suite-cylc-install.conf'
@@ -246,22 +236,16 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
     yield _inner_fn
 
 
-@pytest.fixture(scope='class')
-def rose_stem_run_really_basic(rose_stem_run_template, setup_stem_repo):
+def test_really_basic(rose_stem_run_template, setup_stem_repo):
+    """Check that assorted variables have been exported.
+    """
     rose_stem_opts = {
         'stem_groups': [],
         'stem_sources': [
             str(setup_stem_repo['workingcopy']), "fcm:foo.x_tr@head"
         ],
     }
-    yield rose_stem_run_template(rose_stem_opts)
-
-
-class TestReallyBasic():
-    def test_really_basic(self, rose_stem_run_really_basic):
-        """Check that assorted variables have been exported.
-        """
-        assert rose_stem_run_really_basic['run_stem'].returncode == 0
+    rose_stem_run_template(rose_stem_opts)
 
 
 @pytest.fixture(scope='class')
@@ -294,7 +278,7 @@ class TestBasic():
         """Check that assorted variables have been exported.
         """
         if expected == 'run_ok':
-            assert rose_stem_run_basic['run_stem'].returncode == 0
+            rose_stem_run_basic
         else:
             expected = expected.format(
                 workingcopy=rose_stem_run_basic['workingcopy'],
@@ -343,7 +327,7 @@ class TestProjectOverride():
         """Check that assorted variables have been exported.
         """
         if expected == 'run_ok':
-            assert project_override['run_stem'].returncode == 0
+            assert project_override
         else:
             expected = expected.format(
                 workingcopy=project_override['workingcopy'],
@@ -380,7 +364,7 @@ class TestSuiteRedirection:
         """Check that assorted variables have been exported.
         """
         if expected == 'run_ok':
-            assert suite_redirection['run_stem'].returncode == 0
+            assert suite_redirection
         else:
             expected = expected.format(
                 workingcopy=suite_redirection['workingcopy'],
@@ -419,7 +403,7 @@ class TestSubdirectory:
         """Check that assorted variables have been exported.
         """
         if expected == 'run_ok':
-            assert subdirectory['run_stem'].returncode == 0
+            assert subdirectory
         else:
             expected = expected.format(
                 workingcopy=subdirectory['workingcopy'],
@@ -459,7 +443,7 @@ class TestRelativePath:
         """Check that assorted variables have been exported.
         """
         if expected == 'run_ok':
-            assert relative_path['run_stem'].returncode == 0
+            assert relative_path
         else:
             expected = expected.format(
                 workingcopy=relative_path['workingcopy'],
@@ -512,7 +496,7 @@ class TestWithConfig:
         """test for successful execution with site/user configuration
         """
         if expected == 'run_ok':
-            assert with_config['run_stem'].returncode == 0
+            assert with_config
         else:
             expected = expected.format(
                 workingcopy=with_config['workingcopy'],
@@ -557,7 +541,7 @@ class TestWithConfig2:
         """test for successful execution with site/user configuration
         """
         if expected == 'run_ok':
-            assert with_config2['run_stem'].returncode == 0
+            assert with_config2
         else:
             expected = expected.format(
                 workingcopy=with_config2['workingcopy'],

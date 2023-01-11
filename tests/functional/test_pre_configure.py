@@ -16,7 +16,6 @@
 """Functional tests for top-level function record_cylc_install_options and
 """
 
-import os
 import pytest
 
 from itertools import product
@@ -74,7 +73,7 @@ def test_validate_fail(srcdir, cylc_validate_cli):
     ],
 )
 def test_validate(
-    tmp_path, srcdir, envvars, args, cylc_validate_cli, monkeypatch
+    tmp_path, srcdir, envvars, args, cylc_validate_cli, monkeypatch, capsys
 ):
     if envvars is not None:
         for key, val in envvars.items():
