@@ -221,7 +221,7 @@ def test__generate_name(
     # Case: we've not set source:
     expect = tmp_path.name if expect == 'cwd' else expect
 
-    stemrunner = get_StemRunner({}, {'source': source})
+    stemrunner = get_StemRunner({}, {'workflow_conf_dir': source})
     stemrunner.reporter.contexts['stdout'].verbosity = 5
     assert stemrunner._generate_name() == expect
     assert 'Suite is named' in capsys.readouterr().out

@@ -34,7 +34,6 @@ from itertools import product
 from pathlib import Path
 from uuid import uuid4
 
-from cylc.flow.exceptions import PluginError
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
 from cylc.rose.utilities import (
