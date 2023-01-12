@@ -22,7 +22,7 @@ from types import SimpleNamespace
 from cylc.flow import __version__ as CYLC_VERSION
 
 from cylc.flow.scripts.validate import (
-    wrapped_main as cylc_validate,
+    _main as cylc_validate,
     get_option_parser as validate_gop
 )
 
