@@ -22,7 +22,6 @@ import os
 import pytest
 from pathlib import Path
 from shutil import rmtree
-from subprocess import run
 import sqlite3
 from uuid import uuid4
 
@@ -31,11 +30,13 @@ from cylc.rose.platform_utils import (
     get_platforms_from_task_jobs
 )
 
+from cylc.flow import __version__ as cylc_version
 from cylc.flow.cfgspec.globalcfg import SPEC
 from cylc.flow.parsec.config import ParsecConfig
 from cylc.flow.pathutil import (
     get_workflow_run_pub_db_path
 )
+from cylc.flow.workflow_db_mgr import CylcWorkflowDAO
 
 MOCK_GLBL_CFG = (
     'cylc.flow.platforms.glbl_cfg',
@@ -146,22 +147,22 @@ def fake_flow():
     # Set up a database
     db_file = get_workflow_run_pub_db_path(flow_name)
     Path(db_file).parent.mkdir()
-    db_script = (
-        b"CREATE TABLE task_jobs("
-        b"cycle TEXT, name TEXT, submit_num INTEGER, platform_name TEXT);\n"
-        b"INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
-        b"    VALUES ('1', 'bar', 1, 'localhost');\n"
-        b"INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
-        b"    VALUES ('1', 'baz', 1, 'dairy');\n"
-        b"INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
-        b"    VALUES ('1', 'bar', 2, 'dairy');\n"
-        b"INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
-        b"    VALUES ('2', 'baz', 1, 'milk');\n"
-    )
-    run(
-        ['sqlite3', db_file],
-        input=db_script,
-    )
+    with CylcWorkflowDAO(db_file, create_tables=True) as dao:
+        conn = dao.connect()
+        conn.execute(
+            r"INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
+            r"    VALUES"
+            r"        ('1', 'bar', 1, 'localhost'),"
+            r"        ('1', 'baz', 1, 'dairy'),"
+            r"        ('1', 'bar', 2, 'dairy'),"
+            r"        ('2', 'baz', 1, 'milk')"
+        )
+        conn.execute(
+            r"INSERT INTO workflow_params"
+            f"    VALUES ('cylc_version', {cylc_version!r});",
+        )
+        conn.commit()
+        conn.close()
 
     yield flow_name, flow_path
 

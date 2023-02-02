@@ -153,9 +153,9 @@ def test_add_cylc_install_to_rose_conf_node_opts(rose_conf, cli_conf, expect):
     expect_opt += ' (cylc-install)'
 
     assert result.comments == [(
-        f' Config Options \'{expect_opt}\' from CLI '
-        'appended to options '
-        'already in `rose-suite.conf`.'
+        f'Config Options \'{expect_opt}\' from CLI'
+        ' appended to options'
+        ' already in `rose-suite.conf`.'
     )]
     assert result.state == ''
 
