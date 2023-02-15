@@ -371,12 +371,12 @@ def get_cli_opts_node(opts=None, srcdir=None):
     # For each __define__ determine whether it is an env or template define.
     for define in defines:
         match = re.match(
-                (
-                    r'^\[(?P<key1>.*)\](?P<state>!{0,2})'
-                    r'(?P<key2>.*)\s*=\s*(?P<value>.*)'
-                ),
-                define
-            ).groupdict()
+            (
+                r'^\[(?P<key1>.*)\](?P<state>!{0,2})'
+                r'(?P<key2>.*)\s*=\s*(?P<value>.*)'
+            ),
+            define
+        ).groupdict()
         if match['key1'] == '' and match['state'] in ['!', '!!']:
             LOG.warning(
                 'CLI opts set to ignored or trigger-ignored will be ignored.'
