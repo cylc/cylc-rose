@@ -197,7 +197,8 @@ def generate_params():
     cmds = {
         'list': 'cylc list',
         'graph': 'cylc graph --reference',
-        'config': 'cylc config'
+        'config': 'cylc config',
+        'view': 'cylc view -j'
     }
     cases = {
         'No Opts': ['', {}, b'mynd'],
