@@ -436,7 +436,7 @@ def add_cylc_install_to_rose_conf_node_opts(rose_conf, cli_conf):
     if 'opts' not in rose_conf:
         rose_conf.set(['opts'], '')
     rose_conf['opts'].comments = [(
-        f'Config Options \'{cli_opts} (cylc-install)\' from CLI appended to '
+        f' Config Options \'{cli_opts} (cylc-install)\' from CLI appended to '
         'options already in `rose-suite.conf`.'
     )]
     opts = []
