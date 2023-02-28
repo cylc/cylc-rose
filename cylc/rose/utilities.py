@@ -266,7 +266,7 @@ def rose_config_tree_loader(srcdir=None, opts=None):
     # templating section is.)
     if getattr(opts, 'rose_template_vars', None):
         template_section = identify_templating_section(config_tree.node)
-        for template_var in opts.rose_template_vars:
+        for template_var in opts.rose_template_vars or []:
             redefinitions.append(f'[{template_section}]{template_var}')
         # Reload the config
         config_tree = ConfigTreeLoader().load(
@@ -355,11 +355,11 @@ def get_cli_opts_node(opts=None, srcdir=None):
     defines = []
     rose_template_vars = []
     if opts and 'opt_conf_keys' in dir(opts):
-        opt_conf_keys = opts.opt_conf_keys
+        opt_conf_keys = opts.opt_conf_keys or []
     if opts and 'defines' in dir(opts):
-        defines = opts.defines
+        defines = opts.defines or []
     if opts and 'rose_template_vars' in dir(opts):
-        rose_template_vars = opts.rose_template_vars
+        rose_template_vars = opts.rose_template_vars or []
 
     rose_orig_host = get_host()
     defines.append(f'[env]ROSE_ORIG_HOST={rose_orig_host}')
