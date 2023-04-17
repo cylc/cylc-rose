@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 import re
 import shlex
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
@@ -325,7 +325,7 @@ def merge_rose_cylc_suite_install_conf(old, new):
     return old
 
 
-def parse_cli_defines(define: str) -> Union[bool, Tuple[str]]:
+def parse_cli_defines(define):
     """Parse a define string.
 
     Args:
