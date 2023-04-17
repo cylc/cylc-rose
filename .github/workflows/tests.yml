@@ -26,10 +26,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install deps
-        run: |
-          pip install 'cylc-flow[empy] @ git+https://github.com/cylc/cylc-flow@master'
-          pip install 'metomi-rose @ git+https://github.com/metomi/rose@master'
+      - name: install libs
+        uses: cylc/release-actions/install-cylc-components@v1
+        with:
+          cylc_flow: true
+          cylc_flow_opts: 'empy'
+          metomi_rose: true
+          metomi_rose_opts: 'tests'
 
       - name: Install cylc-rose
         # need editable install for coverage
