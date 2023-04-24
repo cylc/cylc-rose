@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 import re
 import shlex
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, List, Tuple, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
@@ -325,7 +325,13 @@ def merge_rose_cylc_suite_install_conf(old, new):
     return old
 
 
-def parse_cli_defines(define):
+def parse_cli_defines(define: str) -> Union[
+    bool, Tuple[
+        List[Union[str, Any]],
+        Union[str, Any],
+        Union[str, Any]
+    ]
+]:
     """Parse a define string.
 
     Args:
@@ -362,16 +368,17 @@ def parse_cli_defines(define):
         define
     )
     if match:
-        # case: [section]key = value - expected to be much more common
-        match = match.groupdict()
-        keys = [match['section'].strip(), match['key'].strip()]
+        groupdict = match.groupdict()
+        keys = [groupdict['section'].strip(), groupdict['key'].strip()]
     else:
         # Doesn't have a section:
         match = re.match(
-            r'^(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)',
-            define
-        ).groupdict()
-        keys = [match['key'].strip()]
+            r'^(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)', define)
+        if match:
+            groupdict = match.groupdict()
+            keys = [groupdict['key'].strip()]
+        else:
+            raise Exception('foo')
 
     if match['state'] in ['!', '!!']:
         LOG.warning(
@@ -421,7 +428,7 @@ def get_cli_opts_node(opts=None, srcdir=None):
     defines.append(f'[env]ROSE_ORIG_HOST={rose_orig_host}')
     rose_template_vars.append(f'ROSE_ORIG_HOST={rose_orig_host}')
 
-    # Construct new config node:
+    # Construct new config node representing CLI config items:
     newconfig = ConfigNode()
     for define in defines:
         parsed_define = parse_cli_defines(define)
