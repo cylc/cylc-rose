@@ -354,17 +354,18 @@ def parse_cli_defines(define):
         >>> parse_cli_defines('[section]orange = "segment"')
         (['section', 'orange'], '"segment"', '')
     """
-    try:
+    match = re.match(
+        (
+            r'^\[(?P<section>.*)\](?P<state>!{0,2})'
+            r'(?P<key>.*)\s*=\s*(?P<value>.*)'
+        ),
+        define
+    )
+    if match:
         # case: [section]key = value - expected to be much more common
-        match = re.match(
-            (
-                r'^\[(?P<section>.*)\](?P<state>!{0,2})'
-                r'(?P<key>.*)\s*=\s*(?P<value>.*)'
-            ),
-            define
-        ).groupdict()
+        match = match.groupdict()
         keys = [match['section'].strip(), match['key'].strip()]
-    except AttributeError:
+    else:
         # Doesn't have a section:
         match = re.match(
             r'^(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)',
