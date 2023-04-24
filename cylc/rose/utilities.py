@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any, List, Tuple, Union
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
 import cylc.flow.flags as flags
+from cylc.rose.exceptions import CylcRoseCLIError
 from cylc.rose.jinja2_parser import Parser, patch_jinja2_leading_zeros
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.isodatetime.datetimeoper import DateTimeOperator
@@ -359,11 +360,16 @@ def parse_cli_defines(define: str) -> Union[
         # Inside a section
         >>> parse_cli_defines('[section]orange = "segment"')
         (['section', 'orange'], '"segment"', '')
+
+        # User Error
+        >>> import pytest
+        >>> with pytest.raises(CylcRoseCLIError, match="^Cannot parse"):
+        ...     parse_cli_defines('=stuff_and_nonsense')
     """
     match = re.match(
         (
             r'^\[(?P<section>.*)\](?P<state>!{0,2})'
-            r'(?P<key>.*)\s*=\s*(?P<value>.*)'
+            r'(?P<key>.+)\s*=\s*(?P<value>.+)'
         ),
         define
     )
@@ -373,13 +379,15 @@ def parse_cli_defines(define: str) -> Union[
     else:
         # Doesn't have a section:
         match = re.match(
-            r'^(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)', define)
+            r'^(?P<state>!{0,2})(?P<key>.+)\s*=\s*(?P<value>.+)', define)
         if match:
             groupdict = match.groupdict()
             keys = [groupdict['key'].strip()]
         else:
-            raise Exception('foo')
-
+            raise CylcRoseCLIError(
+                f'Cannot parse define {define}. Such defines should have'
+                'the form [section]key = value'
+            )
     if match['state'] in ['!', '!!']:
         LOG.warning(
             'CLI opts set to ignored or trigger-ignored will be ignored.')
