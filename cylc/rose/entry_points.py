@@ -71,8 +71,7 @@ def post_install(srcdir=None, opts=None, rundir=None):
         srcdir=srcdir, opts=opts, rundir=rundir
     )
     # Finally dump a log of the rose-conf in its final state.
-    if results['fileinstall']:
-        dump_rose_log(rundir=rundir, node=results['fileinstall'])
+    dump_rose_log(rundir=rundir, node=results['fileinstall'])
 
     return results
 
@@ -177,11 +176,6 @@ def record_cylc_install_options(
     """
     # Create a config based on command line options:
     cli_config = get_cli_opts_node(opts, srcdir)
-    # Leave now if there is nothing to do:
-    if not cli_config:
-        return False
-    # raise error if CLI config has multiple templating sections
-    identify_templating_section(cli_config)
 
     # Construct path objects representing our target files.
     (Path(rundir) / 'opt').mkdir(exist_ok=True)
@@ -218,8 +212,7 @@ def record_cylc_install_options(
     dumper.dump(cli_config, str(conf_filepath))
 
     # Merge the opts section of the rose-suite.conf with those set by CLI:
-    if not rose_conf_filepath.is_file():
-        rose_conf_filepath.touch()
+    rose_conf_filepath.touch()
     rose_suite_conf = loader.load(str(rose_conf_filepath))
     rose_suite_conf = add_cylc_install_to_rose_conf_node_opts(
         rose_suite_conf, cli_config

@@ -100,21 +100,13 @@ class ConfigVariableSetEvent(Event):
     __str__ = __repr__
 
 
-class ConfigSourceTreeSetEvent(Event):
-
-    """Event to report a source tree for config files."""
-
-    LEVEL = Event.V
-
-    def __repr__(self):
-        return "Using config files from source %s" % (self.args[0])
-
-    __str__ = __repr__
-
-
 class NameSetEvent(Event):
 
-    """Event to report a name for the suite being set."""
+    """Event to report a name for the suite being set.
+
+    Simple parser of output expected to be in the format:
+    Key: Value.
+    """
 
     LEVEL = Event.V
 
@@ -433,6 +425,16 @@ class StemRunner:
             url = self.host_selector.get_local_host() + ':' + url
         return url
 
+    def _parse_auto_opts(self):
+        auto_opts = self._read_auto_opts()
+        if auto_opts:
+            automatic_options = auto_opts.split()
+            for option in automatic_options:
+                elements = option.split("=")
+                if len(elements) == 2:
+                    self._add_define_option(
+                        elements[0], '"' + elements[1] + '"')
+
     def process(self):
         """Process STEM options into 'rose suite-run' options."""
         # Generate options for source trees
@@ -487,14 +489,7 @@ class StemRunner:
                                      str(expanded_groups))
 
         # Load the config file and return any automatic-options
-        auto_opts = self._read_auto_opts()
-        if auto_opts:
-            automatic_options = auto_opts.split()
-            for option in automatic_options:
-                elements = option.split("=")
-                if len(elements) == 2:
-                    self._add_define_option(
-                        elements[0], '"' + elements[1] + '"')
+        self._parse_auto_opts()
 
         # Change into the suite directory
         if getattr(self.opts, 'workflow_conf_dir', None):
