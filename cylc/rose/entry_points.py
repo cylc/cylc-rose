@@ -177,6 +177,9 @@ def record_cylc_install_options(
     # Create a config based on command line options:
     cli_config = get_cli_opts_node(opts, srcdir)
 
+    # raise error if CLI config has multiple templating sections
+    identify_templating_section(cli_config)
+
     # Construct path objects representing our target files.
     (Path(rundir) / 'opt').mkdir(exist_ok=True)
     conf_filepath = Path(rundir) / 'opt/rose-suite-cylc-install.conf'
