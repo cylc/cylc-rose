@@ -6,6 +6,13 @@ creating a new release entry be sure to copy & paste the span tag with the
 updated. Only the first match gets replaced, so it's fine to leave the old
 ones in. -->
 
+## __cylc-rose-1.2.1 (<span actions:bind='release-date'>Upcoming</span>)__
+
+### Fixes
+
+[#231](https://github.com/cylc/cylc-rose/pull/231) - Show warning about
+`root-dir` config setting in compatibility mode.
+
 ## __cylc-rose-1.2.0 (<span actions:bind='release-date'>Released 2023-01-16</span>)__
 
 ### Fixes
