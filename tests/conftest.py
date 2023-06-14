@@ -155,9 +155,7 @@ def _cylc_reinstall_cli(capsys, caplog):
             srcpath:
             args: Dictionary of arguments.
         """
-        options = Options(reinstall_gop())()
-        if opts is not None:
-            options.__dict__.update(opts)
+        options = Options(reinstall_gop(), opts)()
 
         output = SimpleNamespace()
 
