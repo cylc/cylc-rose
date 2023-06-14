@@ -132,9 +132,7 @@ def _cylc_install_cli(capsys, caplog):
             srcpath:
             args: Dictionary of arguments.
         """
-        options = Options(install_gop())()
-        if args is not None:
-            options.__dict__.update(args)
+        options = Options(install_gop(), args)()
 
         output = SimpleNamespace()
 
