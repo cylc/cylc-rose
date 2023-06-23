@@ -177,6 +177,12 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
         dest = str(workingcopy / 'rose-stem')
         shutil.copy2(src, dest)
     suite_install_dir = get_workflow_run_dir(suitename)
+
+    monkeymodule.setattr(
+        'cylc.flow.pathutil.make_symlink_dir',
+        lambda *_, **__: {}
+    )
+
     yield {
         'basetemp': basetemp,
         'workingcopy': workingcopy,
