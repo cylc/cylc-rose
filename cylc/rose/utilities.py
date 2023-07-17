@@ -383,12 +383,7 @@ def parse_cli_defines(define: str) -> Union[
             # See:
             return False
 
-    if match['state'] in ['!', '!!']:
-        LOG.warning(
-            'CLI opts set to ignored or trigger-ignored will be ignored.')
-        return False
-    else:
-        return (keys, match['value'], match['state'])
+    return (keys, match['value'], match['state'])
 
 
 def get_cli_opts_node(opts=None, srcdir=None):
