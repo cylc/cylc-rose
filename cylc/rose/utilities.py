@@ -374,7 +374,7 @@ def parse_cli_defines(define: str) -> Union[
         # Doesn't have a section:
         match = re.match(
             r'^(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)', define)
-        if match:
+        if match and not match['state']:
             groupdict = match.groupdict()
             keys = [groupdict['key'].strip()]
         else:
