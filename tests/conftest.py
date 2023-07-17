@@ -100,7 +100,8 @@ def pytest_runtest_makereport(item, call):
 def _cylc_validate_cli(capsys, caplog):
     """Access the validate CLI"""
     def _inner(srcpath, args=None):
-        options = Options(validate_gop(), args)()
+        parser = validate_gop()
+        options = Options(parser, args)()
         output = SimpleNamespace()
 
         try:
