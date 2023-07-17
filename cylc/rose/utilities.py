@@ -380,7 +380,7 @@ def parse_cli_defines(define: str) -> Union[
         else:
             # This seems like it ought to be an error,
             # But behaviour is consistent with Rose 2019
-            # See:
+            # See: https://github.com/cylc/cylc-rose/issues/217
             return False
 
     return (keys, match['value'], match['state'])
