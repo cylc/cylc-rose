@@ -100,12 +100,7 @@ def pytest_runtest_makereport(item, call):
 def _cylc_validate_cli(capsys, caplog):
     """Access the validate CLI"""
     def _inner(srcpath, args=None):
-        parser = Options(validate_gop())
-        options = parser()
-
-        if args is not None:
-            options.__dict__.update(args)
-
+        options = Options(validate_gop(), args)()
         output = SimpleNamespace()
 
         try:
@@ -132,10 +127,7 @@ def _cylc_install_cli(capsys, caplog):
             srcpath:
             args: Dictionary of arguments.
         """
-        options = Options(install_gop())()
-        if args is not None:
-            options.__dict__.update(args)
-
+        options = Options(install_gop(), args)()
         output = SimpleNamespace()
 
         try:
@@ -160,10 +152,7 @@ def _cylc_reinstall_cli(capsys, caplog):
             srcpath:
             args: Dictionary of arguments.
         """
-        options = Options(reinstall_gop())()
-        if opts is not None:
-            options.__dict__.update(opts)
-
+        options = Options(reinstall_gop(), opts)()
         output = SimpleNamespace()
 
         try:

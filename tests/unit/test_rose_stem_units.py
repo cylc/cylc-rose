@@ -26,7 +26,6 @@ from cylc.rose.stem import (
     RoseStemVersionException,
     RoseSuiteConfNotFoundException,
     StemRunner,
-    SUITE_RC_PREFIX,
     get_source_opt_from_args
 )
 
@@ -119,7 +118,7 @@ def test__add_define_option(get_StemRunner, capsys, exisiting_defines):
     stemrunner = get_StemRunner(
         {'reporter': print}, {'defines': exisiting_defines})
     assert stemrunner._add_define_option('FOO', '"bar"') is None
-    assert f'{SUITE_RC_PREFIX}FOO="bar"' in stemrunner.opts.defines
+    assert '[template variables]FOO="bar"' in stemrunner.opts.defines
     assert 'Variable FOO set to "bar"' in capsys.readouterr().out
 
 
