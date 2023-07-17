@@ -157,7 +157,7 @@ def test_warn_if_old_templating_set(
 ):
     """Test using unsupported root-dir config raises error."""
     monkeypatch.setattr(
-        cylc.rose.utilities.flags, 'cylc7_back_compat', compat_mode
+        cylc.rose.utilities, 'cylc7_back_compat', compat_mode
     )
     (tmp_path / 'rose-suite.conf').write_text(f'[{rose_config}]')
     get_rose_vars(srcdir=tmp_path)
