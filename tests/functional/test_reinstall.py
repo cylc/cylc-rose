@@ -38,7 +38,7 @@ from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as ROHIOS)
-from cylc.flow.workflow_files import reinstall_workflow
+from cylc.flow.install import reinstall_workflow
 
 
 HOST = get_host()
