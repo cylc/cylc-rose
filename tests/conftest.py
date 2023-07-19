@@ -102,7 +102,6 @@ def _cylc_validate_cli(capsys, caplog):
     def _inner(srcpath, args=None):
         parser = validate_gop()
         options = Options(parser, args)()
-
         output = SimpleNamespace()
 
         try:
@@ -130,7 +129,6 @@ def _cylc_install_cli(capsys, caplog):
             args: Dictionary of arguments.
         """
         options = Options(install_gop(), args)()
-
         output = SimpleNamespace()
 
         try:
@@ -156,7 +154,6 @@ def _cylc_reinstall_cli(capsys, caplog):
             args: Dictionary of arguments.
         """
         options = Options(reinstall_gop(), opts)()
-
         output = SimpleNamespace()
 
         try:
