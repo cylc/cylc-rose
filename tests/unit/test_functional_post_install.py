@@ -44,7 +44,7 @@ HOST = get_host()
 def assert_rose_conf_full_equal(left, right, no_ignore=True):
     for keys_1, node_1 in left.walk(no_ignore=no_ignore):
         node_2 = right.get(keys_1, no_ignore=no_ignore)
-        assert not (
+        assert not (  # noqa: E721
             type(node_1) != type(node_2) or
             (
                 not isinstance(node_1.value, dict) and
