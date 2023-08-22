@@ -71,7 +71,8 @@ def post_install(srcdir=None, opts=None, rundir=None):
         srcdir=srcdir, opts=opts, rundir=rundir
     )
     # Finally dump a log of the rose-conf in its final state.
-    dump_rose_log(rundir=rundir, node=results['fileinstall'])
+    if results['fileinstall']:
+        dump_rose_log(rundir=rundir, node=results['fileinstall'])
 
     return results
 
