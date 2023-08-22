@@ -32,6 +32,7 @@ from cylc.rose.utilities import (
     deprecation_warnings,
     dump_rose_log,
     identify_templating_section,
+    id_templating_section,
     MultipleTemplatingEnginesError
 )
 
@@ -250,6 +251,20 @@ def test_identify_templating_section(node_, expect, raises):
     if raises is not None:
         with pytest.raises(raises):
             identify_templating_section(node)
+
+
+@pytest.mark.parametrize(
+    'input_, expect',
+    (
+        ([None], 'template variables'),
+        (['jinja2'], 'jinja2:suite.rc'),
+        (['jinja2:suite.rc'], 'jinja2:suite.rc'),
+        ([None, True], '[template variables]'),
+        (['jinja2', True], '[jinja2:suite.rc]'),
+    )
+)
+def test_id_templating_section(input_, expect):
+    assert id_templating_section(*input_) == expect
 
 
 @pytest.fixture
