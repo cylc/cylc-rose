@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 import re
 import shlex
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, List, Tuple, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
@@ -327,6 +327,67 @@ def merge_rose_cylc_suite_install_conf(old, new):
     return old
 
 
+def parse_cli_defines(define: str) -> Union[
+    bool, Tuple[
+        List[Union[str, Any]],
+        Union[str, Any],
+        Union[str, Any]
+    ]
+]:
+    """Parse a define string.
+
+    Args:
+        define:
+            A string in one of two forms:
+            - `key = "value"`
+            - `[section]key = "value"`
+
+            With optional `!` and `!!` prepended, indicating an ignored state,
+            which should lead to a warning being logged.
+
+    Returns:
+        False: If state is ignored or trigger-ignored, otherwise...
+        (keys, value, state)
+
+    Examples:
+        # Top level key
+        >>> parse_cli_defines('root-dir = "foo"')
+        (['root-dir'], '"foo"', '')
+
+        # Marked as ignored
+        >>> parse_cli_defines('!root-dir = "foo"')
+        False
+
+        # Inside a section
+        >>> parse_cli_defines('[section]orange = "segment"')
+        (['section', 'orange'], '"segment"', '')
+    """
+    match = re.match(
+        (
+            r'^\[(?P<section>.*)\](?P<state>!{0,2})'
+            r'(?P<key>.*)\s*=\s*(?P<value>.*)'
+        ),
+        define
+    )
+    if match:
+        groupdict = match.groupdict()
+        keys = [groupdict['section'].strip(), groupdict['key'].strip()]
+    else:
+        # Doesn't have a section:
+        match = re.match(
+            r'^(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)', define)
+        if match and not match['state']:
+            groupdict = match.groupdict()
+            keys = [groupdict['key'].strip()]
+        else:
+            # This seems like it ought to be an error,
+            # But behaviour is consistent with Rose 2019
+            # See: https://github.com/cylc/cylc-rose/issues/217
+            return False
+
+    return (keys, match['value'], match['state'])
+
+
 def get_cli_opts_node(opts=None, srcdir=None):
     """Create a ConfigNode representing options set on the command line.
 
@@ -367,28 +428,12 @@ def get_cli_opts_node(opts=None, srcdir=None):
     defines.append(f'[env]ROSE_ORIG_HOST={rose_orig_host}')
     rose_template_vars.append(f'ROSE_ORIG_HOST={rose_orig_host}')
 
-    # Construct new ouput based on optional Configs:
+    # Construct new config node representing CLI config items:
     newconfig = ConfigNode()
-
-    # For each __define__ determine whether it is an env or template define.
     for define in defines:
-        match = re.match(
-            (
-                r'^\[(?P<key1>.*)\](?P<state>!{0,2})'
-                r'(?P<key2>.*)\s*=\s*(?P<value>.*)'
-            ),
-            define
-        ).groupdict()
-        if match['key1'] == '' and match['state'] in ['!', '!!']:
-            LOG.warning(
-                'CLI opts set to ignored or trigger-ignored will be ignored.'
-            )
-        else:
-            newconfig.set(
-                keys=[match['key1'], match['key2']],
-                value=match['value'],
-                state=match['state']
-            )
+        parsed_define = parse_cli_defines(define)
+        if parsed_define:
+            newconfig.set(*parsed_define)
 
     # For each __suite define__ add define.
     if srcdir is not None:

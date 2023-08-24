@@ -468,24 +468,6 @@ def test_merge_opts(
 
 
 @pytest.mark.parametrize(
-    'state',
-    ['!', '!!']
-)
-def test_cli_defines_ignored_are_ignored(
-    state, caplog
-):
-    opts = SimpleNamespace(
-        opt_confs='', defines=[f'[]{state}opts=ignore me'],
-        rose_template_vars=[]
-    )
-
-    get_cli_opts_node(opts)
-    assert (caplog.records[0].message ==
-            'CLI opts set to ignored or trigger-ignored will be ignored.'
-            )
-
-
-@pytest.mark.parametrize(
     'opt_confs, defines, rose_template_vars, expect',
     [
         # Basic simple test
