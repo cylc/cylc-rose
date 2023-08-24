@@ -316,7 +316,7 @@ def test__deduce_mirror():
 )
 def test_ascertain_project_if_name_supplied(
     get_StemRunner: Fixture,
-    capsys: Fixture,
+    capsys: pytest.CaptureFixture,
     item: str,
     expect: Tuple[str],
     stdout: str,
