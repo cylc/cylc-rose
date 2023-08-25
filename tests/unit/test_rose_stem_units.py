@@ -277,7 +277,7 @@ def test__check_suite_version_incompatible(get_StemRunner, tmp_path):
     stemrunner = get_StemRunner(
         {}, {'stem_sources': [], 'workflow_conf_dir': str(tmp_path)})
     with pytest.raises(
-        RoseStemVersionException, match='ROSE_VERSION'
+        RoseStemVersionException, match='ROSE_STEM_VERSION'
     ):
         stemrunner._check_suite_version(str(tmp_path / 'rose-suite.conf'))
 
