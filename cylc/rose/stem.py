@@ -342,7 +342,7 @@ class StemRunner:
         if re.search(r'^\.', item):
             item = os.path.abspath(os.path.join(os.getcwd(), item))
 
-        if project is not None:
+        if project:
             print(f"[WARN] Forcing project for '{item}' to be '{project}'")
             return project, item, item, '', ''
 
