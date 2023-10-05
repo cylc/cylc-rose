@@ -19,7 +19,7 @@ jobs:
       PYTEST_ADDOPTS: --cov --cov-append --color=yes
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure Python
         uses: actions/setup-python@v4
@@ -47,7 +47,7 @@ jobs:
         run: mypy
 
       - name: Checkout FCM
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ github.event.inputs.fcm_repo || 'metomi/fcm' }}
           ref: ${{ github.event.inputs.fcm_ref || 'master' }}
