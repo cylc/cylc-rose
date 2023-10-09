@@ -13,6 +13,9 @@ ones in. -->
 [#250](https://github.com/cylc/cylc-rose/pull/250) - Prevent project
 name being manually set to an empty string.
 
+[#248](https://github.com/cylc/cylc-rose/pull/248) - Make sure that
+rose stem sets variables in `[jinja2:suite.rc]` not `[jinja2]`.
+
 ## __cylc-rose-1.3.0 (<span actions:bind='release-date'>Released 2023-07-21</span>)__
 
 ### Fixes
