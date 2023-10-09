@@ -74,6 +74,8 @@ from cylc.flow.scripts.install import (
     install as cylc_install
 )
 
+from cylc.rose.entry_points import get_rose_vars
+
 import metomi.rose.config
 from metomi.rose.fs_util import FileSystemUtil
 from metomi.rose.host_select import HostSelector
@@ -85,7 +87,6 @@ from metomi.rose.resource import ResourceLocator
 EXC_EXIT = cparse('<red><bold>{name}: </bold>{exc}</red>')
 DEFAULT_TEST_DIR = 'rose-stem'
 ROSE_STEM_VERSION = 1
-SUITE_RC_PREFIX = '[jinja2:suite.rc]'
 
 
 class ConfigVariableSetEvent(Event):
@@ -136,15 +137,17 @@ class ProjectNotFoundException(CylcError):
     __str__ = __repr__
 
 
-class RoseStemVersionException(Exception):
+class RoseStemVersionException(CylcError):
 
     """Exception class when running the wrong rose-stem version."""
 
     def __init__(self, version):
+
         Exception.__init__(self, version)
         if version is None:
             self.suite_version = (
-                "does not have ROSE_VERSION set in the rose-suite.conf"
+                "does not have ROSE_STEM_VERSION set in the "
+                "rose-suite.conf"
             )
         else:
             self.suite_version = "at version %s" % (version)
@@ -156,7 +159,7 @@ class RoseStemVersionException(Exception):
     __str__ = __repr__
 
 
-class RoseSuiteConfNotFoundException(Exception):
+class RoseSuiteConfNotFoundException(CylcError):
 
     """Exception class when unable to find rose-suite.conf."""
 
@@ -235,6 +238,7 @@ class StemRunner:
 
         self.host_selector = HostSelector(event_handler=self.reporter,
                                           popen=self.popen)
+        self.template_section = '[template variables]'
 
     def _add_define_option(self, var, val):
         """Add a define option passed to the SuiteRunner.
@@ -244,9 +248,9 @@ class StemRunner:
             val: Value of variable to set
         """
         if self.opts.defines:
-            self.opts.defines.append(SUITE_RC_PREFIX + var + '=' + val)
+            self.opts.defines.append(self.template_section + var + '=' + val)
         else:
-            self.opts.defines = [SUITE_RC_PREFIX + var + '=' + val]
+            self.opts.defines = [self.template_section + var + '=' + val]
         self.reporter(ConfigVariableSetEvent(var, val))
         return
 
@@ -330,7 +334,7 @@ class StemRunner:
         if re.search(r'^\.', item):
             item = os.path.abspath(os.path.join(os.getcwd(), item))
 
-        if project is not None:
+        if project:
             print(f"[WARN] Forcing project for '{item}' to be '{project}'")
             return project, item, item, '', ''
 
@@ -449,6 +453,12 @@ class StemRunner:
             self.opts.stem_sources[i] = url
             self.opts.project.append(project)
 
+            if i == 0:
+                # Get the name of the template section to be used:
+                template_type = get_rose_vars(
+                    Path(url) / "rose-stem")["templating_detected"]
+                self.template_section = f'[{template_type}]'
+
             # Versions of variables with hostname prepended for working copies
             url_host = self._prepend_localhost(url)
             base_host = self._prepend_localhost(base)
@@ -485,8 +495,8 @@ class StemRunner:
             expanded_groups = []
             for i in self.opts.stem_groups:
                 expanded_groups.extend(i.split(','))
-            self.opts.defines.append(SUITE_RC_PREFIX + 'RUN_NAMES=' +
-                                     str(expanded_groups))
+            self.opts.defines.append(
+                f"{self.template_section}RUN_NAMES={str(expanded_groups)}")
 
         # Load the config file and return any automatic-options
         self._parse_auto_opts()

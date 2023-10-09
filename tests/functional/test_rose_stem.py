@@ -177,6 +177,12 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
         dest = str(workingcopy / 'rose-stem')
         shutil.copy2(src, dest)
     suite_install_dir = get_workflow_run_dir(suitename)
+
+    monkeymodule.setattr(
+        'cylc.flow.pathutil.make_symlink_dir',
+        lambda *_, **__: {}
+    )
+
     yield {
         'basetemp': basetemp,
         'workingcopy': workingcopy,
@@ -564,7 +570,7 @@ class TestWithConfig2:
             assert expected in with_config2['jobout_content']
 
 
-def test_incompatible_versions(setup_stem_repo, monkeymodule):
+def test_incompatible_versions(setup_stem_repo, monkeymodule, caplog, capsys):
     """It fails if trying to install an incompatible version.
     """
     # Copy suite into working copy.
@@ -581,7 +587,8 @@ def test_incompatible_versions(setup_stem_repo, monkeymodule):
             str(setup_stem_repo['workingcopy']),
             "fcm:foo.x_tr@head",
         ],
-        'workflow_name': str(setup_stem_repo['suitename'])
+        'workflow_name': str(setup_stem_repo['suitename']),
+        'verbosity': 2,
     }
 
     monkeymodule.setattr('sys.argv', ['stem'])
@@ -617,3 +624,19 @@ def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
     rose_stem(parser, opts)
 
     assert 'ProjectNotFoundException' in capsys.readouterr().err
+
+
+def test_picks_template_section(setup_stem_repo, monkeymodule, capsys):
+    """It can cope with template variables section being either
+    ``template variables`` or ``jinja2:suite.rc``.
+    """
+    monkeymodule.setattr('sys.argv', ['stem'])
+    monkeymodule.chdir(setup_stem_repo['workingcopy'])
+    (setup_stem_repo['workingcopy'] / 'rose-stem/rose-suite.conf').write_text(
+        'ROSE_STEM_VERSION=1\n'
+        '[template_variables]\n'
+    )
+    parser, opts = _get_rose_stem_opts()
+    rose_stem(parser, opts)
+    _, err = capsys.readouterr()
+    assert "[jinja2:suite.rc]' is deprecated" not in err

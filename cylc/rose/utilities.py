@@ -21,11 +21,11 @@ import os
 from pathlib import Path
 import re
 import shlex
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, List, Tuple, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
-import cylc.flow.flags as flags
+from cylc.flow.flags import cylc7_back_compat
 from cylc.rose.jinja2_parser import Parser, patch_jinja2_leading_zeros
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.isodatetime.datetimeoper import DateTimeOperator
@@ -42,6 +42,8 @@ SET_BY_CYLC = 'set by Cylc'
 ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING = (
     ' ROSE_ORIG_HOST set by cylc install.'
 )
+MESSAGE = 'message'
+ALL_MODES = 'all modes'
 
 
 class MultipleTemplatingEnginesError(Exception):
@@ -312,6 +314,67 @@ def merge_rose_cylc_suite_install_conf(old, new):
     return old
 
 
+def parse_cli_defines(define: str) -> Union[
+    bool, Tuple[
+        List[Union[str, Any]],
+        Union[str, Any],
+        Union[str, Any]
+    ]
+]:
+    """Parse a define string.
+
+    Args:
+        define:
+            A string in one of two forms:
+            - `key = "value"`
+            - `[section]key = "value"`
+
+            With optional `!` and `!!` prepended, indicating an ignored state,
+            which should lead to a warning being logged.
+
+    Returns:
+        False: If state is ignored or trigger-ignored, otherwise...
+        (keys, value, state)
+
+    Examples:
+        # Top level key
+        >>> parse_cli_defines('root-dir = "foo"')
+        (['root-dir'], '"foo"', '')
+
+        # Marked as ignored
+        >>> parse_cli_defines('!root-dir = "foo"')
+        False
+
+        # Inside a section
+        >>> parse_cli_defines('[section]orange = "segment"')
+        (['section', 'orange'], '"segment"', '')
+    """
+    match = re.match(
+        (
+            r'^\[(?P<section>.*)\](?P<state>!{0,2})'
+            r'(?P<key>.*)\s*=\s*(?P<value>.*)'
+        ),
+        define
+    )
+    if match:
+        groupdict = match.groupdict()
+        keys = [groupdict['section'].strip(), groupdict['key'].strip()]
+    else:
+        # Doesn't have a section:
+        match = re.match(
+            r'^(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)', define)
+        if match and not match['state']:
+            groupdict = match.groupdict()
+            keys = [groupdict['key'].strip()]
+        else:
+            # This seems like it ought to be an error,
+            # But behaviour is consistent with Rose 2019
+            # See: https://github.com/cylc/cylc-rose/issues/217
+            return False
+
+    return (keys, match['value'], match['state'])
+
+
 def get_cli_opts_node(opts=None, srcdir=None):
     """Create a ConfigNode representing options set on the command line.
 
@@ -352,29 +415,15 @@ def get_cli_opts_node(opts=None, srcdir=None):
     defines.append(f'[env]ROSE_ORIG_HOST={rose_orig_host}')
     rose_template_vars.append(f'ROSE_ORIG_HOST={rose_orig_host}')
 
-    # Construct new ouput based on optional Configs:
+    # Construct new config node representing CLI config items:
     newconfig = ConfigNode()
     newconfig.set(['opts'], ConfigNode())
 
     # For each __define__ determine whether it is an env or template define.
     for define in defines:
-        match = re.match(
-            (
-                r'^\[(?P<key1>.*)\](?P<state>!{0,2})'
-                r'(?P<key2>.*)\s*=\s*(?P<value>.*)'
-            ),
-            define
-        ).groupdict()
-        if match['key1'] == '' and match['state'] in ['!', '!!']:
-            LOG.warning(
-                'CLI opts set to ignored or trigger-ignored will be ignored.'
-            )
-        else:
-            newconfig.set(
-                keys=[match['key1'], match['key2']],
-                value=match['value'],
-                state=match['state']
-            )
+        parsed_define = parse_cli_defines(define)
+        if parsed_define:
+            newconfig.set(*parsed_define)
 
     # For each __suite define__ add define.
     if srcdir is not None:
@@ -641,30 +690,50 @@ def deprecation_warnings(config_tree):
         - "root-dir"
         - "jinja2:suite.rc"
         - "empy:suite.rc"
+        - root-dir
 
+    If ALL_MODES is True this deprecation will ignore whether there is a
+    flow.cylc or suite.rc in the workflow directory.
     """
 
     deprecations = {
-        'empy:suite.rc': (
-            "'rose-suite.conf[empy:suite.rc]' is deprecated."
-            " Use [template variables] instead."),
-        'jinja2:suite.rc': (
-            "'rose-suite.conf[jinja2:suite.rc]' is deprecated."
-            " Use [template variables] instead."),
-        'empy:flow.cylc': (
-            "'rose-suite.conf[empy:flow.cylc]' is not used by Cylc."
-            " Use [template variables] instead."),
-        'jinja2:flow.cylc': (
-            "'rose-suite.conf[jinja2:flow.cylc]' is not used by Cylc."
-            " Use [template variables] instead."),
-        'root-dir': (
-            'You have set "rose-suite.conf[root-dir]", '
-            'which is not supported at '
-            'Cylc 8. Use `[install] symlink dirs` in global.cylc '
-            'instead.')
+        'empy:suite.rc': {
+            MESSAGE: (
+                "'rose-suite.conf[empy:suite.rc]' is deprecated."
+                " Use [template variables] instead."),
+            ALL_MODES: False,
+        },
+        'jinja2:suite.rc': {
+            MESSAGE: (
+                "'rose-suite.conf[jinja2:suite.rc]' is deprecated."
+                " Use [template variables] instead."),
+            ALL_MODES: False,
+        },
+        'empy:flow.cylc': {
+            MESSAGE: (
+                "'rose-suite.conf[empy:flow.cylc]' is not used by Cylc."
+                " Use [template variables] instead."),
+            ALL_MODES: False,
+        },
+        'jinja2:flow.cylc': {
+            MESSAGE: (
+                "'rose-suite.conf[jinja2:flow.cylc]' is not used by Cylc."
+                " Use [template variables] instead."),
+            ALL_MODES: False,
+        },
+        'root-dir': {
+            MESSAGE: (
+                'You have set "rose-suite.conf[root-dir]", '
+                'which is not supported at '
+                'Cylc 8. Use `[install] symlink dirs` in global.cylc '
+                'instead.'),
+            ALL_MODES: True,
+        },
     }
-    if not flags.cylc7_back_compat:
-        for string in list(config_tree.node):
-            for deprecation in deprecations.keys():
-                if deprecation in string.lower():
-                    LOG.warning(deprecations[deprecation])
+    for string in list(config_tree.node):
+        for name, info in deprecations.items():
+            if (
+                (info[ALL_MODES] or not cylc7_back_compat)
+                and name in string.lower()
+            ):
+                LOG.warning(info[MESSAGE])

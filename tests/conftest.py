@@ -20,6 +20,7 @@ import pytest
 from types import SimpleNamespace
 
 from cylc.flow import __version__ as CYLC_VERSION
+from cylc.flow.option_parsers import Options
 
 from cylc.flow.scripts.validate import (
     _main as cylc_validate,
@@ -100,14 +101,7 @@ def _cylc_validate_cli(capsys, caplog):
     """Access the validate CLI"""
     def _inner(srcpath, args=None):
         parser = validate_gop()
-        options = parser.get_default_values()
-        options.__dict__.update({
-            'templatevars': [], 'templatevars_file': []
-        })
-
-        if args is not None:
-            options.__dict__.update(args)
-
+        options = Options(parser, args)()
         output = SimpleNamespace()
 
         try:
@@ -134,16 +128,7 @@ def _cylc_install_cli(capsys, caplog):
             srcpath:
             args: Dictionary of arguments.
         """
-        parser = install_gop()
-        options = parser.get_default_values()
-        options.__dict__.update({
-            'profile_mode': None, 'templatevars': [], 'templatevars_file': [],
-            'output': None
-        })
-
-        if args is not None:
-            options.__dict__.update(args)
-
+        options = Options(install_gop(), args)()
         output = SimpleNamespace()
 
         try:
@@ -168,16 +153,7 @@ def _cylc_reinstall_cli(capsys, caplog):
             srcpath:
             args: Dictionary of arguments.
         """
-        parser = reinstall_gop()
-        options = parser.get_default_values()
-        options.__dict__.update({
-            'profile_mode': None, 'templatevars': [], 'templatevars_file': [],
-            'output': None
-        })
-
-        if opts is not None:
-            options.__dict__.update(opts)
-
+        options = Options(reinstall_gop(), opts)()
         output = SimpleNamespace()
 
         try:

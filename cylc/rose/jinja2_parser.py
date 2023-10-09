@@ -161,10 +161,11 @@ def patch_jinja2_leading_zeros():
     if jinja2.lexer.Lexer.wrap._instances:
         num_examples = 5
         LOG.warning(
-            'Support for integers with leading zeros was dropped'
-            ' in Jinja2 v3.'
+            'Support for integers with leading zeros (including'
+            ' lists of integers) was dropped in Jinja2 v3.'
             ' Rose will extend support until a future version.'
-            '\nPlease amend your Rose configuration files e.g:'
+            '\nPlease amend your Rose configuration files,'
+            ' which currently contain:'
             '\n * '
             + (
                 '\n * '.join(
