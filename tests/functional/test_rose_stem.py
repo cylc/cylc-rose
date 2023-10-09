@@ -570,7 +570,7 @@ class TestWithConfig2:
             assert expected in with_config2['jobout_content']
 
 
-def test_incompatible_versions(setup_stem_repo, monkeymodule):
+def test_incompatible_versions(setup_stem_repo, monkeymodule, caplog, capsys):
     """It fails if trying to install an incompatible version.
     """
     # Copy suite into working copy.
@@ -587,7 +587,8 @@ def test_incompatible_versions(setup_stem_repo, monkeymodule):
             str(setup_stem_repo['workingcopy']),
             "fcm:foo.x_tr@head",
         ],
-        'workflow_name': str(setup_stem_repo['suitename'])
+        'workflow_name': str(setup_stem_repo['suitename']),
+        'verbosity': 2,
     }
 
     monkeymodule.setattr('sys.argv', ['stem'])

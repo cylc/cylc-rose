@@ -145,15 +145,17 @@ class ProjectNotFoundException(CylcError):
     __str__ = __repr__
 
 
-class RoseStemVersionException(Exception):
+class RoseStemVersionException(CylcError):
 
     """Exception class when running the wrong rose-stem version."""
 
     def __init__(self, version):
+
         Exception.__init__(self, version)
         if version is None:
             self.suite_version = (
-                "does not have ROSE_VERSION set in the rose-suite.conf"
+                "does not have ROSE_STEM_VERSION set in the "
+                "rose-suite.conf"
             )
         else:
             self.suite_version = "at version %s" % (version)
@@ -165,7 +167,7 @@ class RoseStemVersionException(Exception):
     __str__ = __repr__
 
 
-class RoseSuiteConfNotFoundException(Exception):
+class RoseSuiteConfNotFoundException(CylcError):
 
     """Exception class when unable to find rose-suite.conf."""
 
@@ -340,7 +342,7 @@ class StemRunner:
         if re.search(r'^\.', item):
             item = os.path.abspath(os.path.join(os.getcwd(), item))
 
-        if project is not None:
+        if project:
             print(f"[WARN] Forcing project for '{item}' to be '{project}'")
             return project, item, item, '', ''
 

@@ -20,6 +20,7 @@ import cylc.rose
 import pytest
 from pytest import param
 from types import SimpleNamespace
+from typing import Any, Tuple
 
 from cylc.rose.stem import (
     ProjectNotFoundException,
@@ -32,6 +33,9 @@ from cylc.rose.stem import (
 from metomi.rose.reporter import Reporter
 from metomi.rose.popen import RosePopener
 from metomi.rose.fs_util import FileSystemUtil
+
+
+Fixture = Any
 
 
 class MockPopen:
@@ -277,7 +281,7 @@ def test__check_suite_version_incompatible(get_StemRunner, tmp_path):
     stemrunner = get_StemRunner(
         {}, {'stem_sources': [], 'workflow_conf_dir': str(tmp_path)})
     with pytest.raises(
-        RoseStemVersionException, match='ROSE_VERSION'
+        RoseStemVersionException, match='ROSE_STEM_VERSION'
     ):
         stemrunner._check_suite_version(str(tmp_path / 'rose-suite.conf'))
 
@@ -291,3 +295,45 @@ def test__deduce_mirror():
     }
     project = 'someproject'
     StemRunner._deduce_mirror(source_dict, project)
+
+
+@pytest.mark.parametrize(
+    'item, expect, stdout',
+    (
+        (
+            # Normally formed project=url
+            'foo=bar',
+            ('foo', 'bar'),
+            "Forcing project for 'bar' to be 'foo'",
+        ),
+        (
+            # Malformed project=url
+            '=foo',
+            ('', 'foo'),
+            None,
+        ),
+    )
+)
+def test_ascertain_project_if_name_supplied(
+    get_StemRunner: Fixture,
+    capsys: pytest.CaptureFixture,
+    item: str,
+    expect: Tuple[str],
+    stdout: str,
+) -> None:
+    """Method gives sensible results for different CLI input.
+
+    Written because `-s=foo` leads to "item" including a leading = sign.
+    This led to project name being set to '', and skipping the FCM
+    calling logic, which the user might expect.
+    """
+    stemrunner = get_StemRunner({})
+    if stdout:
+        results = stemrunner._ascertain_project(item)
+        assert results[:2] == expect
+        assert stdout in capsys.readouterr().out
+    else:
+        with pytest.raises(
+            ProjectNotFoundException, match='is not a working copy'
+        ):
+            stemrunner._ascertain_project(item)
