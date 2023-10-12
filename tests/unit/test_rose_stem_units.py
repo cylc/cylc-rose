@@ -358,6 +358,7 @@ def test_process_no_auto_opts(monkeypatch, get_StemRunner):
     stemrunner._parse_auto_opts()
     assert stemrunner.opts.defines == []
 
+
 @pytest.mark.parametrize(
     'item, expect, stdout',
     (
