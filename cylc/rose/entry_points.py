@@ -39,7 +39,6 @@ from cylc.rose.utilities import (
     get_cli_opts_node,
     add_cylc_install_to_rose_conf_node_opts,
 )
-from cylc.flow.flags import cylc7_back_compat
 from cylc.flow.hostuserutil import get_host
 
 
@@ -123,7 +122,7 @@ def get_rose_vars(srcdir=None, opts=None):
         return config
 
     # Check for definitely invalid defines
-    if opts and hasattr(opts, 'defines') and not cylc7_back_compat:
+    if opts and hasattr(opts, 'defines'):
         invalid_defines_check(opts.defines)
 
     # Load the raw config tree
