@@ -75,6 +75,7 @@ from cylc.flow.scripts.install import (
 )
 
 from cylc.rose.entry_points import get_rose_vars
+from cylc.rose.utilities import id_templating_section
 
 import metomi.rose.config
 from metomi.rose.fs_util import FileSystemUtil
@@ -452,10 +453,10 @@ class StemRunner:
             self.opts.project.append(project)
 
             if i == 0:
-                # Get the name of the template section to be used:
                 template_type = get_rose_vars(
                     Path(url) / "rose-stem")["templating_detected"]
-                self.template_section = f'[{template_type}]'
+                self.template_section = id_templating_section(
+                    template_type, with_brackets=True)
 
             # Versions of variables with hostname prepended for working copies
             url_host = self._prepend_localhost(url)

@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 import re
 import shlex
-from typing import TYPE_CHECKING, Any, List, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
@@ -197,13 +197,27 @@ def identify_templating_section(config_node):
             "You should not define more than one templating section. "
             f"You defined:\n\t{'; '.join(defined_sections)}"
         )
-    elif 'jinja2:suite.rc' in defined_sections:
-        templating = 'jinja2:suite.rc'
-    elif 'empy:suite.rc' in defined_sections:
-        templating = 'empy:suite.rc'
+    elif defined_sections:
+        return id_templating_section(defined_sections.pop())
     else:
+        return id_templating_section('')
+
+
+def id_templating_section(
+    section: Optional[str] = None,
+    with_brackets: bool = False
+) -> str:
+    """Return a full template section string."""
+    templating = None
+    if section and 'jinja2' in section:
+        templating = 'jinja2:suite.rc'
+    elif section and 'empy' in section:
+        templating = 'empy:suite.rc'
+
+    if not templating:
         templating = 'template variables'
 
+    templating = f'[{templating}]' if with_brackets else templating
     return templating
 
 
