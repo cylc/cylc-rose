@@ -25,11 +25,12 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow import LOG
+from cylc.flow.exceptions import CylcError
 from cylc.flow.flags import cylc7_back_compat
 from cylc.rose.jinja2_parser import Parser, patch_jinja2_leading_zeros
 from metomi.rose import __version__ as ROSE_VERSION
 from metomi.isodatetime.datetimeoper import DateTimeOperator
-from metomi.rose.config import ConfigDumper, ConfigNodeDiff, ConfigNode
+from metomi.rose.config import ConfigNodeDiff, ConfigNode, ConfigDumper
 from metomi.rose.config_processor import ConfigProcessError
 from metomi.rose.env import env_var_process, UnboundEnvironmentVariableError
 
@@ -46,7 +47,11 @@ MESSAGE = 'message'
 ALL_MODES = 'all modes'
 
 
-class MultipleTemplatingEnginesError(Exception):
+class MultipleTemplatingEnginesError(CylcError):
+    ...
+
+
+class InvalidDefineError(CylcError):
     ...
 
 
@@ -341,11 +346,42 @@ def merge_rose_cylc_suite_install_conf(old, new):
     return old
 
 
+def invalid_defines_check(defines: List) -> None:
+    """Check for defines which do not contain an = and therefore cannot be
+    valid
+
+    Examples:
+
+        # A single invalid define:
+        >>> import pytest
+        >>> with pytest.raises(InvalidDefineError, match=r'\\* foo'):
+        ...    invalid_defines_check(['foo'])
+
+        # Two invalid defines and one valid one:
+        >>> with pytest.raises(
+        ...     InvalidDefineError, match=r'\\* foo.*\\n.* \\* bar'
+        ... ):
+        ...     invalid_defines_check(['foo', 'bar52', 'baz=442'])
+
+        # No invalid defines
+        >>> invalid_defines_check(['foo=12'])
+    """
+    invalid_defines = []
+    for define in defines:
+        if parse_cli_defines(define) is False:
+            invalid_defines.append(define)
+    if invalid_defines:
+        msg = 'Invalid Suite Defines (should contain an =)'
+        for define in invalid_defines:
+            msg += f'\n * {define}'
+        raise InvalidDefineError(msg)
+
+
 def parse_cli_defines(define: str) -> Union[
-    bool, Tuple[
+    bool, str, Tuple[
         List[Union[str, Any]],
         Union[str, Any],
-        Union[str, Any]
+        Union[str, Any],
     ]
 ]:
     """Parse a define string.
