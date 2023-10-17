@@ -430,6 +430,11 @@ class StemRunner:
         return url
 
     def _parse_auto_opts(self):
+        """Load the site config file and return any automatic-options.
+
+        Parse options in the form of a space separated list of key=value
+        pairs.
+        """
         auto_opts = self._read_auto_opts()
         if auto_opts:
             automatic_options = auto_opts.split()
@@ -498,7 +503,6 @@ class StemRunner:
             self.opts.defines.append(
                 f"{self.template_section}RUN_NAMES={str(expanded_groups)}")
 
-        # Load the config file and return any automatic-options
         self._parse_auto_opts()
 
         # Change into the suite directory

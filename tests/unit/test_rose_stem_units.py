@@ -339,7 +339,15 @@ def test__ascertain_project(get_StemRunner, monkeypatch):
     assert result == ('foo', '', '', '', 'foo')
 
 
-def test_process_multiple_auto_opts(monkeypatch, get_StemRunner):
+def test_process_multiple_auto_opts(
+    monkeypatch: Fixture, get_StemRunner: Fixture
+) -> None:
+    """Read a list of options from site config.
+
+    - Correctly splits list.
+    - Adds valid key=value pairs to stemrunner.options.
+    - Rejects malformed items.
+    """
     stemrunner = get_StemRunner({}, options={'defines': []})
     monkeypatch.setattr(
         cylc.rose.stem.StemRunner, '_read_auto_opts',
@@ -349,7 +357,11 @@ def test_process_multiple_auto_opts(monkeypatch, get_StemRunner):
     assert 'foo="bar"' in stemrunner.opts.defines[0]
 
 
-def test_process_no_auto_opts(monkeypatch, get_StemRunner):
+def test_process_no_auto_opts(
+    monkeypatch: Fixture, get_StemRunner: Fixture
+) -> None:
+    """Read an empty list of options from site config.
+    """
     stemrunner = get_StemRunner({}, options={'defines': []})
     monkeypatch.setattr(
         cylc.rose.stem.StemRunner, '_read_auto_opts',
