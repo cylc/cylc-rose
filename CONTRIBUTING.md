@@ -44,6 +44,7 @@ below.
  - Mel Hall
  - Bruno Kinoshita
  - Hilary Oliver
+ - Mark Dawson
 <!-- end-shortlog -->
 
 (All contributors are identifiable with email addresses in the git version
