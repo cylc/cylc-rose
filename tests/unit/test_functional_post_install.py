@@ -27,15 +27,18 @@ from types import SimpleNamespace
 
 from metomi.isodatetime.datetimeoper import DateTimeOperator
 
+import cylc
 from cylc.flow.hostuserutil import get_host
 from cylc.rose.entry_points import (
-    record_cylc_install_options, rose_fileinstall, post_install
+    record_cylc_install_options, rose_fileinstall, post_install,
+    copy_config_file
 )
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
     MultipleTemplatingEnginesError
 )
 from metomi.rose.config import ConfigLoader
+from metomi.rose.config_tree import ConfigTree
 
 
 HOST = get_host()
@@ -346,13 +349,24 @@ def test_template_section_conflict(
 
 
 def test_rose_fileinstall_exception(tmp_path, monkeypatch):
-    def broken():
-        raise FileNotFoundError('Any Old Error')
-    import os
-    monkeypatch.setattr(os, 'getcwd', broken)
-    (tmp_path / 'rose-suite.conf').touch()
+    """It throws an exception if you try to install files to a non existent
+    destination.
+
+    (And returns to the directory you started at)
+    """
+    def fakenode(_, __):
+        tree = ConfigTree()
+        tree.node.value = {'file': ''}
+        return tree
+
+    monkeypatch.setattr(
+        cylc.rose.entry_points, 'rose_config_tree_loader',
+        fakenode
+    )
+    monkeypatch.setattr(
+        cylc.rose.entry_points, "rose_config_exists", lambda x, y: True)
     with pytest.raises(FileNotFoundError):
-        rose_fileinstall(srcdir=tmp_path, rundir=tmp_path)
+        rose_fileinstall(srcdir=tmp_path, rundir='/oiruhgaqhnaigujhj')
 
 
 def test_cylc_no_rose(tmp_path):
@@ -360,3 +374,14 @@ def test_cylc_no_rose(tmp_path):
     """
     from cylc.rose.entry_points import post_install
     assert post_install(srcdir=tmp_path, rundir=tmp_path) is False
+
+
+def test_copy_config_file_fails():
+    """It fails when source or rundir not specified."""
+    with pytest.raises(FileNotFoundError, match='both source and rundir'):
+        copy_config_file()
+
+
+def test_copy_config_file_fails2():
+    """It fails if source not a rose suite."""
+    copy_config_file(srcdir='/foo', rundir='/bar')

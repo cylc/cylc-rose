@@ -135,8 +135,9 @@ def test__add_define_option(get_StemRunner, capsys, exisiting_defines):
                 0,
                 'url: file:///worthwhile/foo/bar/baz/trunk@1\n'
                 'project: \n'
-                'some waffle which ought to be ignored',
-                ''
+                'key_with_no_value_ignored:\n'
+                'some waffle which ought to be ignored\n',
+                None
             ),
             id='Good fcm output'
         )
@@ -210,7 +211,9 @@ def test__get_project_from_url(
         ('foo/bar', 'some_dir'),
     )
 )
-def test__generate_name(get_StemRunner, monkeypatch, tmp_path, source, expect):
+def test__generate_name(
+    get_StemRunner, monkeypatch, tmp_path, source, expect, caplog, capsys
+):
     """It generates a name if StemRunner._ascertain_project fails.
 
     (This happens if the workflow source is not controlled with FCM)
@@ -223,7 +226,9 @@ def test__generate_name(get_StemRunner, monkeypatch, tmp_path, source, expect):
     expect = tmp_path.name if expect == 'cwd' else expect
 
     stemrunner = get_StemRunner({}, {'workflow_conf_dir': source})
+    stemrunner.reporter.contexts['stdout'].verbosity = 5
     assert stemrunner._generate_name() == expect
+    assert 'Suite is named' in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(
@@ -263,6 +268,13 @@ def test__this_suite(
             stemrunner._this_suite()
 
 
+def test__this_suite_raises_if_no_dir(get_StemRunner):
+    """It raises an exception if there is no suitefile"""
+    stemrunner = get_StemRunner({}, {'stem_sources': ['/foo']})
+    with pytest.raises(RoseSuiteConfNotFoundException):
+        stemrunner._this_suite()
+
+
 def test__check_suite_version_fails_if_no_stem_source(
     get_StemRunner, tmp_path
 ):
@@ -295,6 +307,68 @@ def test__deduce_mirror():
     }
     project = 'someproject'
     StemRunner._deduce_mirror(source_dict, project)
+
+
+def test_RoseSuiteConfNotFoundException_repr():
+    """It handles dirctory not existing _at all_"""
+    result = RoseSuiteConfNotFoundException('/foo').__repr__()
+    expect = 'Suite directory /foo is not a valid directory'
+    assert expect in result
+
+
+def test__ascertain_project(get_StemRunner, monkeypatch):
+    """It doesn't handle sub_tree if not available."""
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner,
+        '_get_project_from_url', lambda _, __: 'foo'
+    )
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner,
+        '_deduce_mirror', lambda _, __, ___: 'foo'
+    )
+    stemrunner = get_StemRunner({'popen': MockPopen((
+        0,
+        (
+            'root: https://foo.com/\n'
+            'url: https://foo.com/helloworld\n'
+            'project: helloworld\n'
+        ),
+        'stderr'
+    ))})
+    result = stemrunner._ascertain_project('')
+    assert result == ('foo', '', '', '', 'foo')
+
+
+def test_process_multiple_auto_opts(
+    monkeypatch: Fixture, get_StemRunner: Fixture
+) -> None:
+    """Read a list of options from site config.
+
+    - Correctly splits list.
+    - Adds valid key=value pairs to stemrunner.options.
+    - Rejects malformed items.
+    """
+    stemrunner = get_StemRunner({}, options={'defines': []})
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner, '_read_auto_opts',
+        lambda _: 'foo=bar baz=qux=quiz'
+    )
+    stemrunner._parse_auto_opts()
+    assert 'foo="bar"' in stemrunner.opts.defines[0]
+
+
+def test_process_no_auto_opts(
+    monkeypatch: Fixture, get_StemRunner: Fixture
+) -> None:
+    """Read an empty list of options from site config.
+    """
+    stemrunner = get_StemRunner({}, options={'defines': []})
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner, '_read_auto_opts',
+        lambda _: ''
+    )
+    stemrunner._parse_auto_opts()
+    assert stemrunner.opts.defines == []
 
 
 @pytest.mark.parametrize(

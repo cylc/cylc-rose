@@ -65,8 +65,6 @@ def get_rose_vars_from_config_node(config, config_node, environ):
             Dictionary of environment variables
 
     """
-    templating = None
-
     # Don't allow multiple templating sections.
     templating = identify_templating_section(config_node)
 
@@ -130,54 +128,43 @@ def get_rose_vars_from_config_node(config, config_node, environ):
 
     # For each of the template language sections extract items to a simple
     # dict to be returned.
-    if 'env' in config_node.value:
-
-        config['env'] = {
-            item[0][1]: item[1].value for item in
-            config_node.value['env'].walk()
-            if item[1].state == ConfigNode.STATE_NORMAL
-        }
-    if templating in config_node.value:
-        config['template_variables'] = {
-            item[0][1]: item[1].value for item in
-            config_node.value[templating].walk()
-            if item[1].state == ConfigNode.STATE_NORMAL
-        }
-    elif 'template variables' in config_node.value:
-        config['template_variables'] = {
-            item[0][1]: item[1].value for item in
-            config_node.value['template variables'].walk()
-            if item[1].state == ConfigNode.STATE_NORMAL
-        }
+    config['env'] = {
+        item[0][1]: item[1].value for item in
+        config_node.value['env'].walk()
+        if item[1].state == ConfigNode.STATE_NORMAL
+    }
+    config['template_variables'] = {
+        item[0][1]: item[1].value for item in
+        config_node.value[templating].walk()
+        if item[1].state == ConfigNode.STATE_NORMAL
+    }
 
     # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
     # access.
-    if templating is not None:
-        with patch_jinja2_leading_zeros():
-            # BACK COMPAT: patch_jinja2_leading_zeros
-            # back support zero-padded integers for a limited time to help
-            # users migrate before upgrading cylc-flow to Jinja2>=3.1
-            parser = Parser()
-            for key, value in config['template_variables'].items():
-                # The special variables are already Python variables.
-                if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
-                    try:
-                        config['template_variables'][key] = (
-                            parser.literal_eval(value)
-                        )
-                    except Exception:
-                        raise ConfigProcessError(
-                            [templating, key],
-                            value,
-                            f'Invalid template variable: {value}'
-                            '\nMust be a valid Python or Jinja2 literal'
-                            ' (note strings "must be quoted").'
-                        ) from None
+    with patch_jinja2_leading_zeros():
+        # BACK COMPAT: patch_jinja2_leading_zeros
+        # back support zero-padded integers for a limited time to help
+        # users migrate before upgrading cylc-flow to Jinja2>=3.1
+        parser = Parser()
+        for key, value in config['template_variables'].items():
+            # The special variables are already Python variables.
+            if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
+                try:
+                    config['template_variables'][key] = (
+                        parser.literal_eval(value)
+                    )
+                except Exception:
+                    raise ConfigProcessError(
+                        [templating, key],
+                        value,
+                        f'Invalid template variable: {value}'
+                        '\nMust be a valid Python or Jinja2 literal'
+                        ' (note strings "must be quoted").'
+                    ) from None
 
     # Add ROSE_SUITE_VARIABLES to config of templating engines in use.
-    if templating is not None:
-        config['template_variables'][
-            'ROSE_SUITE_VARIABLES'] = config['template_variables']
+    config['template_variables'][
+        'ROSE_SUITE_VARIABLES'] = config['template_variables']
 
 
 def identify_templating_section(config_node):
@@ -246,7 +233,7 @@ def rose_config_tree_loader(srcdir=None, opts=None):
     if opts and 'opt_conf_keys' in dir(opts) and opts.opt_conf_keys:
         if isinstance(opts.opt_conf_keys, str):
             opt_conf_keys += opts.opt_conf_keys.split()
-        elif isinstance(opts.opt_conf_keys, list):
+        else:
             opt_conf_keys += opts.opt_conf_keys
 
     # Optional definitions
@@ -430,6 +417,9 @@ def get_cli_opts_node(opts=None, srcdir=None):
 
     # Construct new config node representing CLI config items:
     newconfig = ConfigNode()
+    newconfig.set(['opts'], ConfigNode())
+
+    # For each __define__ determine whether it is an env or template define.
     for define in defines:
         parsed_define = parse_cli_defines(define)
         if parsed_define:
@@ -454,9 +444,7 @@ def get_cli_opts_node(opts=None, srcdir=None):
         )
 
     # Specialised treatement of optional configs.
-    if 'opts' not in newconfig:
-        newconfig['opts'] = ConfigNode()
-        newconfig['opts'].value = ''
+    newconfig['opts'].value = ''
     newconfig['opts'].value = merge_opts(newconfig, opt_conf_keys)
     newconfig['opts'].state = '!'
 
@@ -539,8 +527,7 @@ def merge_opts(config, opt_conf_keys):
         'aleph bet gimmel'
     """
     all_opt_conf_keys = []
-    if 'opts' in config:
-        all_opt_conf_keys.append(config['opts'].value)
+    all_opt_conf_keys.append(config['opts'].value)
     if "ROSE_SUITE_OPT_CONF_KEYS" in os.environ:
         all_opt_conf_keys.append(os.environ["ROSE_SUITE_OPT_CONF_KEYS"])
     if opt_conf_keys and isinstance(opt_conf_keys, str):
