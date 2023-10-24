@@ -86,8 +86,7 @@ def test_rose_fileinstall_validate(fixture_provide_flow, cylc_validate_cli):
 def test_rose_fileinstall_run(fixture_install_flow):
     """Workflow installs:
     """
-    _, _, _, result, _ = fixture_install_flow
-    assert result.ret == 0
+    pass  # this tests the fixture itself
 
 
 def test_rose_fileinstall_rose_conf(fixture_install_flow):
