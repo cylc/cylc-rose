@@ -45,6 +45,7 @@ below.
  - Bruno Kinoshita
  - Hilary Oliver
  - Mark Dawson
+ - Jonny Williams
 <!-- end-shortlog -->
 
 (All contributors are identifiable with email addresses in the git version
