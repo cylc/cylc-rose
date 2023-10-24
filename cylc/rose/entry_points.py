@@ -31,6 +31,7 @@ from cylc.rose.utilities import (
     dump_rose_log,
     get_rose_vars_from_config_node,
     identify_templating_section,
+    invalid_defines_check,
     rose_config_exists,
     rose_config_tree_loader,
     merge_rose_cylc_suite_install_conf,
@@ -119,6 +120,10 @@ def get_rose_vars(srcdir=None, opts=None):
         ):
             raise NotARoseSuiteException()
         return config
+
+    # Check for definitely invalid defines
+    if opts and hasattr(opts, 'defines'):
+        invalid_defines_check(opts.defines)
 
     # Load the raw config tree
     config_tree = rose_config_tree_loader(srcdir, opts)
