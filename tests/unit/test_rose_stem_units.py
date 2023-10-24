@@ -23,11 +23,12 @@ from types import SimpleNamespace
 from typing import Any, Tuple
 
 from cylc.rose.stem import (
+    _get_rose_stem_opts,
     ProjectNotFoundException,
     RoseStemVersionException,
     RoseSuiteConfNotFoundException,
     StemRunner,
-    get_source_opt_from_args
+    get_source_opt_from_args,
 )
 
 from metomi.rose.reporter import Reporter
@@ -411,3 +412,39 @@ def test_ascertain_project_if_name_supplied(
             ProjectNotFoundException, match='is not a working copy'
         ):
             stemrunner._ascertain_project(item)
+
+
+@pytest.mark.parametrize(
+    'language, expect',
+    (
+        ('empy', '[empy:suite.rc]'),
+        ('jinja2', '[jinja2:suite.rc]'),
+        ('template variables', '[template variables]'),
+    )
+)
+def test_process_template_engine_set_correctly(monkeypatch, language, expect):
+    """Defines are correctly assigned a [<template language>:suite.rc]
+    section.
+
+    https://github.com/cylc/cylc-rose/issues/246
+    """
+    # Mimic expected result from get_rose_vars method:
+    monkeypatch.setattr(
+        'cylc.rose.stem.get_rose_vars',
+        lambda _: {'templating_detected': language}
+    )
+    monkeypatch.setattr(
+        'sys.argv',
+        ['foo', 'bar']
+    )
+
+    # We are not interested in these checks, just in the defines
+    # created by the process method.
+    stemrunner = StemRunner(_get_rose_stem_opts()[1])
+    stemrunner._ascertain_project = lambda _: ['', '', '', '', '']
+    stemrunner._this_suite = lambda: '.'
+    stemrunner._check_suite_version = lambda _: '1'
+    stemrunner.process()
+
+    for define in stemrunner.opts.defines:
+        assert define.startswith(expect)
