@@ -20,26 +20,26 @@ Check functions which would be called by
 ``cylc install -D [fileinstall:myfile]example`` will lead to the correct file
 installation.
 """
-import pytest
 
 from pathlib import Path
 from types import SimpleNamespace
 
-from metomi.isodatetime.datetimeoper import DateTimeOperator
-
-import cylc
 from cylc.flow.hostuserutil import get_host
-from cylc.rose.entry_points import (
-    record_cylc_install_options, rose_fileinstall, post_install,
-    copy_config_file
-)
-from cylc.rose.utilities import (
-    ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
-    MultipleTemplatingEnginesError
-)
+from metomi.isodatetime.datetimeoper import DateTimeOperator
 from metomi.rose.config import ConfigLoader
 from metomi.rose.config_tree import ConfigTree
+import pytest
 
+from cylc.rose.entry_points import (
+    copy_config_file,
+    post_install,
+    record_cylc_install_options,
+)
+from cylc.rose.fileinstall import rose_fileinstall
+from cylc.rose.utilities import (
+    ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
+    MultipleTemplatingEnginesError,
+)
 
 HOST = get_host()
 
@@ -360,11 +360,13 @@ def test_rose_fileinstall_exception(tmp_path, monkeypatch):
         return tree
 
     monkeypatch.setattr(
-        cylc.rose.entry_points, 'rose_config_tree_loader',
-        fakenode
+        'cylc.rose.utilities.rose_config_tree_loader',
+        fakenode,
     )
     monkeypatch.setattr(
-        cylc.rose.entry_points, "rose_config_exists", lambda x, y: True)
+        'cylc.rose.fileinstall.rose_config_exists',
+        lambda x, y: True,
+    )
     with pytest.raises(FileNotFoundError):
         rose_fileinstall(srcdir=tmp_path, rundir='/oiruhgaqhnaigujhj')
 

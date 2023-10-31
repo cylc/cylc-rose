@@ -15,25 +15,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Tests the plugin with Rose suite configurations via the Python API."""
 
-import pytest
 from types import SimpleNamespace
 
 from metomi.isodatetime.datetimeoper import DateTimeOperator
 from metomi.rose import __version__ as ROSE_VERSION
-from metomi.rose.config import (
-    ConfigNode,
-)
+from metomi.rose.config import ConfigNode
 from metomi.rose.config_processor import ConfigProcessError
+import pytest
 
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
-    get_rose_vars_from_config_node,
+    MultipleTemplatingEnginesError,
     add_cylc_install_to_rose_conf_node_opts,
     deprecation_warnings,
     dump_rose_log,
-    identify_templating_section,
+    get_rose_vars_from_config_node,
     id_templating_section,
-    MultipleTemplatingEnginesError
+    identify_templating_section,
 )
 
 

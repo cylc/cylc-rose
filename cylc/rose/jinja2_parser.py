@@ -16,22 +16,21 @@
 """Utility for parsing Jinja2 expressions."""
 
 from ast import literal_eval as python_literal_eval
-from copy import deepcopy
 from contextlib import contextmanager
+from copy import deepcopy
 import re
 
+from cylc.flow import LOG
+import jinja2.lexer
 from jinja2.nativetypes import NativeEnvironment  # type: ignore
 from jinja2.nodes import (  # type: ignore
     Literal,
+    Neg,
     Output,
     Pair,
+    Pos,
     Template,
-    Neg,
-    Pos
 )
-import jinja2.lexer
-
-from cylc.flow import LOG
 
 
 def _strip_leading_zeros(string):

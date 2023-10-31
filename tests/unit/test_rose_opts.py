@@ -16,14 +16,13 @@
 """Functional tests for top-level function record_cylc_install_options and
 """
 
-import pytest
-import shutil
-
 from pathlib import Path
+import shutil
 from uuid import uuid4
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
+import pytest
 
 from cylc.rose.utilities import ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
 

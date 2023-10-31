@@ -19,24 +19,22 @@
 """
 
 import os
-import pytest
 from pathlib import Path
 from shutil import rmtree
 import sqlite3
 from uuid import uuid4
 
-from cylc.rose.platform_utils import (
-    get_platform_from_task_def,
-    get_platforms_from_task_jobs
-)
-
 from cylc.flow import __version__ as cylc_version
 from cylc.flow.cfgspec.globalcfg import SPEC
 from cylc.flow.parsec.config import ParsecConfig
-from cylc.flow.pathutil import (
-    get_workflow_run_pub_db_path
-)
+from cylc.flow.pathutil import get_workflow_run_pub_db_path
 from cylc.flow.workflow_db_mgr import CylcWorkflowDAO
+import pytest
+
+from cylc.rose.platform_utils import (
+    get_platform_from_task_def,
+    get_platforms_from_task_jobs,
+)
 
 MOCK_GLBL_CFG = (
     'cylc.flow.platforms.glbl_cfg',

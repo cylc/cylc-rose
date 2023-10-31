@@ -16,19 +16,18 @@
 """Functional tests for top-level function record_cylc_install_options and
 """
 
-import os
-import pytest
-import re
-
 from itertools import product
+import os
 from pathlib import Path
-from pytest import param
+import re
 from shlex import split
 from subprocess import run
 from types import SimpleNamespace
 
-import cylc
-from cylc.rose.entry_points import get_rose_vars, NotARoseSuiteException
+import pytest
+from pytest import param
+
+from cylc.rose.utilities import NotARoseSuiteException, get_rose_vars
 
 
 def envar_exporter(dict_):
@@ -157,7 +156,7 @@ def test_warn_if_old_templating_set(
 ):
     """Test using unsupported root-dir config raises error."""
     monkeypatch.setattr(
-        cylc.rose.utilities, 'cylc7_back_compat', compat_mode
+        'cylc.rose.utilities.cylc7_back_compat', compat_mode
     )
     (tmp_path / 'rose-suite.conf').write_text(f'[{rose_config}]')
     get_rose_vars(srcdir=tmp_path)

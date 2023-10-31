@@ -60,7 +60,6 @@ Jinja2 Variables
         is intended to specify the revision of `fcm-make` config files.
 """
 
-from ansimarkup import parse as cparse
 from contextlib import suppress
 from optparse import OptionGroup
 import os
@@ -68,22 +67,19 @@ from pathlib import Path
 import re
 import sys
 
+from ansimarkup import parse as cparse
 from cylc.flow.exceptions import CylcError
-from cylc.flow.scripts.install import (
-    get_option_parser,
-    install as cylc_install
-)
-
-from cylc.rose.entry_points import get_rose_vars
-from cylc.rose.utilities import id_templating_section
-
+from cylc.flow.scripts.install import get_option_parser
+from cylc.flow.scripts.install import install as cylc_install
 import metomi.rose.config
 from metomi.rose.fs_util import FileSystemUtil
 from metomi.rose.host_select import HostSelector
 from metomi.rose.popen import RosePopener
-from metomi.rose.reporter import Reporter, Event
+from metomi.rose.reporter import Event, Reporter
 from metomi.rose.resource import ResourceLocator
 
+from cylc.rose.entry_points import get_rose_vars
+from cylc.rose.utilities import id_templating_section
 
 EXC_EXIT = cparse('<red><bold>{name}: </bold>{exc}</red>')
 DEFAULT_TEST_DIR = 'rose-stem'
@@ -552,7 +548,7 @@ def get_source_opt_from_args(opts, args):
     return opts
 
 
-def _get_rose_stem_opts():
+def get_rose_stem_opts():
     """Implement rose stem."""
     # use the cylc install option parser
     parser = get_option_parser()
@@ -601,11 +597,6 @@ def _get_rose_stem_opts():
     # hard set it.
     opts.quietness = 0
     return parser, opts
-
-
-def main():
-    parser, opts = _get_rose_stem_opts()
-    rose_stem(parser, opts)
 
 
 def rose_stem(parser, opts):

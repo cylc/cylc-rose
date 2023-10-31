@@ -17,9 +17,9 @@
 copy_config_file.
 """
 
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 from cylc.rose.entry_points import copy_config_file
 

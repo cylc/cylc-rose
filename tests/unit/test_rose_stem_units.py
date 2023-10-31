@@ -16,25 +16,24 @@
 """Functional tests for top-level function record_cylc_install_options and
 """
 
-import cylc.rose
-import pytest
-from pytest import param
 from types import SimpleNamespace
 from typing import Any, Tuple
 
+from metomi.rose.fs_util import FileSystemUtil
+from metomi.rose.popen import RosePopener
+from metomi.rose.reporter import Reporter
+import pytest
+from pytest import param
+
+import cylc.rose
 from cylc.rose.stem import (
-    _get_rose_stem_opts,
     ProjectNotFoundException,
     RoseStemVersionException,
     RoseSuiteConfNotFoundException,
     StemRunner,
+    get_rose_stem_opts,
     get_source_opt_from_args,
 )
-
-from metomi.rose.reporter import Reporter
-from metomi.rose.popen import RosePopener
-from metomi.rose.fs_util import FileSystemUtil
-
 
 Fixture = Any
 
@@ -440,7 +439,7 @@ def test_process_template_engine_set_correctly(monkeypatch, language, expect):
 
     # We are not interested in these checks, just in the defines
     # created by the process method.
-    stemrunner = StemRunner(_get_rose_stem_opts()[1])
+    stemrunner = StemRunner(get_rose_stem_opts()[1])
     stemrunner._ascertain_project = lambda _: ['', '', '', '', '']
     stemrunner._this_suite = lambda: '.'
     stemrunner._check_suite_version = lambda _: '1'

@@ -16,9 +16,9 @@
 """Test generic ultilities
 """
 
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 from cylc.rose.utilities import paths_to_pathlib
 

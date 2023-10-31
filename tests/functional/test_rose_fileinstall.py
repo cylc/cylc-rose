@@ -16,13 +16,12 @@
 """Functional tests for top-level function record_cylc_install_options and
 """
 
-import pytest
-import shutil
-
 from pathlib import Path
+import shutil
 from uuid import uuid4
 
 from cylc.flow.pathutil import get_workflow_run_dir
+import pytest
 
 
 @pytest.fixture

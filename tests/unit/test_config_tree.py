@@ -20,27 +20,24 @@ Warning:
 
 """
 
+from io import StringIO
 import os
+from types import SimpleNamespace
+
+from cylc.flow.hostuserutil import get_host
+from metomi.rose.config import ConfigLoader
 import pytest
 from pytest import param
 
-from types import SimpleNamespace
-from io import StringIO
-
-from cylc.flow.hostuserutil import get_host
+from cylc.rose.entry_points import get_rose_vars
 from cylc.rose.utilities import (
+    MultipleTemplatingEnginesError,
     get_cli_opts_node,
     merge_opts,
     merge_rose_cylc_suite_install_conf,
     rose_config_exists,
     rose_config_tree_loader,
-    MultipleTemplatingEnginesError
 )
-from cylc.rose.entry_points import (
-    get_rose_vars,
-)
-from metomi.rose.config import ConfigLoader
-
 
 HOST = get_host()
 

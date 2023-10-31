@@ -17,14 +17,12 @@
 trouble.
 """
 
-import pytest
-import shutil
-
 from pathlib import Path
+import shutil
 from uuid import uuid4
 
 from cylc.flow.pathutil import get_workflow_run_dir
-
+import pytest
 
 WORKFLOW_SRC = Path(__file__).parent / '14_reinstall_fileinstall'
 
