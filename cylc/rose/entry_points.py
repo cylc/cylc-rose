@@ -43,9 +43,7 @@ def post_install(srcdir=None, opts=None, rundir=None):
     results['record_install'] = record_cylc_install_options(
         srcdir=srcdir, opts=opts, rundir=rundir
     )
-    results['fileinstall'] = rose_fileinstall(
-        srcdir=srcdir, opts=opts, rundir=rundir
-    )
+    results['fileinstall'] = rose_fileinstall(opts=opts, rundir=rundir)
     # Finally dump a log of the rose-conf in its final state.
     if results['fileinstall']:
         dump_rose_log(rundir=rundir, node=results['fileinstall'])

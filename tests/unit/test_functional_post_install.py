@@ -65,11 +65,6 @@ def test_no_rose_suite_conf_in_devdir(tmp_path):
     assert result is False
 
 
-def test_rose_fileinstall_no_config_in_folder():
-    # It returns false if no rose-suite.conf
-    assert rose_fileinstall(Path('/dev/null')) is False
-
-
 def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
     # Setup source and destination dirs, including the file ``installme``:
     srcdir = tmp_path / 'source'
@@ -89,7 +84,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
 
     # Run both record_cylc_install options and fileinstall.
     record_cylc_install_options(opts=opts, rundir=destdir)
-    rose_fileinstall(srcdir, opts, destdir)
+    rose_fileinstall(opts, destdir)
     assert ((destdir / 'installedme').read_text() ==
             'Galileo No! We will not let you go.'
             )
@@ -259,9 +254,7 @@ def test_functional_record_cylc_install_options(
             rundir=testdir, opts=opts, srcdir=testdir
         )
     )
-    rose_fileinstall(
-        rundir=testdir, opts=opts, srcdir=testdir
-    )
+    rose_fileinstall(rundir=testdir, opts=opts)
     ritems = sorted([i.relative_to(refdir) for i in refdir.rglob('*')])
     titems = sorted([i.relative_to(testdir) for i in testdir.rglob('*')])
     assert titems == ritems
@@ -287,7 +280,7 @@ def test_functional_rose_database_dumped_correctly(tmp_path):
         "[file:Gnu]\nsrc=nicest_work_of.nature\n"
     )
     (rundir / 'cylc.flow').touch()
-    rose_fileinstall(srcdir=srcdir, rundir=rundir)
+    rose_fileinstall(rundir=rundir)
 
     assert (rundir / '.rose-config_processors-file.db').is_file()
 
@@ -300,7 +293,7 @@ def test_functional_rose_database_dumped_errors(tmp_path):
         "[file:Gnu]\nsrc=nicest_work_of.nature\n"
     )
     (srcdir / 'cylc.flow').touch()
-    assert rose_fileinstall(srcdir=Path('/this/path/goes/nowhere')) is False
+    assert rose_fileinstall() is False
 
 
 @pytest.mark.parametrize(
@@ -368,7 +361,7 @@ def test_rose_fileinstall_exception(tmp_path, monkeypatch):
         lambda x: True,
     )
     with pytest.raises(FileNotFoundError):
-        rose_fileinstall(srcdir=tmp_path, rundir='/oiruhgaqhnaigujhj')
+        rose_fileinstall(rundir='/oiruhgaqhnaigujhj')
 
 
 def test_cylc_no_rose(tmp_path):

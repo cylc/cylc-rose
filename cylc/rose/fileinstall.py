@@ -21,7 +21,7 @@ import os
 from cylc.rose.utilities import rose_config_exists, rose_config_tree_loader
 
 
-def rose_fileinstall(srcdir=None, opts=None, rundir=None):
+def rose_fileinstall(opts=None, rundir=None):
     """Call Rose Fileinstall.
 
     Args:
