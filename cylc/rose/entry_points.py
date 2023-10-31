@@ -15,35 +15,51 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Top level module providing entry point functions."""
 
+from pathlib import Path
+from typing import Union
+
 from cylc.rose.utilities import (
     copy_config_file,
     dump_rose_log,
     get_rose_vars,
-    paths_to_pathlib,
     record_cylc_install_options,
     rose_config_exists,
 )
 
 
-def pre_configure(srcdir=None, opts=None, rundir=None):
+def pre_configure(srcdir=None, opts=None, rundir=None) -> dict:
     """Run before the Cylc configuration is read."""
-    srcdir, rundir = paths_to_pathlib([srcdir, rundir])
+    if not srcdir:
+        # not sure how this could happen
+        return {
+            'env': {},
+            'template_variables': {},
+            'templating_detected': None
+        }
+    srcdir: Path = Path(srcdir)
     return get_rose_vars(srcdir=srcdir, opts=opts)
 
 
-def post_install(srcdir=None, opts=None, rundir=None):
+def post_install(srcdir=None, opts=None, rundir=None) -> Union[dict, bool]:
     """Run after Cylc file installation has completed."""
     from cylc.rose.fileinstall import rose_fileinstall
 
-    if not rose_config_exists(srcdir):
+    if (
+        not srcdir
+        or not rundir
+        or not rose_config_exists(srcdir)
+    ):
+        # nothing to do here
         return False
-    srcdir, rundir = paths_to_pathlib([srcdir, rundir])
+    srcdir: Path = Path(srcdir)
+    rundir: Path = Path(rundir)
+
     results = {}
     copy_config_file(srcdir=srcdir, rundir=rundir)
     results['record_install'] = record_cylc_install_options(
         srcdir=srcdir, opts=opts, rundir=rundir
     )
-    results['fileinstall'] = rose_fileinstall(opts=opts, rundir=rundir)
+    results['fileinstall'] = rose_fileinstall(rundir, opts)
     # Finally dump a log of the rose-conf in its final state.
     if results['fileinstall']:
         dump_rose_log(rundir=rundir, node=results['fileinstall'])

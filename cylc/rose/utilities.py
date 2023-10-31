@@ -24,7 +24,7 @@ from pathlib import Path
 import re
 import shlex
 import shutil
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 from cylc.flow import LOG
 from cylc.flow.exceptions import CylcError
@@ -226,22 +226,17 @@ def id_templating_section(
     return templating
 
 
-def rose_config_exists(srcdir: Union[Path, str, None]) -> bool:
-    """Do opts or srcdir contain a rose config?
+def rose_config_exists(dir_: Path) -> bool:
+    """Does dir_ a rose config?
 
     Args:
-        srcdir: location to test.
+        dir_: location to test.
 
     Returns:
         True if a ``rose-suite.conf`` exists, or option config items have
         been set.
     """
-    # Return false if source dir doesn't exist.
-    if srcdir is None:
-        return False
-
-    # Return true if and only if the rose suite.conf exists.
-    return Path(srcdir, 'rose-suite.conf').is_file()
+    return (dir_ / 'rose-suite.conf').is_file()
 
 
 def rose_config_tree_loader(srcdir=None, opts=None):
@@ -662,16 +657,6 @@ def dump_rose_log(rundir, node):
     return rel_path
 
 
-def paths_to_pathlib(paths):
-    """Convert paths to pathlib
-    """
-    return [
-        Path(path) if path is not None
-        else None
-        for path in paths
-    ]
-
-
 def override_this_variable(node, section, variable):
     """Variable exists in this section of the config and should be replaced
     because it is a standard variable.
@@ -959,17 +944,14 @@ def record_cylc_install_options(
 
 
 def copy_config_file(
-    srcdir=None,
-    opts=None,
-    rundir=None,
+    srcdir: Path,
+    rundir: Path,
 ):
     """Copy the ``rose-suite.conf`` from a workflow source to run directory.
 
     Args:
         srcdir (pathlib.Path | or str):
             Source Path of Cylc install.
-        opts:
-            Not used in this function, but requried for consistent entry point.
         rundir (pathlib.Path | or str):
             Destination path of Cylc install - the workflow rundir.
 
@@ -977,16 +959,6 @@ def copy_config_file(
         True if ``rose-suite.conf`` has been installed.
         False if insufficiant information to install file given.
     """
-    if (
-        rundir is None or
-        srcdir is None
-    ):
-        raise FileNotFoundError(
-            "This plugin requires both source and rundir to exist."
-        )
-
-    rundir = Path(rundir)
-    srcdir = Path(srcdir)
     srcdir_rose_conf = srcdir / 'rose-suite.conf'
     rundir_rose_conf = rundir / 'rose-suite.conf'
 

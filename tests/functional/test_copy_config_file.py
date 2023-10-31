@@ -19,43 +19,21 @@ copy_config_file.
 
 from pathlib import Path
 
-import pytest
-
 from cylc.rose.entry_points import copy_config_file
 
 
-@pytest.mark.parametrize(
-    'sources, inputs, expect',
-    [
-        (
-            # Valid sourcedir with rose file, rose file at dest:
-            {
-                'src/rose-suite.conf': '[env]\nFOO=2',
-                'dest/rose-suite.conf': '[env]\nFOO=1'
-            },
-            {'srcdir': 'src', 'rundir': 'dest'},
-            True
-        )
-    ]
-)
-def test_basic(tmp_path, sources, inputs, expect):
+def test_basic(tmp_path):
     # Create files
-    for fname, content in sources.items():
+    for fname, content in (
+        ('src/rose-suite.conf', '[env]\nFOO=2'),
+        ('dest/rose-suite.conf', '[env]\nFOO=1'),
+    ):
         fname = Path(tmp_path / fname)
         fname.parent.mkdir(parents=True, exist_ok=True)
         fname.write_text(content)
 
-    # Flesh-out filepaths.
-    inputs = {
-        kwarg: Path(tmp_path / path) for kwarg, path in inputs.items()
-        if path is not None
-    }
-
     # Test
-    if expect:
-        assert copy_config_file(**inputs) == expect
-        assert (Path(tmp_path / 'src/rose-suite.conf').read_text() ==
-                Path(tmp_path / 'dest/rose-suite.conf').read_text()
-                )
-    else:
-        assert copy_config_file(**inputs) == expect
+    assert copy_config_file(tmp_path / 'src', tmp_path / 'dest')
+    assert Path(tmp_path / 'src/rose-suite.conf').read_text() == (
+        Path(tmp_path / 'dest/rose-suite.conf').read_text()
+    )

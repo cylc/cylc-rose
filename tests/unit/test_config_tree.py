@@ -62,10 +62,6 @@ def test_node_stripper():
     assert result == {'foo': 'bar'}
 
 
-def test_rose_config_exists_no_dir():
-    assert not rose_config_exists(None)
-
-
 def test_rose_config_exists_no_rose_suite_conf(tmp_path):
     assert not rose_config_exists(tmp_path)
 

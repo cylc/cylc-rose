@@ -17,11 +17,16 @@
 """Utilities related to performing Rose file installation."""
 
 import os
+from typing import TYPE_CHECKING
 
 from cylc.rose.utilities import rose_config_exists, rose_config_tree_loader
 
+if TYPE_CHECKING:
+    from pathlib import Path
+    from cylc.flow.option_parser import Values
 
-def rose_fileinstall(opts=None, rundir=None):
+
+def rose_fileinstall(rundir: 'Path', opts: 'Values'):
     """Call Rose Fileinstall.
 
     Args:

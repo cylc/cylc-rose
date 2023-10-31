@@ -21,7 +21,6 @@ Check functions which would be called by
 installation.
 """
 
-from pathlib import Path
 from types import SimpleNamespace
 
 from cylc.flow.hostuserutil import get_host
@@ -84,7 +83,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
 
     # Run both record_cylc_install options and fileinstall.
     record_cylc_install_options(opts=opts, rundir=destdir)
-    rose_fileinstall(opts, destdir)
+    rose_fileinstall(destdir, opts)
     assert ((destdir / 'installedme').read_text() ==
             'Galileo No! We will not let you go.'
             )
@@ -254,7 +253,7 @@ def test_functional_record_cylc_install_options(
             rundir=testdir, opts=opts, srcdir=testdir
         )
     )
-    rose_fileinstall(rundir=testdir, opts=opts)
+    rose_fileinstall(testdir, opts)
     ritems = sorted([i.relative_to(refdir) for i in refdir.rglob('*')])
     titems = sorted([i.relative_to(testdir) for i in testdir.rglob('*')])
     assert titems == ritems
@@ -280,20 +279,9 @@ def test_functional_rose_database_dumped_correctly(tmp_path):
         "[file:Gnu]\nsrc=nicest_work_of.nature\n"
     )
     (rundir / 'cylc.flow').touch()
-    rose_fileinstall(rundir=rundir)
+    rose_fileinstall(rundir, SimpleNamespace())
 
     assert (rundir / '.rose-config_processors-file.db').is_file()
-
-
-def test_functional_rose_database_dumped_errors(tmp_path):
-    srcdir = (tmp_path / 'srcdir')
-    srcdir.mkdir()
-    (srcdir / 'nicest_work_of.nature').touch()
-    (srcdir / 'rose-suite.conf').write_text(
-        "[file:Gnu]\nsrc=nicest_work_of.nature\n"
-    )
-    (srcdir / 'cylc.flow').touch()
-    assert rose_fileinstall() is False
 
 
 @pytest.mark.parametrize(
@@ -361,7 +349,7 @@ def test_rose_fileinstall_exception(tmp_path, monkeypatch):
         lambda x: True,
     )
     with pytest.raises(FileNotFoundError):
-        rose_fileinstall(rundir='/oiruhgaqhnaigujhj')
+        rose_fileinstall('/oiruhgaqhnaigujhj', SimpleNamespace())
 
 
 def test_cylc_no_rose(tmp_path):
@@ -371,12 +359,6 @@ def test_cylc_no_rose(tmp_path):
     assert post_install(srcdir=tmp_path, rundir=tmp_path) is False
 
 
-def test_copy_config_file_fails():
-    """It fails when source or rundir not specified."""
-    with pytest.raises(FileNotFoundError, match='both source and rundir'):
-        copy_config_file()
-
-
-def test_copy_config_file_fails2():
+def test_copy_config_file_fails(tmp_path):
     """It fails if source not a rose suite."""
-    copy_config_file(srcdir='/foo', rundir='/bar')
+    copy_config_file(tmp_path, tmp_path)
