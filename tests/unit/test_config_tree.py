@@ -13,15 +13,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Tests the plugin with Rose suite configurations on the filesystem.
-
-Warning:
-   These tests share the same os.environ so may interact.
-
-"""
+"""Tests the plugin with Rose suite configurations on the filesystem."""
 
 from io import StringIO
-import os
 from types import SimpleNamespace
 
 from cylc.flow.hostuserutil import get_host
@@ -155,6 +149,7 @@ def rose_config_template(tmp_path, scope='module'):
     ]
 )
 def test_get_rose_vars(
+    monkeypatch,
     rose_config_template,
     override,
     section,
@@ -174,10 +169,10 @@ def test_get_rose_vars(
         opt_conf_keys=[], defines=[], rose_template_vars=[]
     )
     if override == 'environment':
-        os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = "gravy"
+        monkeypatch.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'gravy')
     else:
         # Prevent externally set environment var breaking tests.
-        os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = ""
+        monkeypatch.setenv('ROSE_SUITE_OPT_CONF_KEYS', '')
     if override == 'CLI':
         options.opt_conf_keys = ["chips"]
     elif override == 'override':
@@ -206,9 +201,9 @@ def test_get_rose_vars_env_section(tmp_path):
     ) == 'Spaniel'
 
 
-def test_get_rose_vars_expansions(tmp_path):
+def test_get_rose_vars_expansions(monkeypatch, tmp_path):
     """Check that variables are expanded correctly."""
-    os.environ['XYZ'] = "xyz"
+    monkeypatch.setenv('XYZ', 'xyz')
     (tmp_path / "rose-suite.conf").write_text(
         "[env]\n"
         "FOO=a\n"
@@ -298,6 +293,7 @@ def test_get_rose_vars_fail_if_empy_AND_jinja2(tmp_path):
     ]
 )
 def test_rose_config_tree_loader(
+    monkeypatch,
     rose_config_template,
     override,
     section,
@@ -316,10 +312,10 @@ def test_rose_config_tree_loader(
     """
     options = None
     if override == 'environment':
-        os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = "gravy"
+        monkeypatch.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'gravy')
     else:
         # Prevent externally set environment var breaking tests.
-        os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = ""
+        monkeypatch.setenv('ROSE_SUITE_OPT_CONF_KEYS', '')
     if opts_format == 'list':
         conf_keys = ['chips']
     else:

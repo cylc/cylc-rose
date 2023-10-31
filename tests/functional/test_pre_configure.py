@@ -30,11 +30,6 @@ from pytest import param
 from cylc.rose.utilities import NotARoseSuiteException, get_rose_vars
 
 
-def envar_exporter(dict_):
-    for key, val in dict_.items():
-        os.environ[key] = val
-
-
 @pytest.mark.parametrize(
     'srcdir, expect',
     [
@@ -82,40 +77,36 @@ def test_validate_fail(srcdir, expect, cylc_validate_cli):
         ('09_template_vars_vanilla', {'XYZ': 'xyz'}, None),
     ],
 )
-def test_validate(tmp_path, srcdir, envvars, args, cylc_validate_cli):
-    if envvars is not None:
-        envvars = os.environ.update(envvars)
+def test_validate(monkeypatch, srcdir, envvars, args, cylc_validate_cli):
+    for key, value in (envvars or {}).items():
+        monkeypatch.setenv(key, value)
     srcdir = Path(__file__).parent / srcdir
     validate = cylc_validate_cli(str(srcdir), args)
     assert validate.ret == 0
 
 
 @pytest.mark.parametrize(
-    'srcdir, envvars, args',
+    'srcdir, envvars',
     [
-        ('00_jinja2_basic', None, None),
-        ('01_empy', None, None),
+        ('00_jinja2_basic', None),
+        ('01_empy', None),
         (
             '04_opts_set_from_env',
             {'ROSE_SUITE_OPT_CONF_KEYS': 'Gaelige'},
-            None
         ),
         (
             '05_opts_set_from_rose_suite_conf',
             {'ROSE_SUITE_OPT_CONF_KEYS': ''},
-            None
         ),
-        ('06_jinja2_thorough', {'XYZ': 'xyz'}, None),
+        ('06_jinja2_thorough', {'XYZ': 'xyz'}),
     ],
 )
-def test_process(tmp_path, srcdir, envvars, args):
-    if envvars is not None:
-        envvars = os.environ.update(envvars)
+def test_process(srcdir, envvars):
     srcdir = Path(__file__).parent / srcdir
     result = run(
         ['cylc', 'view', '-p', str(srcdir)],
         capture_output=True,
-        env=envvars
+        env={**os.environ, **(envvars or {})}
     ).stdout.decode()
     expect = (srcdir / 'processed.conf.control').read_text()
     assert expect == result
