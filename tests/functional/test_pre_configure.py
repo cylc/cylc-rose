@@ -27,7 +27,7 @@ from types import SimpleNamespace
 import pytest
 from pytest import param
 
-from cylc.rose.utilities import NotARoseSuiteException, get_rose_vars
+from cylc.rose.utilities import NotARoseSuiteException, load_rose_config
 
 
 @pytest.mark.parametrize(
@@ -121,7 +121,7 @@ def test_process(srcdir, envvars):
 def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
     """Test using unsupported root-dir config raises error."""
     (tmp_path / 'rose-suite.conf').write_text(root_dir_config)
-    get_rose_vars(srcdir=tmp_path)
+    load_rose_config(tmp_path)
     msg = 'rose-suite.conf[root-dir]'
     assert msg in caplog.records[0].msg
 
@@ -150,7 +150,7 @@ def test_warn_if_old_templating_set(
         'cylc.rose.utilities.cylc7_back_compat', compat_mode
     )
     (tmp_path / 'rose-suite.conf').write_text(f'[{rose_config}]')
-    get_rose_vars(srcdir=tmp_path)
+    load_rose_config(tmp_path)
     msg = "Use [template variables]"
     if compat_mode:
         assert not caplog.records
@@ -174,7 +174,7 @@ def test_fail_if_options_but_no_rose_suite_conf(opts, tmp_path):
         NotARoseSuiteException,
         match='^Cylc-Rose CLI'
     ):
-        get_rose_vars(tmp_path, opts)
+        load_rose_config(tmp_path, opts)
 
 
 def generate_params():

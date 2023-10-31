@@ -39,6 +39,7 @@ def rose_fileinstall(rundir: 'Path', opts: 'Values'):
         return False
 
     # Load the config tree
+    # TODO: private
     config_tree = rose_config_tree_loader(rundir, opts)
 
     if any(i.startswith('file') for i in config_tree.node.value):

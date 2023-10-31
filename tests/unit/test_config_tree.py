@@ -23,7 +23,10 @@ from metomi.rose.config import ConfigLoader
 import pytest
 from pytest import param
 
-from cylc.rose.entry_points import get_rose_vars
+from cylc.rose.entry_points import (
+    process_config,
+    load_rose_config,
+)
 from cylc.rose.utilities import (
     MultipleTemplatingEnginesError,
     get_cli_opts_node,
@@ -167,12 +170,14 @@ def test_get_rose_vars(
             f"[{section}:suite.rc]Another_Jinja2_var='Variable overridden'"
         ]
     suite_path = rose_config_template(section)
-    result = get_rose_vars(
+    config_tree = load_rose_config(
         suite_path, options
-    )['template_variables']
-
-    assert result['Another_Jinja2_var'] == exp_ANOTHER_JINJA2_ENV
-    assert result['JINJA2_VAR'] == exp_JINJA2_VAR
+    )
+    template_variables = (
+        process_config(config_tree)['template_variables']
+    )
+    assert template_variables['Another_Jinja2_var'] == exp_ANOTHER_JINJA2_ENV
+    assert template_variables['JINJA2_VAR'] == exp_JINJA2_VAR
 
 
 def test_get_rose_vars_env_section(tmp_path):
@@ -182,9 +187,9 @@ def test_get_rose_vars_env_section(tmp_path):
             "DOG_TYPE = Spaniel \n"
         )
 
-    assert (
-        get_rose_vars(tmp_path)['env']['DOG_TYPE']
-    ) == 'Spaniel'
+    config_tree = load_rose_config(tmp_path)
+    environment_variables = process_config(config_tree)['env']
+    assert environment_variables['DOG_TYPE'] == 'Spaniel'
 
 
 def test_get_rose_vars_expansions(monkeypatch, tmp_path):
@@ -201,20 +206,26 @@ def test_get_rose_vars_expansions(monkeypatch, tmp_path):
         "BOOL=True\n"
         'LIST=["a", 1, True]\n'
     )
-    rose_vars = get_rose_vars(tmp_path)
-    assert rose_vars['template_variables']['LOCAL_ENV'] == 'xyz'
-    assert rose_vars['template_variables']['BAR'] == 'ab'
-    assert rose_vars['template_variables']['ESCAPED_ENV'] == '$HOME'
-    assert rose_vars['template_variables']['INT'] == 42
-    assert rose_vars['template_variables']['BOOL'] is True
-    assert rose_vars['template_variables']['LIST'] == ["a", 1, True]
+    config_tree = load_rose_config(tmp_path)
+    template_variables = (
+        process_config(config_tree)['template_variables']
+    )
+    assert template_variables['LOCAL_ENV'] == 'xyz'
+    assert template_variables['BAR'] == 'ab'
+    assert template_variables['ESCAPED_ENV'] == '$HOME'
+    assert template_variables['INT'] == 42
+    assert template_variables['BOOL'] is True
+    assert template_variables['LIST'] == ["a", 1, True]
 
 
 def test_get_rose_vars_ROSE_VARS(tmp_path):
     """Test that rose variables are available in the environment section.."""
     (tmp_path / "rose-suite.conf").touch()
-    rose_vars = get_rose_vars(tmp_path)
-    assert sorted(rose_vars['env']) == sorted([
+    config_tree = load_rose_config(tmp_path)
+    environment_variables = (
+        process_config(config_tree)['env']
+    )
+    assert sorted(environment_variables) == sorted([
         'ROSE_ORIG_HOST',
         'ROSE_VERSION',
     ])
@@ -225,9 +236,12 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
     (tmp_path / "rose-suite.conf").write_text(
         "[jinja2:suite.rc]"
     )
-    rose_vars = get_rose_vars(tmp_path)
+    config_tree = load_rose_config(tmp_path)
+    template_variables = (
+        process_config(config_tree)['template_variables']
+    )
     assert sorted(
-        rose_vars['template_variables']['ROSE_SUITE_VARIABLES']
+        template_variables['ROSE_SUITE_VARIABLES']
     ) == sorted([
         'ROSE_VERSION',
         'ROSE_ORIG_HOST',
@@ -241,8 +255,9 @@ def test_get_rose_vars_fail_if_empy_AND_jinja2(tmp_path):
         "[jinja2:suite.rc]\n"
         "[empy:suite.rc]\n"
     )
+    config_tree = load_rose_config(tmp_path)
     with pytest.raises(MultipleTemplatingEnginesError):
-        get_rose_vars(tmp_path)
+        process_config(config_tree)
 
 
 @pytest.mark.parametrize(

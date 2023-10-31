@@ -24,7 +24,7 @@ from pathlib import Path
 import re
 import shlex
 import shutil
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from cylc.flow import LOG
 from cylc.flow.exceptions import CylcError
@@ -39,6 +39,7 @@ from metomi.rose.config import (
     ConfigNodeDiff,
 )
 from metomi.rose.config_processor import ConfigProcessError
+from metomi.rose.config_tree import ConfigTree
 from metomi.rose.env import UnboundEnvironmentVariableError, env_var_process
 
 from cylc.rose.jinja2_parser import Parser, patch_jinja2_leading_zeros
@@ -73,28 +74,41 @@ class InvalidDefineError(CylcError):
     ...
 
 
-def get_rose_vars_from_config_node(config, config_node, environ=os.environ):
-    """Load template variables from a Rose config node.
+def process_config(
+    config_tree: 'ConfigTree',
+    environ=os.environ,
+) -> Dict[str, Any]:
+    """Process template and environment variables.
 
-    This uses only the provided config node and environment variables
-    - there is no system interaction.
+    Note:
+        This uses only the provided config node and environment variables,
+        there is no system interaction.
 
     Args:
-        config (dict):
-            Object which will be populated with the results.
-        config_node (metomi.rose.config.ConfigNode):
+        config_tree:
             Configuration node representing the Rose suite configuration.
-        environ (dict):
+        environ:
             Dictionary of environment variables (for testing).
 
     """
+    plugin_result: Dict[str, Any] = {
+        # default return value
+        'env': {},
+        'template_variables': {},
+        'templating_detected': None
+    }
+    config_node = config_tree.node
+
     # Don't allow multiple templating sections.
     templating = identify_templating_section(config_node)
 
     if templating != 'template variables':
-        config['templating_detected'] = templating.replace(':suite.rc', '')
+        plugin_result['templating_detected'] = templating.replace(
+            ':suite.rc',
+            '',
+        )
     else:
-        config['templating_detected'] = templating
+        plugin_result['templating_detected'] = templating
 
     # Create env section if it doesn't already exist.
     if 'env' not in config_node.value:
@@ -151,29 +165,29 @@ def get_rose_vars_from_config_node(config, config_node, environ=os.environ):
 
     # For each of the template language sections extract items to a simple
     # dict to be returned.
-    config['env'] = {
+    plugin_result['env'] = {
         item[0][1]: item[1].value for item in
         config_node.value['env'].walk()
         if item[1].state == ConfigNode.STATE_NORMAL
     }
-    config['template_variables'] = {
+    plugin_result['template_variables'] = {
         item[0][1]: item[1].value for item in
         config_node.value[templating].walk()
         if item[1].state == ConfigNode.STATE_NORMAL
     }
 
-    # Add the entire config to ROSE_SUITE_VARIABLES to allow for programatic
-    # access.
+    # Add the entire plugin_result to ROSE_SUITE_VARIABLES to allow for
+    # programatic access.
     with patch_jinja2_leading_zeros():
         # BACK COMPAT: patch_jinja2_leading_zeros
         # back support zero-padded integers for a limited time to help
         # users migrate before upgrading cylc-flow to Jinja2>=3.1
         parser = Parser()
-        for key, value in config['template_variables'].items():
+        for key, value in plugin_result['template_variables'].items():
             # The special variables are already Python variables.
             if key not in ['ROSE_ORIG_HOST', 'ROSE_VERSION', 'ROSE_SITE']:
                 try:
-                    config['template_variables'][key] = (
+                    plugin_result['template_variables'][key] = (
                         parser.literal_eval(value)
                     )
                 except Exception:
@@ -185,9 +199,11 @@ def get_rose_vars_from_config_node(config, config_node, environ=os.environ):
                         ' (note strings "must be quoted").'
                     ) from None
 
-    # Add ROSE_SUITE_VARIABLES to config of templating engines in use.
-    config['template_variables'][
-        'ROSE_SUITE_VARIABLES'] = config['template_variables']
+    # Add ROSE_SUITE_VARIABLES to plugin_result of templating engines in use.
+    plugin_result['template_variables'][
+        'ROSE_SUITE_VARIABLES'] = plugin_result['template_variables']
+
+    return plugin_result
 
 
 def identify_templating_section(config_node):
@@ -789,19 +805,27 @@ def deprecation_warnings(config_tree):
                 LOG.warning(info[MESSAGE])
 
 
-def get_rose_vars(srcdir=None, opts=None):
-    """Load template variables from Rose suite configuration.
+def load_rose_config(
+    srcdir: Path,
+    opts=None,
+    warn: bool = True,
+) -> 'ConfigTree':
+    """Load rose configuration from srcdir.
+
+    Load template variables from Rose suite configuration.
 
     Loads the Rose suite configuration tree from the filesystem
     using the shell environment.
 
     Args:
-        srcdir(pathlib.Path):
+        srcdir:
             Path to the Rose suite configuration
             (the directory containing the ``rose-suite.conf`` file).
         opts:
             Options object containing specification of optional
             configuarations set by the CLI.
+        warn:
+            Log deprecation warnings if True.
 
     Returns:
         dict - A dictionary of sections of rose-suite.conf.
@@ -815,22 +839,18 @@ def get_rose_vars(srcdir=None, opts=None):
                 }
             }
     """
-    # Set up blank page for returns.
-    config = {
-        'env': {},
-        'template_variables': {},
-        'templating_detected': None
-    }
-
     # Return a blank config dict if srcdir does not exist
     if not rose_config_exists(srcdir):
         if (
-            getattr(opts, "opt_conf_keys", None)
-            or getattr(opts, "defines", None)
-            or getattr(opts, "rose_template_vars", None)
+            opts
+            and (
+                getattr(opts, "opt_conf_keys", None)
+                or getattr(opts, "defines", None)
+                or getattr(opts, "rose_template_vars", None)
+            )
         ):
             raise NotARoseSuiteException()
-        return config
+        return ConfigTree()
 
     # Check for definitely invalid defines
     if opts and hasattr(opts, 'defines'):
@@ -838,19 +858,16 @@ def get_rose_vars(srcdir=None, opts=None):
 
     # Load the raw config tree
     config_tree = rose_config_tree_loader(srcdir, opts)
-    deprecation_warnings(config_tree)
+    if warn:
+        deprecation_warnings(config_tree)
 
-    # Extract templatevars from the configuration
-    get_rose_vars_from_config_node(
-        config,
-        config_tree.node,
-    )
+    return config_tree
 
+
+def export_environment(environment):
     # Export environment vars
-    for key, val in config['env'].items():
+    for key, val in environment.items():
         os.environ[key] = val
-
-    return config
 
 
 def record_cylc_install_options(

@@ -21,7 +21,9 @@ from typing import Union
 from cylc.rose.utilities import (
     copy_config_file,
     dump_rose_log,
-    get_rose_vars,
+    export_environment,
+    load_rose_config,
+    process_config,
     record_cylc_install_options,
     rose_config_exists,
 )
@@ -32,12 +34,22 @@ def pre_configure(srcdir=None, opts=None, rundir=None) -> dict:
     if not srcdir:
         # not sure how this could happen
         return {
+            # default return value
             'env': {},
             'template_variables': {},
             'templating_detected': None
         }
-    srcdir: Path = Path(srcdir)
-    return get_rose_vars(srcdir=srcdir, opts=opts)
+
+    # load the Rose config
+    config_tree = load_rose_config(Path(srcdir), opts=opts)
+
+    # extract plugin return information from the Rose config
+    plugin_result = process_config(config_tree)
+
+    # set environment variables
+    export_environment(plugin_result['env'])
+
+    return plugin_result
 
 
 def post_install(srcdir=None, opts=None, rundir=None) -> Union[dict, bool]:

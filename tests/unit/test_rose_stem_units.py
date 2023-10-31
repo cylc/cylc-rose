@@ -19,6 +19,7 @@
 from types import SimpleNamespace
 from typing import Any, Tuple
 
+from metomi.rose.config_tree import ConfigTree
 from metomi.rose.fs_util import FileSystemUtil
 from metomi.rose.popen import RosePopener
 from metomi.rose.reporter import Reporter
@@ -427,10 +428,13 @@ def test_process_template_engine_set_correctly(monkeypatch, language, expect):
 
     https://github.com/cylc/cylc-rose/issues/246
     """
-    # Mimic expected result from get_rose_vars method:
     monkeypatch.setattr(
-        'cylc.rose.stem.get_rose_vars',
-        lambda _: {'templating_detected': language}
+        'cylc.rose.stem.load_rose_config',
+        lambda _: ConfigTree()
+    )
+    monkeypatch.setattr(
+        'cylc.rose.stem.process_config',
+        lambda _: {'templating_detected': language, 'env': {}}
     )
     monkeypatch.setattr(
         'sys.argv',

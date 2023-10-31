@@ -78,8 +78,14 @@ from metomi.rose.popen import RosePopener
 from metomi.rose.reporter import Event, Reporter
 from metomi.rose.resource import ResourceLocator
 
-from cylc.rose.entry_points import get_rose_vars
-from cylc.rose.utilities import id_templating_section
+from cylc.rose.entry_points import (
+    export_environment,
+    load_rose_config,
+)
+from cylc.rose.utilities import (
+    id_templating_section,
+    process_config,
+)
 
 EXC_EXIT = cparse('<red><bold>{name}: </bold>{exc}</red>')
 DEFAULT_TEST_DIR = 'rose-stem'
@@ -456,8 +462,12 @@ class StemRunner:
             self.opts.project.append(project)
 
             if i == 0:
-                template_type = get_rose_vars(
-                    Path(url) / "rose-stem")["templating_detected"]
+                config_tree = load_rose_config(Path(url) / "rose-stem")
+                plugin_result = process_config(config_tree)
+                # set environment variables
+                export_environment(plugin_result['env'])
+                template_type = plugin_result['templating_detected']
+
                 self.template_section = id_templating_section(
                     template_type, with_brackets=True)
 
