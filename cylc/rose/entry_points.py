@@ -35,7 +35,7 @@ def post_install(srcdir=None, opts=None, rundir=None):
     """Run after Cylc file installation has completed."""
     from cylc.rose.fileinstall import rose_fileinstall
 
-    if not rose_config_exists(srcdir, opts):
+    if not rose_config_exists(srcdir):
         return False
     srcdir, rundir = paths_to_pathlib([srcdir, rundir])
     results = {}

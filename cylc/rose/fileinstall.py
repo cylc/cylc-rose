@@ -30,7 +30,7 @@ def rose_fileinstall(srcdir=None, opts=None, rundir=None):
         rundir (pathlib.Path)
 
     """
-    if not rose_config_exists(rundir, opts):
+    if not rose_config_exists(rundir):
         return False
 
     # Load the config tree

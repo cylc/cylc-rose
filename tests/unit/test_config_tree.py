@@ -62,31 +62,21 @@ def test_node_stripper():
     assert result == {'foo': 'bar'}
 
 
-def test_rose_config_exists_no_dir(tmp_path):
-    assert rose_config_exists(None, SimpleNamespace(
-        opt_conf_keys=None, defines=[], rose_template_vars=[])
-    ) is False
+def test_rose_config_exists_no_dir():
+    assert not rose_config_exists(None)
 
 
 def test_rose_config_exists_no_rose_suite_conf(tmp_path):
-    assert rose_config_exists(
-        tmp_path, SimpleNamespace(
-            opt_conf_keys=None, defines=[], rose_template_vars=[]
-        )
-    ) is False
+    assert not rose_config_exists(tmp_path)
 
 
 def test_rose_config_exists_nonexistant_dir(tmp_path):
-    assert rose_config_exists(
-        tmp_path / "non-existant-folder", SimpleNamespace(
-            opt_conf_keys='', defines=[], rose_template_vars=[]
-        )
-    ) is False
+    assert not rose_config_exists(tmp_path / "non-existant-folder")
 
 
 def test_rose_config_exists_true(tmp_path):
     (tmp_path / "rose-suite.conf").touch()
-    assert rose_config_exists(tmp_path, SimpleNamespace()) is True
+    assert rose_config_exists(tmp_path)
 
 
 @pytest.fixture

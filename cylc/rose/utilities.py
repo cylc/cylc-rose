@@ -43,9 +43,6 @@ from metomi.rose.env import UnboundEnvironmentVariableError, env_var_process
 
 from cylc.rose.jinja2_parser import Parser, patch_jinja2_leading_zeros
 
-if TYPE_CHECKING:
-    from optparse import Values
-
 
 SECTIONS = {'jinja2:suite.rc', 'empy:suite.rc', 'template variables'}
 SET_BY_CYLC = 'set by Cylc'
@@ -229,14 +226,11 @@ def id_templating_section(
     return templating
 
 
-def rose_config_exists(
-    srcdir: Union[Path, str, None], opts: 'Values'
-) -> bool:
+def rose_config_exists(srcdir: Union[Path, str, None]) -> bool:
     """Do opts or srcdir contain a rose config?
 
     Args:
         srcdir: location to test.
-        opts: Cylc Rose options, which might contain config items.
 
     Returns:
         True if a ``rose-suite.conf`` exists, or option config items have
@@ -844,7 +838,7 @@ def get_rose_vars(srcdir=None, opts=None):
     }
 
     # Return a blank config dict if srcdir does not exist
-    if not rose_config_exists(srcdir, opts):
+    if not rose_config_exists(srcdir):
         if (
             getattr(opts, "opt_conf_keys", None)
             or getattr(opts, "defines", None)
