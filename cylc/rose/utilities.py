@@ -76,7 +76,7 @@ class InvalidDefineError(CylcError):
     ...
 
 
-def get_rose_vars_from_config_node(config, config_node, environ):
+def get_rose_vars_from_config_node(config, config_node, environ=os.environ):
     """Load template variables from a Rose config node.
 
     This uses only the provided config node and environment variables
@@ -88,7 +88,7 @@ def get_rose_vars_from_config_node(config, config_node, environ):
         config_node (metomi.rose.config.ConfigNode):
             Configuration node representing the Rose suite configuration.
         environ (dict):
-            Dictionary of environment variables
+            Dictionary of environment variables (for testing).
 
     """
     # Don't allow multiple templating sections.
@@ -865,7 +865,6 @@ def get_rose_vars(srcdir=None, opts=None):
     get_rose_vars_from_config_node(
         config,
         config_tree.node,
-        os.environ
     )
 
     # Export environment vars
