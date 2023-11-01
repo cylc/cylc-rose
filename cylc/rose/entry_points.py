@@ -16,7 +16,6 @@
 """Top level module providing entry point functions."""
 
 from pathlib import Path
-from typing import Union
 
 from cylc.rose.utilities import (
     copy_config_file,
@@ -52,7 +51,7 @@ def pre_configure(srcdir=None, opts=None, rundir=None) -> dict:
     return plugin_result
 
 
-def post_install(srcdir=None, opts=None, rundir=None) -> Union[dict, bool]:
+def post_install(srcdir=None, opts=None, rundir=None) -> bool:
     """Run after Cylc file installation has completed."""
     from cylc.rose.fileinstall import rose_fileinstall
 
@@ -66,17 +65,20 @@ def post_install(srcdir=None, opts=None, rundir=None) -> Union[dict, bool]:
     srcdir: Path = Path(srcdir)
     rundir: Path = Path(rundir)
 
-    results = {}
+    # transfer the rose-suite.conf file
     copy_config_file(srcdir=srcdir, rundir=rundir)
-    results['record_install'] = record_cylc_install_options(
+
+    # write cylc-install CLI options to an optional config
+    record_cylc_install_options(
         srcdir=srcdir, opts=opts, rundir=rundir
     )
-    results['fileinstall'] = rose_fileinstall(rundir, opts)
-    # Finally dump a log of the rose-conf in its final state.
-    if results['fileinstall']:
-        dump_rose_log(rundir=rundir, node=results['fileinstall'])
 
-    return results
+    # perform file installation
+    config_node = rose_fileinstall(rundir, opts)
+    if config_node:
+        dump_rose_log(rundir=rundir, node=config_node)
+
+    return True
 
 
 def rose_stem():
