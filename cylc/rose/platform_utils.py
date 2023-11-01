@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-"""Interfaces for Cylc Platforms for use by rose apps.
-"""
+
+"""Interfaces for Cylc Platforms for use by rose apps."""
+
 from optparse import Values
 import sqlite3
 import subprocess

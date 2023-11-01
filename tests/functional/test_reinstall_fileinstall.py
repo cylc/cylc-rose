@@ -13,7 +13,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Cylc reinstall is able to use the async fileinstall from rose without
+
+"""
+Ensure Cylc reinstall is able to use the async fileinstall from rose without
 trouble.
 """
 

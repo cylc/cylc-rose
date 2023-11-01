@@ -14,9 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Cylc support for reading and interpreting ``rose-suite.conf`` workflow
-configuration files.
-"""
+"""Cylc support for reading and interpreting ``rose-suite.conf`` files."""
 
 import itertools
 import os

@@ -13,9 +13,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Functional tests for top-level function cylc.rose.entry points
-copy_config_file.
-"""
+
+"""Unit tests for utilities."""
 
 from pathlib import Path
 

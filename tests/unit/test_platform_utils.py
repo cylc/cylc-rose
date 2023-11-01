@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-"""Tests for platform utils module:
-"""
+
+"""Tests for platform utils module."""
 
 import os
 from pathlib import Path

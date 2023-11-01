@@ -13,8 +13,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Functional tests for top-level function record_cylc_install_options and
-"""
 
 from types import SimpleNamespace
 

@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 """Tests the plugin with Rose suite configurations on the filesystem."""
 
 from io import StringIO
