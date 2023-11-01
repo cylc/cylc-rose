@@ -60,7 +60,7 @@ def assert_rose_conf_full_equal(left, right, no_ignore=True):
 
 
 def test_no_rose_suite_conf_in_devdir(tmp_path):
-    result = post_install(srcdir=tmp_path)
+    result = post_install(tmp_path, tmp_path, SimpleNamespace())
     assert result is False
 
 
@@ -82,7 +82,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
     )
 
     # Run both record_cylc_install options and fileinstall.
-    record_cylc_install_options(opts=opts, rundir=destdir)
+    record_cylc_install_options(srcdir, destdir, opts)
     rose_fileinstall(destdir, opts)
     assert ((destdir / 'installedme').read_text() ==
             'Galileo No! We will not let you go.'
@@ -248,11 +248,7 @@ def test_functional_record_cylc_install_options(
     loader = ConfigLoader()
 
     # Run the entry point top-level function:
-    rose_suite_cylc_install_node, rose_suite_opts_node = (
-        record_cylc_install_options(
-            rundir=testdir, opts=opts, srcdir=testdir
-        )
-    )
+    record_cylc_install_options(testdir, testdir, opts=opts)
     rose_fileinstall(testdir, opts)
     ritems = sorted([i.relative_to(refdir) for i in refdir.rglob('*')])
     titems = sorted([i.relative_to(testdir) for i in testdir.rglob('*')])
@@ -321,11 +317,7 @@ def test_template_section_conflict(
 
     with pytest.raises(MultipleTemplatingEnginesError) as exc_info:
         # Run the entry point top-level function:
-        rose_suite_cylc_install_node, rose_suite_opts_node = (
-            record_cylc_install_options(
-                rundir=testdir, opts=opts, srcdir=testdir
-            )
-        )
+        record_cylc_install_options(testdir, testdir, opts)
     assert exc_info.match(expect)
 
 
@@ -356,7 +348,7 @@ def test_cylc_no_rose(tmp_path):
     """A Cylc workflow that contains no ``rose-suite.conf`` installs OK.
     """
     from cylc.rose.entry_points import post_install
-    assert post_install(srcdir=tmp_path, rundir=tmp_path) is False
+    assert post_install(tmp_path, tmp_path, SimpleNamespace()) is False
 
 
 def test_copy_config_file_fails(tmp_path):

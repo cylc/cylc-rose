@@ -16,6 +16,7 @@
 """Tests the plugin with Rose suite configurations on the filesystem."""
 
 from io import StringIO
+from pathlib import Path
 from types import SimpleNamespace
 
 from cylc.flow.hostuserutil import get_host
@@ -501,7 +502,7 @@ def test_get_cli_opts_node(opt_confs, defines, rose_template_vars, expect):
     )
     loader = ConfigLoader()
     expect = loader.load(StringIO(expect))
-    result = get_cli_opts_node(opts)
+    result = get_cli_opts_node(Path('no/such/dir'), opts)
     for item in ['env', 'template variables', 'opts']:
         assert result[item] == expect[item]
 

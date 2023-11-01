@@ -17,16 +17,20 @@
 """Utilities related to performing Rose file installation."""
 
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from cylc.rose.utilities import rose_config_exists, rose_config_tree_loader
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from cylc.flow.option_parser import Values
+    from cylc.flow.option_parsers import Values
+    from metomi.rose.config import ConfigNode
 
 
-def rose_fileinstall(rundir: 'Path', opts: 'Values'):
+def rose_fileinstall(
+    rundir: 'Path',
+    opts: 'Values',
+) -> 'Union[ConfigNode, bool]':
     """Call Rose Fileinstall.
 
     Args:
@@ -39,7 +43,6 @@ def rose_fileinstall(rundir: 'Path', opts: 'Values'):
         return False
 
     # Load the config tree
-    # TODO: private
     config_tree = rose_config_tree_loader(rundir, opts)
 
     if any(i.startswith('file') for i in config_tree.node.value):

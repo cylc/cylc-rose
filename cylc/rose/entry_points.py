@@ -16,6 +16,7 @@
 """Top level module providing entry point functions."""
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from cylc.rose.utilities import (
     copy_config_file,
@@ -27,8 +28,11 @@ from cylc.rose.utilities import (
     rose_config_exists,
 )
 
+if TYPE_CHECKING:
+    from cylc.flow.option_parsers import Values
 
-def pre_configure(srcdir=None, opts=None, rundir=None) -> dict:
+
+def pre_configure(srcdir: Path, opts: 'Values') -> dict:
     """Run before the Cylc configuration is read."""
     if not srcdir:
         # not sure how this could happen
@@ -51,32 +55,25 @@ def pre_configure(srcdir=None, opts=None, rundir=None) -> dict:
     return plugin_result
 
 
-def post_install(srcdir=None, opts=None, rundir=None) -> bool:
+def post_install(srcdir: Path, rundir: str, opts: 'Values') -> bool:
     """Run after Cylc file installation has completed."""
     from cylc.rose.fileinstall import rose_fileinstall
 
-    if (
-        not srcdir
-        or not rundir
-        or not rose_config_exists(srcdir)
-    ):
+    if not rose_config_exists(srcdir):
         # nothing to do here
         return False
-    srcdir: Path = Path(srcdir)
-    rundir: Path = Path(rundir)
+    _rundir: Path = Path(rundir)
 
     # transfer the rose-suite.conf file
-    copy_config_file(srcdir=srcdir, rundir=rundir)
+    copy_config_file(srcdir=srcdir, rundir=_rundir)
 
     # write cylc-install CLI options to an optional config
-    record_cylc_install_options(
-        srcdir=srcdir, opts=opts, rundir=rundir
-    )
+    record_cylc_install_options(srcdir, _rundir, opts)
 
     # perform file installation
-    config_node = rose_fileinstall(rundir, opts)
+    config_node = rose_fileinstall(_rundir, opts)
     if config_node:
-        dump_rose_log(rundir=rundir, node=config_node)
+        dump_rose_log(rundir=_rundir, node=config_node)
 
     return True
 
