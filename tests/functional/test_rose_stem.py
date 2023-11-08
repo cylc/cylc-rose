@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
+
 """
 Tests for cylc.rose.stem
 ========================
@@ -63,24 +64,24 @@ to investigate failing tests.
 
 """
 import os
-import pytest
+from pathlib import Path
 import re
+from shlex import split
 import shutil
 import subprocess
-
-from pathlib import Path
-from shlex import split
 from types import SimpleNamespace
 from uuid import uuid4
 
-from cylc.flow.pathutil import get_workflow_run_dir
 from cylc.flow.hostuserutil import get_host
+from cylc.flow.pathutil import get_workflow_run_dir
+from metomi.rose.resource import ResourceLocator
+import pytest
 
 from cylc.rose.stem import (
-    RoseStemVersionException, rose_stem, _get_rose_stem_opts)
-
-from metomi.rose.resource import ResourceLocator
-
+    RoseStemVersionException,
+    get_rose_stem_opts,
+    rose_stem,
+)
 
 HOST = get_host().split('.')[0]
 
@@ -225,7 +226,7 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
     def _inner_fn(rose_stem_opts, verbosity=verbosity):
         monkeymodule.setattr('sys.argv', ['stem'])
         monkeymodule.chdir(setup_stem_repo['workingcopy'])
-        parser, opts = _get_rose_stem_opts()
+        parser, opts = get_rose_stem_opts()
         [setattr(opts, key, val) for key, val in rose_stem_opts.items()]
 
         run_stem = SimpleNamespace()
@@ -593,7 +594,7 @@ def test_incompatible_versions(setup_stem_repo, monkeymodule, caplog, capsys):
 
     monkeymodule.setattr('sys.argv', ['stem'])
     monkeymodule.chdir(setup_stem_repo['workingcopy'])
-    parser, opts = _get_rose_stem_opts()
+    parser, opts = get_rose_stem_opts()
     [setattr(opts, key, val) for key, val in rose_stem_opts.items()]
 
     with pytest.raises(
@@ -618,7 +619,7 @@ def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
 
     monkeymodule.setattr('sys.argv', ['stem'])
     monkeymodule.chdir(setup_stem_repo['workingcopy'])
-    parser, opts = _get_rose_stem_opts()
+    parser, opts = get_rose_stem_opts()
     [setattr(opts, key, val) for key, val in rose_stem_opts.items()]
 
     rose_stem(parser, opts)
@@ -636,7 +637,7 @@ def test_picks_template_section(setup_stem_repo, monkeymodule, capsys):
         'ROSE_STEM_VERSION=1\n'
         '[template_variables]\n'
     )
-    parser, opts = _get_rose_stem_opts()
+    parser, opts = get_rose_stem_opts()
     rose_stem(parser, opts)
     _, err = capsys.readouterr()
     assert "[jinja2:suite.rc]' is deprecated" not in err

@@ -13,28 +13,28 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Functional tests for top-level function record_cylc_install_options and
-"""
 
-import cylc.rose
-import pytest
-from pytest import param
+"""Unit tests for Rose Stem."""
+
 from types import SimpleNamespace
 from typing import Any, Tuple
 
+from metomi.rose.config_tree import ConfigTree
+from metomi.rose.fs_util import FileSystemUtil
+from metomi.rose.popen import RosePopener
+from metomi.rose.reporter import Reporter
+import pytest
+from pytest import param
+
+import cylc.rose
 from cylc.rose.stem import (
-    _get_rose_stem_opts,
     ProjectNotFoundException,
     RoseStemVersionException,
     RoseSuiteConfNotFoundException,
     StemRunner,
+    get_rose_stem_opts,
     get_source_opt_from_args,
 )
-
-from metomi.rose.reporter import Reporter
-from metomi.rose.popen import RosePopener
-from metomi.rose.fs_util import FileSystemUtil
-
 
 Fixture = Any
 
@@ -428,10 +428,13 @@ def test_process_template_engine_set_correctly(monkeypatch, language, expect):
 
     https://github.com/cylc/cylc-rose/issues/246
     """
-    # Mimic expected result from get_rose_vars method:
     monkeypatch.setattr(
-        'cylc.rose.stem.get_rose_vars',
-        lambda _: {'templating_detected': language}
+        'cylc.rose.stem.load_rose_config',
+        lambda _: ConfigTree()
+    )
+    monkeypatch.setattr(
+        'cylc.rose.stem.process_config',
+        lambda _: {'templating_detected': language, 'env': {}}
     )
     monkeypatch.setattr(
         'sys.argv',
@@ -440,7 +443,7 @@ def test_process_template_engine_set_correctly(monkeypatch, language, expect):
 
     # We are not interested in these checks, just in the defines
     # created by the process method.
-    stemrunner = StemRunner(_get_rose_stem_opts()[1])
+    stemrunner = StemRunner(get_rose_stem_opts()[1])
     stemrunner._ascertain_project = lambda _: ['', '', '', '', '']
     stemrunner._this_suite = lambda: '.'
     stemrunner._check_suite_version = lambda _: '1'

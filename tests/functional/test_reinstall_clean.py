@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 """Functional tests for reinstalling of config files.
 This test does the following:
 
@@ -27,17 +28,17 @@ At each step it checks the contents of
 - ~/cylc-run/temporary-id/opt/rose-suite-cylc-install.conf
 """
 
-import pytest
-import shutil
-
 from pathlib import Path
+import shutil
 from uuid import uuid4
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
-from cylc.rose.utilities import (
-    ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as ROHIOS)
+import pytest
 
+from cylc.rose.utilities import (
+    ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as ROHIOS,
+)
 
 HOST = get_host()
 
