@@ -34,15 +34,6 @@ if TYPE_CHECKING:
 
 def pre_configure(srcdir: Path, opts: 'Values') -> dict:
     """Run before the Cylc configuration is read."""
-    if not srcdir:
-        # not sure how this could happen
-        return {
-            # default return value
-            'env': {},
-            'template_variables': {},
-            'templating_detected': None
-        }
-
     # load the Rose config
     config_tree = load_rose_config(Path(srcdir), opts=opts)
 

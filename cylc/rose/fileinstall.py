@@ -31,14 +31,7 @@ def rose_fileinstall(
     rundir: 'Path',
     opts: 'Values',
 ) -> 'Union[ConfigNode, bool]':
-    """Call Rose Fileinstall.
-
-    Args:
-        srcdir(pathlib.Path):
-            Search for a ``rose-suite.conf`` file in this location.
-        rundir (pathlib.Path)
-
-    """
+    """Call Rose Fileinstall."""
     if not rose_config_exists(rundir):
         return False
 
