@@ -37,14 +37,7 @@ jobs:
       - name: Install cylc-rose
         # need editable install for coverage
         run: |
-          pip install -e .[all]
-
-      - name: Style
-        run: |
-          flake8
-
-      - name: Mypy
-        run: mypy
+          pip install -e .[tests]
 
       - name: Checkout FCM
         uses: actions/checkout@v4
@@ -100,3 +93,36 @@ jobs:
         with:
           name: '${{ github.workflow }} py-${{ matrix.python-version }}'
           fail_ci_if_error: false
+
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3
+
+      - name: install libs
+        uses: cylc/release-actions/install-cylc-components@v1
+        with:
+          cylc_flow: true
+          cylc_flow_opts: ''
+          metomi_rose: true
+          metomi_rose_opts: ''
+
+      - name: Install cylc-rose
+        # need editable install for coverage
+        run: |
+          pip install -e .[lint]
+
+      - name: Style
+        run: |
+          flake8
+
+      - name: Mypy
+        run: mypy
