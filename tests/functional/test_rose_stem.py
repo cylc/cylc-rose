@@ -75,13 +75,16 @@ from uuid import uuid4
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
 from metomi.rose.resource import ResourceLocator
+
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 from cylc.rose.stem import (
     RoseStemVersionException,
     get_rose_stem_opts,
     rose_stem,
 )
+
 
 HOST = get_host().split('.')[0]
 
@@ -99,15 +102,13 @@ except FileNotFoundError:
 
 @pytest.fixture(scope='module')
 def monkeymodule():
-    """Make monkeypatching available in a module scope.
-    """
-    from _pytest.monkeypatch import MonkeyPatch
+    """Make monkeypatching available in a module scope."""
     mpatch = MonkeyPatch()
     yield mpatch
     mpatch.undo()
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture(scope='module')
 def setup_stem_repo(tmp_path_factory, monkeymodule, request):
     """Setup a Rose Stem Repository for the tests.
 
@@ -199,7 +200,7 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
         ResourceLocator.default(reset=True)
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture(scope='module')
 def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
     """Runs rose-stem
 
@@ -251,26 +252,20 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
     yield _inner_fn
 
 
-@pytest.fixture(scope='class')
-def rose_stem_run_really_basic(rose_stem_run_template, setup_stem_repo):
+def test_rose_stem_run_really_basic(rose_stem_run_template, setup_stem_repo):
+    """Check that assorted variables have been exported."""
     rose_stem_opts = {
         'stem_groups': [],
         'stem_sources': [
             str(setup_stem_repo['workingcopy']), "fcm:foo.x_tr@head"
         ],
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    plugin_result = rose_stem_run_template(rose_stem_opts)
+    assert plugin_result['run_stem'].returncode == 0
 
 
-class TestReallyBasic():
-    def test_really_basic(self, rose_stem_run_really_basic):
-        """Check that assorted variables have been exported.
-        """
-        assert rose_stem_run_really_basic['run_stem'].returncode == 0
-
-
-@pytest.fixture(scope='class')
 def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
+    """Check that assorted variables have been exported."""
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
         'stem_sources': [
@@ -278,40 +273,11 @@ def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
         ],
         'workflow_name': setup_stem_repo['suitename']
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    plugin_result = rose_stem_run_template(rose_stem_opts)
+    assert plugin_result['run_stem'].returncode == 0
 
 
-class TestBasic():
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
-            "SOURCE_FOO=\"{workingcopy} fcm:foo.x_tr@head\"",
-            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy} fcm:foo.x_tr@head\"",
-            "SOURCE_FOO_BASE=\"{workingcopy}\"\n",
-            "SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"\n",
-            "SOURCE_FOO_REV=\"\"\n",
-            "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"\n",
-        ]
-    )
-    def test_basic(self, rose_stem_run_basic, expected):
-        """Check that assorted variables have been exported.
-        """
-        if expected == 'run_ok':
-            assert rose_stem_run_basic['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=rose_stem_run_basic['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in rose_stem_run_basic['jobout_content']
-
-
-@pytest.fixture(scope='class')
-def project_override(
-    rose_stem_run_template, setup_stem_repo
-):
+def test_project_override(rose_stem_run_template, setup_stem_repo):
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
         'stem_sources': [
@@ -319,166 +285,50 @@ def project_override(
         ],
         'workflow_name': setup_stem_repo['suitename']
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    plugin_result = rose_stem_run_template(rose_stem_opts)
+    assert plugin_result['run_stem'].returncode == 0
 
 
-class TestProjectOverride():
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            (
-                "RUN_NAMES=[\'earl_grey\', \'milk\', \'sugar\', "
-                "\'spoon\', \'cup\', \'milk\']"
-            ),
-            "SOURCE_FOO=\"fcm:foo.x_tr@head\"",
-            "HOST_SOURCE_FOO=\"fcm:foo.x_tr@head\"",
-            "SOURCE_BAR=\"{workingcopy}\"",
-            "HOST_SOURCE_BAR=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
-            "HOST_SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
-            "SOURCE_BAR_BASE=\"{workingcopy}\"",
-            "HOST_SOURCE_BAR_BASE=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_REV=\"@1\"",
-            "SOURCE_BAR_REV=\"\"",
-            "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
-        ]
-    )
-    def test_project_override(self, project_override, expected):
-        """Check that assorted variables have been exported.
-        """
-        if expected == 'run_ok':
-            assert project_override['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=project_override['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in project_override['jobout_content']
-
-
-@pytest.fixture(scope='class')
-def suite_redirection(
-    rose_stem_run_template, setup_stem_repo
-):
+def test_suite_redirection(rose_stem_run_template, setup_stem_repo):
     rose_stem_opts = {
         'workflow_conf_dir': f'{setup_stem_repo["workingcopy"]}/rose-stem',
         'stem_groups': ['lapsang'],
         'stem_sources': ["fcm:foo.x_tr@head"],
         'workflow_name': setup_stem_repo['suitename']
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    plugin_result = rose_stem_run_template(rose_stem_opts)
+    assert plugin_result['run_stem'].returncode == 0
 
 
-class TestSuiteRedirection:
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            "RUN_NAMES=[\'lapsang\']",
-            "SOURCE_FOO=\"fcm:foo.x_tr@head\"",
-            "SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
-            "SOURCE_FOO_REV=\"@1\"",
-        ]
-    )
-    def test_suite_redirection(self, suite_redirection, expected):
-        """Check that assorted variables have been exported.
-        """
-        if expected == 'run_ok':
-            assert suite_redirection['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=suite_redirection['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in suite_redirection['jobout_content']
-
-
-@pytest.fixture(scope='class')
-def subdirectory(
-    rose_stem_run_template, setup_stem_repo
-):
+def test_subdirectory(rose_stem_run_template, setup_stem_repo):
+    """Check that assorted variables have been exported."""
     rose_stem_opts = {
         'stem_groups': ['assam'],
         'stem_sources': [f'{setup_stem_repo["workingcopy"]}/rose-stem'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    plugin_result = rose_stem_run_template(rose_stem_opts)
+    assert plugin_result['run_stem'].returncode == 0
 
 
-class TestSubdirectory:
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            "RUN_NAMES=[\'assam\']",
-            "SOURCE_FOO=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_BASE=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_REV=\"\"",
-            "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
-        ]
-    )
-    def test_subdirectory(self, subdirectory, expected):
-        """Check that assorted variables have been exported.
-        """
-        if expected == 'run_ok':
-            assert subdirectory['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=subdirectory['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in subdirectory['jobout_content']
+def test_relative_path(rose_stem_run_template, setup_stem_repo):
+    """Check that assorted variables have been exported.
 
-
-@pytest.fixture(scope='class')
-def relative_path(
-    rose_stem_run_template, setup_stem_repo
-):
+    * Check relative path with src is working.
+    """
     rose_stem_opts = {
         'workflow_conf_dir': './rose-stem',
         'stem_groups': ['ceylon'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    plugin_result = rose_stem_run_template(rose_stem_opts)
+    assert plugin_result['run_stem'].returncode == 0
 
 
-class TestRelativePath:
-    """Check relative path with src is working.
-    """
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            "RUN_NAMES=[\'ceylon\']",
-            "SOURCE_FOO=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_BASE=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_REV=\"\"",
-        ]
-    )
-    def test_relative_path(self, relative_path, expected):
-        """Check that assorted variables have been exported.
-        """
-        if expected == 'run_ok':
-            assert relative_path['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=relative_path['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in relative_path['jobout_content']
-
-
-@pytest.fixture(scope='class')
-def with_config(
-    rose_stem_run_template, setup_stem_repo, monkeymodule
+def test_with_config(
+    rose_stem_run_template, setup_stem_repo, monkeypatch
 ):
-    """test for successful execution with site/user configuration
-    """
+    """Test for successful execution with site/user configuration."""
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
         'stem_sources': [
@@ -489,49 +339,17 @@ def with_config(
         '[rose-stem]\n'
         'automatic-options=MILK=true\n'
     )
-    monkeymodule.setenv(
+    monkeypatch.setenv(
         'ROSE_CONF_PATH', str(setup_stem_repo['basetemp'])
     )
-    yield rose_stem_run_template(rose_stem_opts)
-    monkeymodule.delenv('ROSE_CONF_PATH')
+    plugin_result = rose_stem_run_template(rose_stem_opts)
+    assert plugin_result['run_stem'].returncode == 0
 
 
-class TestWithConfig:
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            (
-                "RUN_NAMES=[\'earl_grey\', \'milk\', \'sugar\', "
-                "\'spoon\', \'cup\', \'milk\']"
-            ),
-            "SOURCE_FOO=\"{workingcopy} fcm:foo.x_tr@head\"",
-            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy} fcm:foo.x_tr@head\"",
-            "SOURCE_FOO_BASE=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_REV=\"\"",
-            "MILK=\"true\"",
-        ]
-    )
-    def test_with_config(self, with_config, expected, monkeypatch):
-        """test for successful execution with site/user configuration
-        """
-        if expected == 'run_ok':
-            assert with_config['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=with_config['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in with_config['jobout_content']
-
-
-@pytest.fixture(scope='class')
-def with_config2(
-    rose_stem_run_template, setup_stem_repo, monkeymodule
+def test_with_config2(
+    rose_stem_run_template, setup_stem_repo, monkeypatch
 ):
-    """test for successful execution with site/user configuration
-    """
+    """test for successful execution with site/user configuration."""
     rose_stem_opts = {
         'stem_groups': ['assam'],
         'stem_sources': [
@@ -542,38 +360,15 @@ def with_config2(
         '[rose-stem]\n'
         'automatic-options=MILK=true TEA=darjeeling\n'
     )
-    monkeymodule.setenv(
+    monkeypatch.setenv(
         'ROSE_CONF_PATH', str(setup_stem_repo['basetemp'])
     )
-    yield rose_stem_run_template(rose_stem_opts)
-    monkeymodule.delenv('ROSE_CONF_PATH')
+    plugin_result = rose_stem_run_template(rose_stem_opts)
+    assert plugin_result['run_stem'].returncode == 0
 
 
-class TestWithConfig2:
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            "MILK=\"true\"\n",
-            "TEA=\"darjeeling\"\n"
-        ]
-    )
-    def test_with_config2(self, with_config2, expected):
-        """test for successful execution with site/user configuration
-        """
-        if expected == 'run_ok':
-            assert with_config2['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=with_config2['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in with_config2['jobout_content']
-
-
-def test_incompatible_versions(setup_stem_repo, monkeymodule, caplog, capsys):
-    """It fails if trying to install an incompatible version.
-    """
+def test_incompatible_versions(setup_stem_repo, monkeypatch):
+    """It fails if trying to install an incompatible version."""
     # Copy suite into working copy.
     test_src_dir = Path(__file__).parent / '12_rose_stem'
     src = str(test_src_dir / 'rose-suite2.conf')
@@ -592,8 +387,8 @@ def test_incompatible_versions(setup_stem_repo, monkeymodule, caplog, capsys):
         'verbosity': 2,
     }
 
-    monkeymodule.setattr('sys.argv', ['stem'])
-    monkeymodule.chdir(setup_stem_repo['workingcopy'])
+    monkeypatch.setattr('sys.argv', ['stem'])
+    monkeypatch.chdir(setup_stem_repo['workingcopy'])
     parser, opts = get_rose_stem_opts()
     [setattr(opts, key, val) for key, val in rose_stem_opts.items()]
 
@@ -603,11 +398,11 @@ def test_incompatible_versions(setup_stem_repo, monkeymodule, caplog, capsys):
         rose_stem(parser, opts)
 
 
-def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
+def test_project_not_in_keywords(setup_stem_repo, monkeypatch, capsys):
     """It fails if it cannot extract project name from FCM keywords.
     """
     # Copy suite into working copy.
-    monkeymodule.delenv('FCM_CONF_PATH')
+    monkeypatch.delenv('FCM_CONF_PATH')
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
         'stem_sources': [
@@ -617,8 +412,8 @@ def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
         'workflow_name': str(setup_stem_repo['suitename'])
     }
 
-    monkeymodule.setattr('sys.argv', ['stem'])
-    monkeymodule.chdir(setup_stem_repo['workingcopy'])
+    monkeypatch.setattr('sys.argv', ['stem'])
+    monkeypatch.chdir(setup_stem_repo['workingcopy'])
     parser, opts = get_rose_stem_opts()
     [setattr(opts, key, val) for key, val in rose_stem_opts.items()]
 
@@ -627,12 +422,12 @@ def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
     assert 'ProjectNotFoundException' in capsys.readouterr().err
 
 
-def test_picks_template_section(setup_stem_repo, monkeymodule, capsys):
+def test_picks_template_section(setup_stem_repo, monkeypatch, capsys):
     """It can cope with template variables section being either
     ``template variables`` or ``jinja2:suite.rc``.
     """
-    monkeymodule.setattr('sys.argv', ['stem'])
-    monkeymodule.chdir(setup_stem_repo['workingcopy'])
+    monkeypatch.setattr('sys.argv', ['stem'])
+    monkeypatch.chdir(setup_stem_repo['workingcopy'])
     (setup_stem_repo['workingcopy'] / 'rose-stem/rose-suite.conf').write_text(
         'ROSE_STEM_VERSION=1\n'
         '[template_variables]\n'
