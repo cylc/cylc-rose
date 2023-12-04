@@ -15,9 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from types import SimpleNamespace
+from uuid import uuid4
 
 from cylc.flow import __version__ as CYLC_VERSION
 from cylc.flow.option_parsers import Options
+from cylc.flow.pathutil import get_workflow_run_dir
 from cylc.flow.scripts.install import get_option_parser as install_gop
 from cylc.flow.scripts.install import install_cli as cylc_install
 from cylc.flow.scripts.reinstall import get_option_parser as reinstall_gop
@@ -25,6 +27,11 @@ from cylc.flow.scripts.reinstall import reinstall_cli as cylc_reinstall
 from cylc.flow.scripts.validate import _main as cylc_validate
 from cylc.flow.scripts.validate import get_option_parser as validate_gop
 import pytest
+
+
+@pytest.fixture
+def generate_workflow_name():
+    return 'cylc-rose-test-' + str(uuid4())[:8]
 
 
 @pytest.fixture(scope='module')
@@ -108,7 +115,7 @@ def _cylc_validate_cli(capsys, caplog):
     return _inner
 
 
-def _cylc_install_cli(capsys, caplog):
+def _cylc_install_cli(capsys, caplog, generate_workflow_name):
     """Access the install CLI"""
     def _inner(srcpath, args=None):
         """Install a workflow.
@@ -119,9 +126,13 @@ def _cylc_install_cli(capsys, caplog):
         """
         options = Options(install_gop(), args)()
         output = SimpleNamespace()
+        if not options.workflow_name:
+            options.workflow_name = generate_workflow_name
+        if not args or args and not args.get('no_run_name', ''):
+            options.no_run_name = True
 
         try:
-            cylc_install(options, str(srcpath))
+            output.name, output.id = cylc_install(options, str(srcpath))
             output.ret = 0
             output.exc = ''
         except Exception as exc:
@@ -129,6 +140,7 @@ def _cylc_install_cli(capsys, caplog):
             output.exc = exc
         output.logging = '\n'.join([i.message for i in caplog.records])
         output.out, output.err = capsys.readouterr()
+        output.run_dir = get_workflow_run_dir(output.id)
         return output
     return _inner
 
@@ -159,13 +171,13 @@ def _cylc_reinstall_cli(capsys, caplog):
 
 
 @pytest.fixture
-def cylc_install_cli(capsys, caplog):
-    return _cylc_install_cli(capsys, caplog)
+def cylc_install_cli(capsys, caplog, generate_workflow_name):
+    return _cylc_install_cli(capsys, caplog, generate_workflow_name)
 
 
 @pytest.fixture(scope='module')
-def mod_cylc_install_cli(mod_capsys, mod_caplog):
-    return _cylc_install_cli(mod_capsys, mod_caplog)
+def mod_cylc_install_cli(mod_capsys, mod_caplog, generate_workflow_name):
+    return _cylc_install_cli(mod_capsys, mod_caplog, generate_workflow_name)
 
 
 @pytest.fixture
