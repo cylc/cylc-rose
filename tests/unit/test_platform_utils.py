@@ -264,7 +264,7 @@ def test_get_platforms_db_retry(
     # now we'll allow the second retry to succeed by undoing the patch
     # (time.sleep is called between retries)
     def undo():
-        monkeypatch.undo(),
+        monkeypatch.undo()
         mock_glbl_cfg(*MOCK_GLBL_CFG)
 
     monkeypatch.setattr(
