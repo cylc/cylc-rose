@@ -8,6 +8,13 @@ on:
   schedule:
     - cron: '53 0 * * 1-5' # 00:53 Mon-Fri
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 2
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -15,11 +22,12 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9']
+      fail-fast: false
     env:
       PYTEST_ADDOPTS: --cov --cov-append --color=yes
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure Python
         uses: actions/setup-python@v4
@@ -32,22 +40,15 @@ jobs:
           cylc_flow: true
           cylc_flow_opts: 'empy'
           metomi_rose: true
-          metomi_rose_opts: 'tests'
+          metomi_rose_opts: ''
 
       - name: Install cylc-rose
         # need editable install for coverage
         run: |
-          pip install -e .[all]
-
-      - name: Style
-        run: |
-          flake8
-
-      - name: Mypy
-        run: mypy
+          pip install -e .[tests]
 
       - name: Checkout FCM
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ github.event.inputs.fcm_repo || 'metomi/fcm' }}
           ref: ${{ github.event.inputs.fcm_ref || 'master' }}
@@ -95,8 +96,52 @@ jobs:
           coverage xml
           coverage report
 
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage_py-${{ matrix.python-version }}
+          path: coverage.xml
+          retention-days: 4
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install cylc-rose
+        run: |
+          pip install -e .[lint]
+
+      - name: Style
+        run: flake8
+
+      - name: Mypy
+        run: mypy
+
+  codecov:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v3
+
       - name: Codecov upload
         uses: codecov/codecov-action@v3
         with:
-          name: '${{ github.workflow }} py-${{ matrix.python-version }}'
-          fail_ci_if_error: false
+          name: ${{ github.workflow }}
+          fail_ci_if_error: true
+          verbose: true
+          # Token not required for public repos, but avoids upload failure due
+          # to rate-limiting (but not for PRs opened from forks)
+          token: ${{ secrets.CODECOV_TOKEN }}
