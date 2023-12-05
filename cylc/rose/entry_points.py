@@ -34,6 +34,10 @@ if TYPE_CHECKING:
 
 def pre_configure(srcdir: Path, opts: 'Values') -> dict:
     """Run before the Cylc configuration is read."""
+    if not rose_config_exists(srcdir):
+        # nothing to do here
+        return {}
+
     # load the Rose config
     config_tree = load_rose_config(Path(srcdir), opts=opts)
 
@@ -53,6 +57,7 @@ def post_install(srcdir: Path, rundir: str, opts: 'Values') -> bool:
     if not rose_config_exists(srcdir):
         # nothing to do here
         return False
+
     _rundir: Path = Path(rundir)
 
     # transfer the rose-suite.conf file
