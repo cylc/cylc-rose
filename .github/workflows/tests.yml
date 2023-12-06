@@ -115,9 +115,17 @@ jobs:
         with:
           python-version: '3.9'
 
+      - name: install libs
+        uses: cylc/release-actions/install-cylc-components@v1
+        with:
+          cylc_flow: true
+          cylc_flow_opts: ''
+          metomi_rose: true
+          metomi_rose_opts: ''
+
       - name: Install cylc-rose
         run: |
-          pip install -e .[lint]
+          pip install .[lint]
 
       - name: Style
         run: flake8
