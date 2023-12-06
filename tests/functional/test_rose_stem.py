@@ -496,33 +496,24 @@ def with_config(
 
 
 class TestWithConfig:
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            (
-                "RUN_NAMES=[\'earl_grey\', \'milk\', \'sugar\', "
-                "\'spoon\', \'cup\', \'milk\']"
-            ),
-            "SOURCE_FOO=\"{workingcopy} fcm:foo.x_tr@head\"",
-            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy} fcm:foo.x_tr@head\"",
-            "SOURCE_FOO_BASE=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_REV=\"\"",
-            "MILK=\"true\"",
-        ]
-    )
-    def test_with_config(self, with_config, expected, monkeypatch):
+    def test_with_config(self, with_config):
         """test for successful execution with site/user configuration
         """
-        if expected == 'run_ok':
-            assert with_config['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=with_config['workingcopy'],
+        assert with_config['run_stem'].returncode == 0
+        for line in [
+            "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
+            'SOURCE_FOO="{workingcopy} fcm:foo.x_tr@head"',
+            'HOST_SOURCE_FOO="{hostname}:{workingcopy} fcm:foo.x_tr@head"',
+            'SOURCE_FOO_BASE="{workingcopy}"',
+            'HOST_SOURCE_FOO_BASE="{hostname}:{workingcopy}"',
+            'SOURCE_FOO_REV=""',
+            'MILK="true"',
+        ]:
+            line = line.format(
+                **with_config,
                 hostname=HOST
             )
-            assert expected in with_config['jobout_content']
+            assert line in with_config['jobout_content']
 
 
 @pytest.fixture(scope='class')
