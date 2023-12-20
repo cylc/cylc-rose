@@ -497,33 +497,24 @@ def with_config(
 
 
 class TestWithConfig:
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            (
-                "RUN_NAMES=[\'earl_grey\', \'milk\', \'sugar\', "
-                "\'spoon\', \'cup\', \'milk\']"
-            ),
-            "SOURCE_FOO=\"{workingcopy} fcm:foo.x_tr@head\"",
-            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy} fcm:foo.x_tr@head\"",
-            "SOURCE_FOO_BASE=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_REV=\"\"",
-            "MILK=\"true\"",
-        ]
-    )
-    def test_with_config(self, with_config, expected, monkeypatch):
+    def test_with_config(self, with_config):
         """test for successful execution with site/user configuration
         """
-        if expected == 'run_ok':
-            assert with_config['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=with_config['workingcopy'],
+        assert with_config['run_stem'].returncode == 0
+        for line in [
+            "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
+            'SOURCE_FOO="{workingcopy} fcm:foo.x_tr@head"',
+            'HOST_SOURCE_FOO="{hostname}:{workingcopy} fcm:foo.x_tr@head"',
+            'SOURCE_FOO_BASE="{workingcopy}"',
+            'HOST_SOURCE_FOO_BASE="{hostname}:{workingcopy}"',
+            'SOURCE_FOO_REV=""',
+            'MILK="true"',
+        ]:
+            line = line.format(
+                **with_config,
                 hostname=HOST
             )
-            assert expected in with_config['jobout_content']
+            assert line in with_config['jobout_content']
 
 
 @pytest.fixture(scope='class')
@@ -550,25 +541,19 @@ def with_config2(
 
 
 class TestWithConfig2:
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            "MILK=\"true\"\n",
-            "TEA=\"darjeeling\"\n"
-        ]
-    )
-    def test_with_config2(self, with_config2, expected):
+    def test_with_config2(self, with_config2):
         """test for successful execution with site/user configuration
         """
-        if expected == 'run_ok':
-            assert with_config2['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=with_config2['workingcopy'],
+        assert with_config2['run_stem'].returncode == 0
+        for line in [
+            'MILK="true"',
+            'TEA="darjeeling"',
+        ]:
+            line = line.format(
+                **with_config2,
                 hostname=HOST
             )
-            assert expected in with_config2['jobout_content']
+            assert line in with_config2['jobout_content']
 
 
 def test_incompatible_versions(setup_stem_repo, monkeymodule, caplog, capsys):
