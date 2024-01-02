@@ -29,8 +29,13 @@ from cylc.flow.scripts.validate import get_option_parser as validate_gop
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture()
 def generate_workflow_name():
+    return 'cylc-rose-test-' + str(uuid4())[:8]
+
+
+@pytest.fixture(scope='module')
+def mod_generate_workflow_name():
     return 'cylc-rose-test-' + str(uuid4())[:8]
 
 
@@ -176,8 +181,9 @@ def cylc_install_cli(capsys, caplog, generate_workflow_name):
 
 
 @pytest.fixture(scope='module')
-def mod_cylc_install_cli(mod_capsys, mod_caplog, generate_workflow_name):
-    return _cylc_install_cli(mod_capsys, mod_caplog, generate_workflow_name)
+def mod_cylc_install_cli(mod_capsys, mod_caplog, mod_generate_workflow_name):
+    return _cylc_install_cli(
+        mod_capsys, mod_caplog, mod_generate_workflow_name)
 
 
 @pytest.fixture

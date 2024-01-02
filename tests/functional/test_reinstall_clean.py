@@ -109,7 +109,7 @@ def test_cylc_install_run(fixture_install_flow):
     'file_, expect',
     [
         (
-            'run1/opt/rose-suite-cylc-install.conf', (
+            'opt/rose-suite-cylc-install.conf', (
                 '# This file records CLI Options.\n\n'
                 '!opts=bar\n\n'
                 '[env]\n'
@@ -163,7 +163,7 @@ def test_cylc_reinstall_run(fixture_reinstall_flow):
     'file_, expect',
     [
         (
-            'run1/opt/rose-suite-cylc-install.conf', (
+            'opt/rose-suite-cylc-install.conf', (
                 '# This file records CLI Options.\n\n'
                 '!opts=baz\n\n'
                 '[env]\n'

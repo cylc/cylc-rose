@@ -69,7 +69,7 @@ def test_CYLC_SYMLINKS_validate(monkeypatch, tmp_path, cylc_validate_cli):
 
     # CYLC_SYMLINKS == None the first time the global.cylc
     # is loaded and "Foo" the second time.
-    assert output.logging == 'None\n"Foo"'
+    assert output.logging == '"Foo"'
 
 
 def test_CYLC_SYMLINKS_install(monkeypatch, tmp_path, cylc_install_cli):
