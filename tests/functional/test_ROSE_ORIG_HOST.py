@@ -102,7 +102,7 @@ def fixture_provide_flow(tmp_path_factory, request):
 
 
 @pytest.fixture(scope='module')
-def fixture_install_flow(
+async def fixture_install_flow(
     fixture_provide_flow, monkeymodule, mod_cylc_install_cli
 ):
     """Run ``cylc install``.
@@ -113,9 +113,9 @@ def fixture_install_flow(
     If a test fails then using ``pytest --pdb`` and
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
-    result = mod_cylc_install_cli(
+    result = await mod_cylc_install_cli(
         fixture_provide_flow['srcpath'],
-        {'workflow_name': fixture_provide_flow['test_flow_name']}
+        fixture_provide_flow['test_flow_name'],
     )
     install_conf_path = (
         fixture_provide_flow['flowpath'] /
@@ -130,20 +130,26 @@ def fixture_install_flow(
     }
 
 
-def test_cylc_validate_srcdir(fixture_install_flow, mod_cylc_validate_cli):
+async def test_cylc_validate_srcdir(
+    fixture_install_flow,
+    mod_cylc_validate_cli,
+):
     """Sanity check that workflow validates:
     """
     srcpath = fixture_install_flow['srcpath']
-    result = mod_cylc_validate_cli(srcpath)
+    result = await mod_cylc_validate_cli(srcpath)
     search = re.findall(r'ROSE_ORIG_HOST \(.*\) is: (.*)', result.logging)
     assert search == [HOST, HOST]
 
 
-def test_cylc_validate_rundir(fixture_install_flow, mod_cylc_validate_cli):
+async def test_cylc_validate_rundir(
+    fixture_install_flow,
+    mod_cylc_validate_cli,
+):
     """Sanity check that workflow validates:
     """
     flowpath = fixture_install_flow['flowpath']
-    result = mod_cylc_validate_cli(flowpath)
+    result = await mod_cylc_validate_cli(flowpath)
     assert 'ROSE_ORIG_HOST (env) is:' in result.logging
 
 

@@ -39,9 +39,8 @@ def rose_fileinstall(
     config_tree = rose_config_tree_loader(rundir, opts)
 
     if any(i.startswith('file') for i in config_tree.node.value):
-        startpoint = None
         try:
-            startpoint = os.getcwd()
+            # NOTE: Cylc will chdir back for us afterwards
             os.chdir(rundir)
         except FileNotFoundError as exc:
             raise exc
@@ -66,8 +65,5 @@ def rose_fileinstall(
             # Process fileinstall.
             config_pm = ConfigProcessorsManager(event_handler, popen, fs_util)
             config_pm(config_tree, "file")
-        finally:
-            if startpoint:
-                os.chdir(startpoint)
 
     return config_tree.node

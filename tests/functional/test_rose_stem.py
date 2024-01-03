@@ -252,7 +252,7 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
     """
     verbosity = pytestconfig.getoption('verbose')
 
-    def _inner_fn(rose_stem_opts, verbosity=verbosity):
+    async def _inner_fn(rose_stem_opts, verbosity=verbosity):
         monkeymodule.setattr('sys.argv', ['stem'])
         monkeymodule.chdir(setup_stem_repo['workingcopy'])
         parser, opts = get_rose_stem_opts()
@@ -261,7 +261,7 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
         run_stem = SimpleNamespace()
         run_stem.stdout = ''
         try:
-            rose_stem(parser, opts)
+            await rose_stem(parser, opts)
             run_stem.returncode = 0
             run_stem.stderr = ''
         except Exception as exc:
@@ -281,14 +281,14 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
 
 
 @pytest.fixture(scope='class')
-def rose_stem_run_really_basic(rose_stem_run_template, setup_stem_repo):
+async def rose_stem_run_really_basic(rose_stem_run_template, setup_stem_repo):
     rose_stem_opts = {
         'stem_groups': [],
         'stem_sources': [
             str(setup_stem_repo['workingcopy']), "fcm:foo.x_tr@head"
         ],
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    yield await rose_stem_run_template(rose_stem_opts)
 
 
 class TestReallyBasic():
@@ -299,7 +299,7 @@ class TestReallyBasic():
 
 
 @pytest.fixture(scope='class')
-def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
+async def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
         'stem_sources': [
@@ -307,7 +307,7 @@ def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
         ],
         'workflow_name': setup_stem_repo['suitename']
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    yield await rose_stem_run_template(rose_stem_opts)
 
 
 class TestBasic():
@@ -338,7 +338,7 @@ class TestBasic():
 
 
 @pytest.fixture(scope='class')
-def project_override(
+async def project_override(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_opts = {
@@ -348,7 +348,7 @@ def project_override(
         ],
         'workflow_name': setup_stem_repo['suitename']
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    yield await rose_stem_run_template(rose_stem_opts)
 
 
 class TestProjectOverride():
@@ -387,7 +387,7 @@ class TestProjectOverride():
 
 
 @pytest.fixture(scope='class')
-def suite_redirection(
+async def suite_redirection(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_opts = {
@@ -396,7 +396,7 @@ def suite_redirection(
         'stem_sources': ["fcm:foo.x_tr@head"],
         'workflow_name': setup_stem_repo['suitename']
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    yield await rose_stem_run_template(rose_stem_opts)
 
 
 class TestSuiteRedirection:
@@ -424,7 +424,7 @@ class TestSuiteRedirection:
 
 
 @pytest.fixture(scope='class')
-def subdirectory(
+async def subdirectory(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_opts = {
@@ -432,7 +432,7 @@ def subdirectory(
         'stem_sources': [f'{setup_stem_repo["workingcopy"]}/rose-stem'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    yield await rose_stem_run_template(rose_stem_opts)
 
 
 class TestSubdirectory:
@@ -463,7 +463,7 @@ class TestSubdirectory:
 
 
 @pytest.fixture(scope='class')
-def relative_path(
+async def relative_path(
     rose_stem_run_template, setup_stem_repo
 ):
     rose_stem_opts = {
@@ -471,7 +471,7 @@ def relative_path(
         'stem_groups': ['ceylon'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    yield rose_stem_run_template(rose_stem_opts)
+    yield await rose_stem_run_template(rose_stem_opts)
 
 
 class TestRelativePath:
@@ -503,7 +503,7 @@ class TestRelativePath:
 
 
 @pytest.fixture(scope='class')
-def with_config(
+async def with_config(
     rose_stem_run_template, setup_stem_repo, mock_global_cfg
 ):
     """test for successful execution with site/user configuration
@@ -519,7 +519,7 @@ def with_config(
         'cylc.rose.stem.ResourceLocator.default',
         '[rose-stem]\nautomatic-options = MILK=true',
     )
-    yield rose_stem_run_template(rose_stem_opts)
+    yield await rose_stem_run_template(rose_stem_opts)
 
 
 class TestWithConfig:
@@ -544,7 +544,7 @@ class TestWithConfig:
 
 
 @pytest.fixture(scope='class')
-def with_config2(
+async def with_config2(
     rose_stem_run_template, setup_stem_repo, mock_global_cfg
 ):
     """test for successful execution with site/user configuration
@@ -559,7 +559,7 @@ def with_config2(
         'cylc.rose.stem.ResourceLocator.default',
         '[rose-stem]\nautomatic-options = MILK=true TEA=darjeeling',
     )
-    yield rose_stem_run_template(rose_stem_opts)
+    yield await rose_stem_run_template(rose_stem_opts)
 
 
 class TestWithConfig2:
@@ -578,7 +578,12 @@ class TestWithConfig2:
             assert line in with_config2['jobout_content']
 
 
-def test_incompatible_versions(setup_stem_repo, monkeymodule, caplog, capsys):
+async def test_incompatible_versions(
+    setup_stem_repo,
+    monkeymodule,
+    caplog,
+    capsys,
+):
     """It fails if trying to install an incompatible version.
     """
     # Copy suite into working copy.
@@ -607,10 +612,10 @@ def test_incompatible_versions(setup_stem_repo, monkeymodule, caplog, capsys):
     with pytest.raises(
         RoseStemVersionException, match='1 but suite is at version 0'
     ):
-        rose_stem(parser, opts)
+        await rose_stem(parser, opts)
 
 
-def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
+async def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
     """It fails if it cannot extract project name from FCM keywords.
     """
     # Copy suite into working copy.
@@ -629,12 +634,12 @@ def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
     parser, opts = get_rose_stem_opts()
     [setattr(opts, key, val) for key, val in rose_stem_opts.items()]
 
-    rose_stem(parser, opts)
+    await rose_stem(parser, opts)
 
     assert 'ProjectNotFoundException' in capsys.readouterr().err
 
 
-def test_picks_template_section(setup_stem_repo, monkeymodule, capsys):
+async def test_picks_template_section(setup_stem_repo, monkeymodule, capsys):
     """It can cope with template variables section being either
     ``template variables`` or ``jinja2:suite.rc``.
     """
@@ -645,6 +650,6 @@ def test_picks_template_section(setup_stem_repo, monkeymodule, capsys):
         '[template_variables]\n'
     )
     parser, opts = get_rose_stem_opts()
-    rose_stem(parser, opts)
+    await rose_stem(parser, opts)
     _, err = capsys.readouterr()
     assert "[jinja2:suite.rc]' is deprecated" not in err

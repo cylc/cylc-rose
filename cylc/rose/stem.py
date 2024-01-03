@@ -609,13 +609,13 @@ def get_rose_stem_opts():
     return parser, opts
 
 
-def rose_stem(parser, opts):
+async def rose_stem(parser, opts):
     try:
         # modify the CLI options to add whatever rose stem would like to add
         opts = StemRunner(opts).process()
 
         # call cylc install
-        cylc_install(opts, opts.workflow_conf_dir)
+        await cylc_install(opts, opts.workflow_conf_dir)
 
     except CylcError as exc:
         if opts.verbosity > 1:

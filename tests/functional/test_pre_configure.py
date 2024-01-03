@@ -45,9 +45,9 @@ from cylc.rose.utilities import NotARoseSuiteException, load_rose_config
         )
     ]
 )
-def test_validate_fail(srcdir, expect, cylc_validate_cli):
+async def test_validate_fail(srcdir, expect, cylc_validate_cli):
     srcdir = Path(__file__).parent / srcdir
-    validate = cylc_validate_cli(srcdir)
+    validate = await cylc_validate_cli(srcdir)
     assert validate.ret == 1
     if expect:
         assert re.findall(expect, str(validate.exc))
@@ -77,11 +77,11 @@ def test_validate_fail(srcdir, expect, cylc_validate_cli):
         ('09_template_vars_vanilla', {'XYZ': 'xyz'}, None),
     ],
 )
-def test_validate(monkeypatch, srcdir, envvars, args, cylc_validate_cli):
+async def test_validate(monkeypatch, srcdir, envvars, args, cylc_validate_cli):
     for key, value in (envvars or {}).items():
         monkeypatch.setenv(key, value)
     srcdir = Path(__file__).parent / srcdir
-    validate = cylc_validate_cli(str(srcdir), args)
+    validate = await cylc_validate_cli(str(srcdir), args)
     assert validate.ret == 0
 
 

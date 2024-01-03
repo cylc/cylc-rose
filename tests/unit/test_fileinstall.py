@@ -56,12 +56,15 @@ def fixture_provide_flow(tmp_path_factory):
 
 
 @pytest.fixture(scope='module')
-def fixture_install_flow(fixture_provide_flow, request, mod_cylc_install_cli):
+async def fixture_install_flow(
+    fixture_provide_flow, request,
+    mod_cylc_install_cli,
+):
     srcpath, datapath, flow_name = fixture_provide_flow
-    result = mod_cylc_install_cli(
+    result = await mod_cylc_install_cli(
         srcpath,
+        flow_name,
         {
-            'workflow_name': flow_name,
             'no_run_name': True,
             'opt_conf_keys': ['A', 'B'],
             'defines': ["[env]FOO=42", "[jinja2:suite.rc]BAR=84"],
@@ -75,11 +78,14 @@ def fixture_install_flow(fixture_provide_flow, request, mod_cylc_install_cli):
         shutil.rmtree(destpath)
 
 
-def test_rose_fileinstall_validate(fixture_provide_flow, cylc_validate_cli):
+async def test_rose_fileinstall_validate(
+    fixture_provide_flow,
+    cylc_validate_cli,
+):
     """Workflow validates:
     """
     srcpath, _, _ = fixture_provide_flow
-    cylc_validate_cli(srcpath)
+    await cylc_validate_cli(srcpath)
 
 
 def test_rose_fileinstall_run(fixture_install_flow):

@@ -76,7 +76,7 @@ def fixture_provide_flow(tmp_path_factory, request):
 
 
 @pytest.fixture(scope='module')
-def fixture_install_flow(
+async def fixture_install_flow(
     fixture_provide_flow, monkeymodule, mod_cylc_install_cli
 ):
     """Run ``cylc install``.
@@ -87,10 +87,10 @@ def fixture_install_flow(
     If a test fails using ``pytest --pdb then``
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
-    result = mod_cylc_install_cli(
+    result = await mod_cylc_install_cli(
         fixture_provide_flow['srcpath'],
+        fixture_provide_flow['test_flow_name'],
         {
-            'workflow_name': fixture_provide_flow['test_flow_name'],
             'opt_conf_keys': ['bar'],
             'defines': ['[env]FOO=1']
         }
@@ -126,8 +126,8 @@ def test_cylc_install_files(fixture_install_flow, file_, expect):
 
 
 @pytest.fixture(scope='module')
-def fixture_reinstall_flow(
-    fixture_provide_flow, monkeymodule, mod_cylc_reinstall_cli
+async def fixture_reinstall_flow(
+    fixture_install_flow, monkeymodule, mod_cylc_reinstall_cli
 ):
     """Run ``cylc reinstall --clear-rose-install-options``.
 
@@ -141,8 +141,10 @@ def fixture_reinstall_flow(
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
-    result = mod_cylc_reinstall_cli(
-        f'{fixture_provide_flow["test_flow_name"]}/run1',
+    result = await mod_cylc_reinstall_cli(
+        (
+            fixture_install_flow['fixture_provide_flow']['test_flow_name']
+        ),
         {
             'opt_conf_keys': ['baz'],
             'defines': ['[env]BAR=2'],
@@ -150,7 +152,7 @@ def fixture_reinstall_flow(
         }
     )
     yield {
-        'fixture_provide_flow': fixture_provide_flow,
+        'fixture_install_flow': fixture_install_flow,
         'result': result
     }
 
@@ -175,5 +177,10 @@ def test_cylc_reinstall_run(fixture_reinstall_flow):
     ]
 )
 def test_cylc_reinstall_files(fixture_reinstall_flow, file_, expect):
-    fpath = fixture_reinstall_flow['fixture_provide_flow']['flowpath']
+    fpath = (
+        fixture_reinstall_flow
+        ['fixture_install_flow']
+        ['fixture_provide_flow']
+        ['flowpath']
+    )
     assert (fpath / file_).read_text() == expect

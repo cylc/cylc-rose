@@ -76,7 +76,10 @@ def post_install(srcdir: Path, rundir: str, opts: 'Values') -> bool:
 
 def rose_stem():
     """Implements the "rose stem" command."""
-    from cylc.rose.stem import get_rose_stem_opts
+    import asyncio
+    from cylc.rose.stem import get_rose_stem_opts, rose_stem
 
     parser, opts = get_rose_stem_opts()
-    rose_stem(parser, opts)
+    asyncio.run(
+        rose_stem(parser, opts)
+    )
