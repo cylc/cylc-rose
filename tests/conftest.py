@@ -30,12 +30,12 @@ import pytest
 
 
 @pytest.fixture()
-def generate_workflow_name():
+def workflow_name():
     return 'cylc-rose-test-' + str(uuid4())[:8]
 
 
 @pytest.fixture(scope='module')
-def mod_generate_workflow_name():
+def mod_workflow_name():
     return 'cylc-rose-test-' + str(uuid4())[:8]
 
 
@@ -120,7 +120,7 @@ def _cylc_validate_cli(capsys, caplog):
     return _inner
 
 
-def _cylc_install_cli(capsys, caplog, generate_workflow_name):
+def _cylc_install_cli(capsys, caplog, workflow_name):
     """Access the install CLI"""
     def _inner(srcpath, args=None):
         """Install a workflow.
@@ -132,7 +132,7 @@ def _cylc_install_cli(capsys, caplog, generate_workflow_name):
         options = Options(install_gop(), args)()
         output = SimpleNamespace()
         if not options.workflow_name:
-            options.workflow_name = generate_workflow_name
+            options.workflow_name = workflow_name
         if not args or args and not args.get('no_run_name', ''):
             options.no_run_name = True
 
@@ -176,14 +176,14 @@ def _cylc_reinstall_cli(capsys, caplog):
 
 
 @pytest.fixture
-def cylc_install_cli(capsys, caplog, generate_workflow_name):
-    return _cylc_install_cli(capsys, caplog, generate_workflow_name)
+def cylc_install_cli(capsys, caplog, workflow_name):
+    return _cylc_install_cli(capsys, caplog, workflow_name)
 
 
 @pytest.fixture(scope='module')
-def mod_cylc_install_cli(mod_capsys, mod_caplog, mod_generate_workflow_name):
+def mod_cylc_install_cli(mod_capsys, mod_caplog, mod_workflow_name):
     return _cylc_install_cli(
-        mod_capsys, mod_caplog, mod_generate_workflow_name)
+        mod_capsys, mod_caplog, mod_workflow_name)
 
 
 @pytest.fixture

@@ -38,8 +38,11 @@ def test_basic(tmp_path):
     )
 
 
-def test_CYLC_SYMLINKS_validate(monkeypatch, tmp_path, cylc_validate_cli):
-    """We reload the global config after exporting env variables."""
+def test_global_config_environment_validate(monkeypatch, tmp_path, cylc_validate_cli):
+    """It should reload the global config after exporting env variables.
+
+    See: https://github.com/cylc/cylc-rose/issues/237
+    """
     # Setup global config:
     global_conf = """#!jinja2
         {% from "cylc.flow" import LOG %}
@@ -72,8 +75,13 @@ def test_CYLC_SYMLINKS_validate(monkeypatch, tmp_path, cylc_validate_cli):
     assert output.logging == '"Foo"'
 
 
-def test_CYLC_SYMLINKS_install(monkeypatch, tmp_path, cylc_install_cli):
-    """We reload the global config after exporting env variables."""
+def test_global_config_environment_validate2(
+    monkeypatch, tmp_path, cylc_install_cli
+):
+    """It should reload the global config after exporting env variables.
+
+    See: https://github.com/cylc/cylc-rose/issues/237
+    """
     # Setup global config:
     global_conf = (
         '#!jinja2\n'
