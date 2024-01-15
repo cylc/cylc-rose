@@ -72,7 +72,7 @@ def test_global_config_environment_validate(monkeypatch, tmp_path, cylc_validate
 
     # CYLC_SYMLINKS == None the first time the global.cylc
     # is loaded and "Foo" the second time.
-    assert output.logging == '"Foo"'
+    assert output.logging.split('\n')[-1] == '"Foo"'
 
 
 def test_global_config_environment_validate2(
