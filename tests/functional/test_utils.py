@@ -38,7 +38,9 @@ def test_basic(tmp_path):
     )
 
 
-def test_global_config_environment_validate(monkeypatch, tmp_path, cylc_validate_cli):
+def test_global_config_environment_validate(
+    monkeypatch, tmp_path, cylc_validate_cli
+):
     """It should reload the global config after exporting env variables.
 
     See: https://github.com/cylc/cylc-rose/issues/237
