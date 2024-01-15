@@ -79,20 +79,20 @@ to allow environment variables set by Rose to change the global configuration.
 For example you could use ``CYLC_SYMLINKS`` as a variable to control
 the behaviour of ``cylc install``:
 
-   .. code-block:: cylc
+.. code-block:: cylc
 
-      #!jinja2
-      # part of a global.cylc file
-      [install]
-         [[symlink dirs]]
-            [[[hpc]]]
-      {% if environ["CYLC_SYMLINKS"] | default("x") == "A" %}
-               run = $LOCATION_A
-      {% elif environ["CYLC_SYMLINKS"] | default("x") == "B" %}
-               run = $LOCATION_B
-      {% else %}
-               run = $LOCATION_C
-      {% endif %}
+   #!jinja2
+   # part of a global.cylc file
+   [install]
+      [[symlink dirs]]
+         [[[hpc]]]
+   {% if environ["CYLC_SYMLINKS"] | default("x") == "A" %}
+            run = $LOCATION_A
+   {% elif environ["CYLC_SYMLINKS"] | default("x") == "B" %}
+            run = $LOCATION_B
+   {% else %}
+            run = $LOCATION_C
+   {% endif %}
 
 
 

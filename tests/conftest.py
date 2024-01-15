@@ -133,7 +133,7 @@ def _cylc_install_cli(capsys, caplog, workflow_name):
         output = SimpleNamespace()
         if not options.workflow_name:
             options.workflow_name = workflow_name
-        if not args or args and not args.get('no_run_name', ''):
+        if not args or not args.get('no_run_name', ''):
             options.no_run_name = True
 
         try:
