@@ -13,18 +13,18 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Cylc reinstall is able to use the async fileinstall from rose without
+
+"""
+Ensure Cylc reinstall is able to use the async fileinstall from rose without
 trouble.
 """
 
-import pytest
-import shutil
-
 from pathlib import Path
+import shutil
 from uuid import uuid4
 
 from cylc.flow.pathutil import get_workflow_run_dir
-
+import pytest
 
 WORKFLOW_SRC = Path(__file__).parent / '14_reinstall_fileinstall'
 
