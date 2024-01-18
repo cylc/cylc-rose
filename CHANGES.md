@@ -1,4 +1,4 @@
-s# Selected Cylc-Rose Changes
+# Selected Cylc-Rose Changes
 
 <!-- The topmost release date is automatically updated by GitHub Actions. When
 creating a new release entry be sure to copy & paste the span tag with the
