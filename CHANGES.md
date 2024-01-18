@@ -6,7 +6,7 @@ creating a new release entry be sure to copy & paste the span tag with the
 updated. Only the first match gets replaced, so it's fine to leave the old
 ones in. -->
 
-## __cylc-rose-1.3.1 (<span actions:bind='release-date'>Released 2023-10-24</span>)__
+## __cylc-rose-1.3.1 (<span actions:bind='release-date'>Released 2024-01-18</span>)__
 
 ### Fixes
 
