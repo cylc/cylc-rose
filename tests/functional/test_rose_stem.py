@@ -107,6 +107,31 @@ def monkeymodule():
 
 
 @pytest.fixture(scope='class')
+def mock_usr_cfg(monkeymodule):
+    """Mock the rose ResourceLocator.default
+
+    Args (To _inner):
+        key: List of keys to mock getting.
+        value: Value to return.
+    """
+    def _inner(keys, value):
+        """Mock a config object with a config node."""
+        mock_config = type(
+            'MockConfig', (object,), {
+                'get_conf': type(
+                    'MockConfigNode', (object,),
+                    {'get_value': lambda *_: value})
+            }
+        )
+
+        monkeymodule.setattr(
+            'cylc.rose.stem.ResourceLocator.default',
+            lambda *_, **__: mock_config)
+
+    return _inner
+
+
+@pytest.fixture(scope='class')
 def setup_stem_repo(tmp_path_factory, monkeymodule, request):
     """Setup a Rose Stem Repository for the tests.
 
@@ -474,7 +499,7 @@ class TestRelativePath:
 
 @pytest.fixture(scope='class')
 def with_config(
-    rose_stem_run_template, setup_stem_repo, monkeymodule
+    rose_stem_run_template, setup_stem_repo, mock_usr_cfg
 ):
     """test for successful execution with site/user configuration
     """
@@ -484,15 +509,9 @@ def with_config(
             f'{setup_stem_repo["workingcopy"]}', 'fcm:foo.x_tr@head'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    (setup_stem_repo['basetemp'] / 'rose.conf').write_text(
-        '[rose-stem]\n'
-        'automatic-options=MILK=true\n'
-    )
-    monkeymodule.setenv(
-        'ROSE_CONF_PATH', str(setup_stem_repo['basetemp'])
-    )
+
+    mock_usr_cfg(['rose-stem', 'automatic-options'], 'MILK=true')
     yield rose_stem_run_template(rose_stem_opts)
-    monkeymodule.delenv('ROSE_CONF_PATH')
 
 
 class TestWithConfig:
@@ -518,7 +537,7 @@ class TestWithConfig:
 
 @pytest.fixture(scope='class')
 def with_config2(
-    rose_stem_run_template, setup_stem_repo, monkeymodule
+    rose_stem_run_template, setup_stem_repo, mock_usr_cfg
 ):
     """test for successful execution with site/user configuration
     """
@@ -528,15 +547,9 @@ def with_config2(
             f'{setup_stem_repo["workingcopy"]}'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    (setup_stem_repo['basetemp'] / 'rose.conf').write_text(
-        '[rose-stem]\n'
-        'automatic-options=MILK=true TEA=darjeeling\n'
-    )
-    monkeymodule.setenv(
-        'ROSE_CONF_PATH', str(setup_stem_repo['basetemp'])
-    )
+    mock_usr_cfg(
+        ['rose-stem', 'automatic-options'], 'MILK=true TEA=darjeeling')
     yield rose_stem_run_template(rose_stem_opts)
-    monkeymodule.delenv('ROSE_CONF_PATH')
 
 
 class TestWithConfig2:
