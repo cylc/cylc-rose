@@ -107,7 +107,7 @@ def monkeymodule():
 
 
 @pytest.fixture(scope='class')
-def mock_usr_cfg(monkeymodule):
+def mock_global_cfg(monkeymodule):
     """Mock the rose ResourceLocator.default
 
     Args (To _inner):
