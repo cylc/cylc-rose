@@ -499,7 +499,7 @@ class TestRelativePath:
 
 @pytest.fixture(scope='class')
 def with_config(
-    rose_stem_run_template, setup_stem_repo, mock_usr_cfg
+    rose_stem_run_template, setup_stem_repo, mock_global_cfg
 ):
     """test for successful execution with site/user configuration
     """
@@ -510,7 +510,7 @@ def with_config(
         'workflow_name': setup_stem_repo['suitename']
     }
 
-    mock_usr_cfg(['rose-stem', 'automatic-options'], 'MILK=true')
+    mock_global_cfg(['rose-stem', 'automatic-options'], 'MILK=true')
     yield rose_stem_run_template(rose_stem_opts)
 
 
@@ -537,7 +537,7 @@ class TestWithConfig:
 
 @pytest.fixture(scope='class')
 def with_config2(
-    rose_stem_run_template, setup_stem_repo, mock_usr_cfg
+    rose_stem_run_template, setup_stem_repo, mock_global_cfg
 ):
     """test for successful execution with site/user configuration
     """
@@ -547,7 +547,7 @@ def with_config2(
             f'{setup_stem_repo["workingcopy"]}'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    mock_usr_cfg(
+    mock_global_cfg(
         ['rose-stem', 'automatic-options'], 'MILK=true TEA=darjeeling')
     yield rose_stem_run_template(rose_stem_opts)
 
