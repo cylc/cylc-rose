@@ -67,11 +67,13 @@ import pytest
 import re
 import shutil
 import subprocess
+from io import StringIO
 
 from pathlib import Path
 from shlex import split
 from types import SimpleNamespace
 from uuid import uuid4
+from unittest.mock import MagicMock
 
 from cylc.flow.pathutil import get_workflow_run_dir
 from cylc.flow.hostuserutil import get_host
@@ -79,6 +81,7 @@ from cylc.flow.hostuserutil import get_host
 from cylc.rose.stem import (
     RoseStemVersionException, rose_stem, _get_rose_stem_opts)
 
+from metomi.rose.config import ConfigLoader
 from metomi.rose.resource import ResourceLocator
 
 
@@ -104,6 +107,26 @@ def monkeymodule():
     mpatch = MonkeyPatch()
     yield mpatch
     mpatch.undo()
+
+
+@pytest.fixture(scope='class')
+def mock_global_cfg(monkeymodule):
+    """Mock the rose ResourceLocator.default
+
+    Args (To _inner):
+        target: The module to patch.
+        conf: A fake rose global config as a string.
+    """
+    def _inner(target, conf):
+        """Mock a config object with a config node."""
+        node = ConfigLoader().load(StringIO(conf))
+
+        # Create a fake class imitating ConfigTree with .get_conf method:
+        config = MagicMock(spec=['get_conf'], get_conf=lambda: node)
+
+        monkeymodule.setattr(target, lambda *_, **__: config)
+
+    yield _inner
 
 
 @pytest.fixture(scope='class')
@@ -474,7 +497,7 @@ class TestRelativePath:
 
 @pytest.fixture(scope='class')
 def with_config(
-    rose_stem_run_template, setup_stem_repo, monkeymodule
+    rose_stem_run_template, setup_stem_repo, mock_global_cfg
 ):
     """test for successful execution with site/user configuration
     """
@@ -484,15 +507,12 @@ def with_config(
             f'{setup_stem_repo["workingcopy"]}', 'fcm:foo.x_tr@head'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    (setup_stem_repo['basetemp'] / 'rose.conf').write_text(
-        '[rose-stem]\n'
-        'automatic-options=MILK=true\n'
-    )
-    monkeymodule.setenv(
-        'ROSE_CONF_PATH', str(setup_stem_repo['basetemp'])
+
+    mock_global_cfg(
+        'cylc.rose.stem.ResourceLocator.default',
+        '[rose-stem]\nautomatic-options = MILK=true',
     )
     yield rose_stem_run_template(rose_stem_opts)
-    monkeymodule.delenv('ROSE_CONF_PATH')
 
 
 class TestWithConfig:
@@ -518,7 +538,7 @@ class TestWithConfig:
 
 @pytest.fixture(scope='class')
 def with_config2(
-    rose_stem_run_template, setup_stem_repo, monkeymodule
+    rose_stem_run_template, setup_stem_repo, mock_global_cfg
 ):
     """test for successful execution with site/user configuration
     """
@@ -528,15 +548,11 @@ def with_config2(
             f'{setup_stem_repo["workingcopy"]}'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    (setup_stem_repo['basetemp'] / 'rose.conf').write_text(
-        '[rose-stem]\n'
-        'automatic-options=MILK=true TEA=darjeeling\n'
-    )
-    monkeymodule.setenv(
-        'ROSE_CONF_PATH', str(setup_stem_repo['basetemp'])
+    mock_global_cfg(
+        'cylc.rose.stem.ResourceLocator.default',
+        '[rose-stem]\nautomatic-options = MILK=true TEA=darjeeling',
     )
     yield rose_stem_run_template(rose_stem_opts)
-    monkeymodule.delenv('ROSE_CONF_PATH')
 
 
 class TestWithConfig2:
