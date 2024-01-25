@@ -13,28 +13,28 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Functional tests for top-level function record_cylc_install_options and
-"""
 
-import cylc.rose
-import pytest
-from pytest import param
+"""Unit tests for Rose Stem."""
+
 from types import SimpleNamespace
 from typing import Any, Tuple
 
+from metomi.rose.config_tree import ConfigTree
+from metomi.rose.fs_util import FileSystemUtil
+from metomi.rose.popen import RosePopener
+from metomi.rose.reporter import Reporter
+import pytest
+from pytest import param
+
+import cylc.rose
 from cylc.rose.stem import (
-    _get_rose_stem_opts,
     ProjectNotFoundException,
     RoseStemVersionException,
     RoseSuiteConfNotFoundException,
     StemRunner,
+    get_rose_stem_opts,
     get_source_opt_from_args,
 )
-
-from metomi.rose.reporter import Reporter
-from metomi.rose.popen import RosePopener
-from metomi.rose.fs_util import FileSystemUtil
-
 
 Fixture = Any
 
@@ -136,8 +136,9 @@ def test__add_define_option(get_StemRunner, capsys, exisiting_defines):
                 0,
                 'url: file:///worthwhile/foo/bar/baz/trunk@1\n'
                 'project: \n'
-                'some waffle which ought to be ignored',
-                ''
+                'key_with_no_value_ignored:\n'
+                'some waffle which ought to be ignored\n',
+                None
             ),
             id='Good fcm output'
         )
@@ -211,7 +212,9 @@ def test__get_project_from_url(
         ('foo/bar', 'some_dir'),
     )
 )
-def test__generate_name(get_StemRunner, monkeypatch, tmp_path, source, expect):
+def test__generate_name(
+    get_StemRunner, monkeypatch, tmp_path, source, expect, caplog, capsys
+):
     """It generates a name if StemRunner._ascertain_project fails.
 
     (This happens if the workflow source is not controlled with FCM)
@@ -224,7 +227,9 @@ def test__generate_name(get_StemRunner, monkeypatch, tmp_path, source, expect):
     expect = tmp_path.name if expect == 'cwd' else expect
 
     stemrunner = get_StemRunner({}, {'workflow_conf_dir': source})
+    stemrunner.reporter.contexts['stdout'].verbosity = 5
     assert stemrunner._generate_name() == expect
+    assert 'Suite is named' in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(
@@ -264,6 +269,13 @@ def test__this_suite(
             stemrunner._this_suite()
 
 
+def test__this_suite_raises_if_no_dir(get_StemRunner):
+    """It raises an exception if there is no suitefile"""
+    stemrunner = get_StemRunner({}, {'stem_sources': ['/foo']})
+    with pytest.raises(RoseSuiteConfNotFoundException):
+        stemrunner._this_suite()
+
+
 def test__check_suite_version_fails_if_no_stem_source(
     get_StemRunner, tmp_path
 ):
@@ -296,6 +308,68 @@ def test__deduce_mirror():
     }
     project = 'someproject'
     StemRunner._deduce_mirror(source_dict, project)
+
+
+def test_RoseSuiteConfNotFoundException_repr():
+    """It handles dirctory not existing _at all_"""
+    result = RoseSuiteConfNotFoundException('/foo').__repr__()
+    expect = 'Suite directory /foo is not a valid directory'
+    assert expect in result
+
+
+def test__ascertain_project(get_StemRunner, monkeypatch):
+    """It doesn't handle sub_tree if not available."""
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner,
+        '_get_project_from_url', lambda _, __: 'foo'
+    )
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner,
+        '_deduce_mirror', lambda _, __, ___: 'foo'
+    )
+    stemrunner = get_StemRunner({'popen': MockPopen((
+        0,
+        (
+            'root: https://foo.com/\n'
+            'url: https://foo.com/helloworld\n'
+            'project: helloworld\n'
+        ),
+        'stderr'
+    ))})
+    result = stemrunner._ascertain_project('')
+    assert result == ('foo', '', '', '', 'foo')
+
+
+def test_process_multiple_auto_opts(
+    monkeypatch: Fixture, get_StemRunner: Fixture
+) -> None:
+    """Read a list of options from site config.
+
+    - Correctly splits list.
+    - Adds valid key=value pairs to stemrunner.options.
+    - Rejects malformed items.
+    """
+    stemrunner = get_StemRunner({}, options={'defines': []})
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner, '_read_auto_opts',
+        lambda _: 'foo=bar baz=qux=quiz'
+    )
+    stemrunner._parse_auto_opts()
+    assert 'foo="bar"' in stemrunner.opts.defines[0]
+
+
+def test_process_no_auto_opts(
+    monkeypatch: Fixture, get_StemRunner: Fixture
+) -> None:
+    """Read an empty list of options from site config.
+    """
+    stemrunner = get_StemRunner({}, options={'defines': []})
+    monkeypatch.setattr(
+        cylc.rose.stem.StemRunner, '_read_auto_opts',
+        lambda _: ''
+    )
+    stemrunner._parse_auto_opts()
+    assert stemrunner.opts.defines == []
 
 
 @pytest.mark.parametrize(
@@ -354,10 +428,13 @@ def test_process_template_engine_set_correctly(monkeypatch, language, expect):
 
     https://github.com/cylc/cylc-rose/issues/246
     """
-    # Mimic expected result from get_rose_vars method:
     monkeypatch.setattr(
-        'cylc.rose.stem.get_rose_vars',
-        lambda _: {'templating_detected': language}
+        'cylc.rose.stem.load_rose_config',
+        lambda _: ConfigTree()
+    )
+    monkeypatch.setattr(
+        'cylc.rose.stem.process_config',
+        lambda _: {'templating_detected': language, 'env': {}}
     )
     monkeypatch.setattr(
         'sys.argv',
@@ -366,7 +443,7 @@ def test_process_template_engine_set_correctly(monkeypatch, language, expect):
 
     # We are not interested in these checks, just in the defines
     # created by the process method.
-    stemrunner = StemRunner(_get_rose_stem_opts()[1])
+    stemrunner = StemRunner(get_rose_stem_opts()[1])
     stemrunner._ascertain_project = lambda _: ['', '', '', '', '']
     stemrunner._this_suite = lambda: '.'
     stemrunner._check_suite_version = lambda _: '1'

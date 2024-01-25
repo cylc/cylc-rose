@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
+
 """
 Tests for cylc.rose.stem
 ========================
@@ -59,16 +60,14 @@ to investigate failing tests.
 
 """
 
-import pytest
+from pathlib import Path
 import re
 import shutil
-
-from pathlib import Path
 from uuid import uuid4
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
-
+import pytest
 
 HOST = get_host()
 

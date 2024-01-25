@@ -13,29 +13,18 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Functional tests for top-level function record_cylc_install_options and
-"""
 
-import pytest
 from types import SimpleNamespace
 
 from cylc.flow import __version__ as CYLC_VERSION
 from cylc.flow.option_parsers import Options
-
-from cylc.flow.scripts.validate import (
-    _main as cylc_validate,
-    get_option_parser as validate_gop
-)
-
-from cylc.flow.scripts.install import (
-    install_cli as cylc_install,
-    get_option_parser as install_gop
-)
-
-from cylc.flow.scripts.reinstall import (
-    reinstall_cli as cylc_reinstall,
-    get_option_parser as reinstall_gop
-)
+from cylc.flow.scripts.install import get_option_parser as install_gop
+from cylc.flow.scripts.install import install_cli as cylc_install
+from cylc.flow.scripts.reinstall import get_option_parser as reinstall_gop
+from cylc.flow.scripts.reinstall import reinstall_cli as cylc_reinstall
+from cylc.flow.scripts.validate import _main as cylc_validate
+from cylc.flow.scripts.validate import get_option_parser as validate_gop
+import pytest
 
 
 @pytest.fixture(scope='module')
