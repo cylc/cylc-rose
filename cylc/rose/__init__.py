@@ -130,8 +130,8 @@ to the Cylc scheduler.
       suites. This is no longer possible, and if set in your
       ``ROSE_VERSION`` in your suite configuration it will be ignored.
 
+.. note::
 
-``CYLC_VERSION``
    .. deprecated:: 8.0.0
 
       ``CYLC_VERSION`` will be removed from your configuration by the
