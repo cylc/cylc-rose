@@ -70,16 +70,12 @@ from shlex import split
 import shutil
 import subprocess
 from io import StringIO
-from pathlib import Path
-from shlex import split
 from types import SimpleNamespace
 from uuid import uuid4
 from unittest.mock import MagicMock
 
 from cylc.flow.hostuserutil import get_host
 
-from cylc.rose.stem import (
-    RoseStemVersionException, rose_stem, _get_rose_stem_opts)
 
 from metomi.rose.config import ConfigLoader
 from cylc.flow.pathutil import get_workflow_run_dir
