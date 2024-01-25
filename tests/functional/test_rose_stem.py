@@ -73,6 +73,7 @@ from pathlib import Path
 from shlex import split
 from types import SimpleNamespace
 from uuid import uuid4
+from unittest.mock import MagicMock
 
 from cylc.flow.pathutil import get_workflow_run_dir
 from cylc.flow.hostuserutil import get_host
@@ -121,7 +122,7 @@ def mock_global_cfg(monkeymodule):
         node = ConfigLoader().load(StringIO(conf))
 
         # Create a fake class imitating ConfigTree with .get_conf method:
-        config = Mock(spec=['get_conf'], get_conf=lambda: node)
+        config = MagicMock(spec=['get_conf'], get_conf=lambda: node)
 
         monkeymodule.setattr(target, lambda *_, **__: config)
 
@@ -508,8 +509,8 @@ def with_config(
     }
 
     mock_global_cfg(
+        'cylc.rose.stem.ResourceLocator.default',
         '[rose-stem]\nautomatic-options = MILK=true',
-        'cylc.rose.stem.ResourceLocator.default'
     )
     yield rose_stem_run_template(rose_stem_opts)
 
@@ -548,8 +549,8 @@ def with_config2(
         'workflow_name': setup_stem_repo['suitename']
     }
     mock_global_cfg(
+        'cylc.rose.stem.ResourceLocator.default',
         '[rose-stem]\nautomatic-options = MILK=true TEA=darjeeling',
-        'cylc.rose.stem.ResourceLocator.default'
     )
     yield rose_stem_run_template(rose_stem_opts)
 
