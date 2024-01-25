@@ -113,15 +113,15 @@ def mock_global_cfg(monkeymodule):
     """Mock the rose ResourceLocator.default
 
     Args (To _inner):
-        conf: A fake rose global config as a string.
         target: The module to patch.
+        conf: A fake rose global config as a string.
     """
-    def _inner(conf, target):
+    def _inner(target, conf):
         """Mock a config object with a config node."""
         node = ConfigLoader().load(StringIO(conf))
 
         # Create a fake class imitating ConfigTree with .get_conf method:
-        config = type('MockConfig', (object,), {'get_conf': lambda: node})
+        config = Mock(spec=['get_conf'], get_conf=lambda: node)
 
         monkeymodule.setattr(target, lambda *_, **__: config)
 
