@@ -13,30 +13,26 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Test generic ultilities
-"""
 
-import pytest
+"""Unit tests for utilities."""
 
 from pathlib import Path
 
-from cylc.rose.utilities import paths_to_pathlib
+from cylc.rose.entry_points import copy_config_file
 
 
-@pytest.mark.parametrize(
-    'paths, expect',
-    [
-        # None is passed through:
-        ([None, None], [None, None]),
-        # Path as string is made Path:
-        (['/foot/path/', None], [Path('/foot/path'), None]),
-        # Path as Path left alone:
-        ([Path('/cycle/path/'), None], [Path('/cycle/path'), None]),
-        # Different starting types re-typed independently:
-        (
-            [Path('/cycle/path/'), '/bridle/path'],
-            [Path('/cycle/path'), Path('/bridle/path')]),
-    ]
-)
-def test_paths_to_pathlib(paths, expect):
-    assert paths_to_pathlib(paths) == expect
+def test_basic(tmp_path):
+    # Create files
+    for fname, content in (
+        ('src/rose-suite.conf', '[env]\nFOO=2'),
+        ('dest/rose-suite.conf', '[env]\nFOO=1'),
+    ):
+        fname = Path(tmp_path / fname)
+        fname.parent.mkdir(parents=True, exist_ok=True)
+        fname.write_text(content)
+
+    # Test
+    assert copy_config_file(tmp_path / 'src', tmp_path / 'dest')
+    assert Path(tmp_path / 'src/rose-suite.conf').read_text() == (
+        Path(tmp_path / 'dest/rose-suite.conf').read_text()
+    )

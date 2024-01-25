@@ -13,35 +13,33 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 """Tests the plugin with Rose suite configurations via the Python API."""
 
-import pytest
 from types import SimpleNamespace
 
 from metomi.isodatetime.datetimeoper import DateTimeOperator
 from metomi.rose import __version__ as ROSE_VERSION
-from metomi.rose.config import (
-    ConfigNode,
-)
+from metomi.rose.config import ConfigNode
+from metomi.rose.config_tree import ConfigTree
 from metomi.rose.config_processor import ConfigProcessError
+import pytest
 
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
-    get_rose_vars_from_config_node,
+    MultipleTemplatingEnginesError,
     add_cylc_install_to_rose_conf_node_opts,
     deprecation_warnings,
     dump_rose_log,
-    identify_templating_section,
+    process_config,
     id_templating_section,
-    MultipleTemplatingEnginesError
+    identify_templating_section,
 )
 
 
 def test_blank():
     """It should provide only standard vars for a blank config."""
-    ret = {}
-    node = ConfigNode()
-    get_rose_vars_from_config_node(ret, node, {})
+    ret = process_config(ConfigTree(), {})
     assert set(ret.keys()) == {
         'template_variables', 'templating_detected', 'env'
     }
@@ -53,37 +51,40 @@ def test_blank():
 
 def test_invalid_templatevar():
     """It should wrap eval errors as something more informative."""
-    ret = {}
+    tree = ConfigTree()
     node = ConfigNode()
     node.set(['jinja2:suite.rc', 'X'], 'Y')
+    tree.node = node
     with pytest.raises(ConfigProcessError):
-        get_rose_vars_from_config_node(ret, node, {})
+        process_config(tree, {})
 
 
-def test_get_rose_vars_from_config_node__unbound_env_var(caplog):
+def test_get_plugin_result__unbound_env_var(caplog):
     """It should fail if variable unset in environment.
     """
-    ret = {}
+    tree = ConfigTree()
     node = ConfigNode()
     node.set(['env', 'X'], '${MYVAR}')
+    tree.node = node
     with pytest.raises(ConfigProcessError) as exc:
-        get_rose_vars_from_config_node(ret, node, {})
+        process_config(tree, {})
     assert exc.match('env=X: MYVAR: unbound variable')
 
 
 @pytest.fixture
 def override_version_vars(caplog, scope='module'):
-    """Set up config tree and pass to get_rose_vars_from_config_node
+    """Set up config tree and pass to process_config
 
     Yields:
         node: The node after manipulation.
         message: A string representing the caplog output.
     """
-    ret = {}
+    tree = ConfigTree()
     node = ConfigNode()
     node.set(['template variables', 'ROSE_VERSION'], 99)
     node.set(['template variables', 'CYLC_VERSION'], 101)
-    get_rose_vars_from_config_node(ret, node, {})
+    tree.node = node
+    process_config(tree, {})
     message = '\n'.join([i.message for i in caplog.records])
     yield (node, message)
 
@@ -270,11 +271,12 @@ def test_id_templating_section(input_, expect):
 @pytest.fixture
 def node_with_ROSE_ORIG_HOST():
     def _inner(comment=''):
-        ret = {}
+        tree = ConfigTree()
         node = ConfigNode()
         node.set(['env', 'ROSE_ORIG_HOST'], 'IMPLAUSIBLE_HOST_NAME')
         node['env']['ROSE_ORIG_HOST'].comments = [comment]
-        get_rose_vars_from_config_node(ret, node, {})
+        tree.node = node
+        process_config(tree, {})
         return node
     yield _inner
 

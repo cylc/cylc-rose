@@ -13,34 +13,30 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Tests the plugin with Rose suite configurations on the filesystem.
 
-Warning:
-   These tests share the same os.environ so may interact.
+"""Tests the plugin with Rose suite configurations on the filesystem."""
 
-"""
+from io import StringIO
+from pathlib import Path
+from types import SimpleNamespace
 
-import os
+from cylc.flow.hostuserutil import get_host
+from metomi.rose.config import ConfigLoader
 import pytest
 from pytest import param
 
-from types import SimpleNamespace
-from io import StringIO
-
-from cylc.flow.hostuserutil import get_host
+from cylc.rose.entry_points import (
+    process_config,
+    load_rose_config,
+)
 from cylc.rose.utilities import (
+    MultipleTemplatingEnginesError,
     get_cli_opts_node,
     merge_opts,
     merge_rose_cylc_suite_install_conf,
     rose_config_exists,
     rose_config_tree_loader,
-    MultipleTemplatingEnginesError
 )
-from cylc.rose.entry_points import (
-    get_rose_vars,
-)
-from metomi.rose.config import ConfigLoader
-
 
 HOST = get_host()
 
@@ -71,31 +67,17 @@ def test_node_stripper():
     assert result == {'foo': 'bar'}
 
 
-def test_rose_config_exists_no_dir(tmp_path):
-    assert rose_config_exists(None, SimpleNamespace(
-        opt_conf_keys=None, defines=[], rose_template_vars=[])
-    ) is False
-
-
 def test_rose_config_exists_no_rose_suite_conf(tmp_path):
-    assert rose_config_exists(
-        tmp_path, SimpleNamespace(
-            opt_conf_keys=None, defines=[], rose_template_vars=[]
-        )
-    ) is False
+    assert not rose_config_exists(tmp_path)
 
 
 def test_rose_config_exists_nonexistant_dir(tmp_path):
-    assert rose_config_exists(
-        tmp_path / "non-existant-folder", SimpleNamespace(
-            opt_conf_keys='', defines=[], rose_template_vars=[]
-        )
-    ) is False
+    assert not rose_config_exists(tmp_path / "non-existant-folder")
 
 
 def test_rose_config_exists_true(tmp_path):
     (tmp_path / "rose-suite.conf").touch()
-    assert rose_config_exists(tmp_path, SimpleNamespace()) is True
+    assert rose_config_exists(tmp_path)
 
 
 @pytest.fixture
@@ -158,6 +140,7 @@ def rose_config_template(tmp_path, scope='module'):
     ]
 )
 def test_get_rose_vars(
+    monkeypatch,
     rose_config_template,
     override,
     section,
@@ -177,10 +160,10 @@ def test_get_rose_vars(
         opt_conf_keys=[], defines=[], rose_template_vars=[]
     )
     if override == 'environment':
-        os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = "gravy"
+        monkeypatch.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'gravy')
     else:
         # Prevent externally set environment var breaking tests.
-        os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = ""
+        monkeypatch.setenv('ROSE_SUITE_OPT_CONF_KEYS', '')
     if override == 'CLI':
         options.opt_conf_keys = ["chips"]
     elif override == 'override':
@@ -189,12 +172,14 @@ def test_get_rose_vars(
             f"[{section}:suite.rc]Another_Jinja2_var='Variable overridden'"
         ]
     suite_path = rose_config_template(section)
-    result = get_rose_vars(
+    config_tree = load_rose_config(
         suite_path, options
-    )['template_variables']
-
-    assert result['Another_Jinja2_var'] == exp_ANOTHER_JINJA2_ENV
-    assert result['JINJA2_VAR'] == exp_JINJA2_VAR
+    )
+    template_variables = (
+        process_config(config_tree)['template_variables']
+    )
+    assert template_variables['Another_Jinja2_var'] == exp_ANOTHER_JINJA2_ENV
+    assert template_variables['JINJA2_VAR'] == exp_JINJA2_VAR
 
 
 def test_get_rose_vars_env_section(tmp_path):
@@ -204,14 +189,14 @@ def test_get_rose_vars_env_section(tmp_path):
             "DOG_TYPE = Spaniel \n"
         )
 
-    assert (
-        get_rose_vars(tmp_path)['env']['DOG_TYPE']
-    ) == 'Spaniel'
+    config_tree = load_rose_config(tmp_path)
+    environment_variables = process_config(config_tree)['env']
+    assert environment_variables['DOG_TYPE'] == 'Spaniel'
 
 
-def test_get_rose_vars_expansions(tmp_path):
+def test_get_rose_vars_expansions(monkeypatch, tmp_path):
     """Check that variables are expanded correctly."""
-    os.environ['XYZ'] = "xyz"
+    monkeypatch.setenv('XYZ', 'xyz')
     (tmp_path / "rose-suite.conf").write_text(
         "[env]\n"
         "FOO=a\n"
@@ -223,23 +208,29 @@ def test_get_rose_vars_expansions(tmp_path):
         "BOOL=True\n"
         'LIST=["a", 1, True]\n'
     )
-    rose_vars = get_rose_vars(tmp_path)
-    assert rose_vars['template_variables']['LOCAL_ENV'] == 'xyz'
-    assert rose_vars['template_variables']['BAR'] == 'ab'
-    assert rose_vars['template_variables']['ESCAPED_ENV'] == '$HOME'
-    assert rose_vars['template_variables']['INT'] == 42
-    assert rose_vars['template_variables']['BOOL'] is True
-    assert rose_vars['template_variables']['LIST'] == ["a", 1, True]
+    config_tree = load_rose_config(tmp_path)
+    template_variables = (
+        process_config(config_tree)['template_variables']
+    )
+    assert template_variables['LOCAL_ENV'] == 'xyz'
+    assert template_variables['BAR'] == 'ab'
+    assert template_variables['ESCAPED_ENV'] == '$HOME'
+    assert template_variables['INT'] == 42
+    assert template_variables['BOOL'] is True
+    assert template_variables['LIST'] == ["a", 1, True]
 
 
 def test_get_rose_vars_ROSE_VARS(tmp_path):
     """Test that rose variables are available in the environment section.."""
     (tmp_path / "rose-suite.conf").touch()
-    rose_vars = get_rose_vars(tmp_path)
-    assert list(rose_vars['env'].keys()).sort() == [
+    config_tree = load_rose_config(tmp_path)
+    environment_variables = (
+        process_config(config_tree)['env']
+    )
+    assert sorted(environment_variables) == sorted([
         'ROSE_ORIG_HOST',
         'ROSE_VERSION',
-    ].sort()
+    ])
 
 
 def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
@@ -247,14 +238,17 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
     (tmp_path / "rose-suite.conf").write_text(
         "[jinja2:suite.rc]"
     )
-    rose_vars = get_rose_vars(tmp_path)
-    assert list(rose_vars['template_variables'][
-        'ROSE_SUITE_VARIABLES'
-    ].keys()).sort() == [
+    config_tree = load_rose_config(tmp_path)
+    template_variables = (
+        process_config(config_tree)['template_variables']
+    )
+    assert sorted(
+        template_variables['ROSE_SUITE_VARIABLES']
+    ) == sorted([
         'ROSE_VERSION',
         'ROSE_ORIG_HOST',
         'ROSE_SUITE_VARIABLES'
-    ].sort()
+    ])
 
 
 def test_get_rose_vars_fail_if_empy_AND_jinja2(tmp_path):
@@ -263,8 +257,9 @@ def test_get_rose_vars_fail_if_empy_AND_jinja2(tmp_path):
         "[jinja2:suite.rc]\n"
         "[empy:suite.rc]\n"
     )
+    config_tree = load_rose_config(tmp_path)
     with pytest.raises(MultipleTemplatingEnginesError):
-        get_rose_vars(tmp_path)
+        process_config(config_tree)
 
 
 @pytest.mark.parametrize(
@@ -301,6 +296,7 @@ def test_get_rose_vars_fail_if_empy_AND_jinja2(tmp_path):
     ]
 )
 def test_rose_config_tree_loader(
+    monkeypatch,
     rose_config_template,
     override,
     section,
@@ -319,10 +315,10 @@ def test_rose_config_tree_loader(
     """
     options = None
     if override == 'environment':
-        os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = "gravy"
+        monkeypatch.setenv('ROSE_SUITE_OPT_CONF_KEYS', 'gravy')
     else:
         # Prevent externally set environment var breaking tests.
-        os.environ['ROSE_SUITE_OPT_CONF_KEYS'] = ""
+        monkeypatch.setenv('ROSE_SUITE_OPT_CONF_KEYS', '')
     if opts_format == 'list':
         conf_keys = ['chips']
     else:
@@ -507,7 +503,7 @@ def test_get_cli_opts_node(opt_confs, defines, rose_template_vars, expect):
     )
     loader = ConfigLoader()
     expect = loader.load(StringIO(expect))
-    result = get_cli_opts_node(opts)
+    result = get_cli_opts_node(Path('no/such/dir'), opts)
     for item in ['env', 'template variables', 'opts']:
         assert result[item] == expect[item]
 
