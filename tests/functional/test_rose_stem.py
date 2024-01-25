@@ -120,7 +120,9 @@ def mock_global_cfg(monkeymodule):
         """Get the ResourceLocator.default and patch its get_conf method
         """
         obj = ResourceLocator.default()
-        obj.get_conf = lambda: ConfigLoader().load(StringIO(conf))
+        monkeymodule.setattr(
+            obj, 'get_conf', lambda: ConfigLoader().load(StringIO(conf))
+        )
 
         monkeymodule.setattr(target, lambda *_, **__: obj)
 
