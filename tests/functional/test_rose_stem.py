@@ -67,6 +67,7 @@ import pytest
 import re
 import shutil
 import subprocess
+from io import StringIO
 
 from pathlib import Path
 from shlex import split
@@ -79,6 +80,7 @@ from cylc.flow.hostuserutil import get_host
 from cylc.rose.stem import (
     RoseStemVersionException, rose_stem, _get_rose_stem_opts)
 
+from metomi.rose.config import ConfigLoader
 from metomi.rose.resource import ResourceLocator
 
 
@@ -111,24 +113,19 @@ def mock_global_cfg(monkeymodule):
     """Mock the rose ResourceLocator.default
 
     Args (To _inner):
-        key: List of keys to mock getting.
-        value: Value to return.
+        conf: A fake rose global config as a string.
+        target: The module to patch.
     """
-    def _inner(keys, value):
+    def _inner(conf, target):
         """Mock a config object with a config node."""
-        mock_config = type(
-            'MockConfig', (object,), {
-                'get_conf': type(
-                    'MockConfigNode', (object,),
-                    {'get_value': lambda *_: value})
-            }
-        )
+        node = ConfigLoader().load(StringIO(conf))
 
-        monkeymodule.setattr(
-            'cylc.rose.stem.ResourceLocator.default',
-            lambda *_, **__: mock_config)
+        # Create a fake class imitating ConfigTree with .get_conf method:
+        config = type('MockConfig', (object,), {'get_conf': lambda: node})
 
-    return _inner
+        monkeymodule.setattr(target, lambda *_, **__: config)
+
+    yield _inner
 
 
 @pytest.fixture(scope='class')
@@ -510,7 +507,10 @@ def with_config(
         'workflow_name': setup_stem_repo['suitename']
     }
 
-    mock_global_cfg(['rose-stem', 'automatic-options'], 'MILK=true')
+    mock_global_cfg(
+        '[rose-stem]\nautomatic-options = MILK=true',
+        'cylc.rose.stem.ResourceLocator.default'
+    )
     yield rose_stem_run_template(rose_stem_opts)
 
 
@@ -548,7 +548,9 @@ def with_config2(
         'workflow_name': setup_stem_repo['suitename']
     }
     mock_global_cfg(
-        ['rose-stem', 'automatic-options'], 'MILK=true TEA=darjeeling')
+        '[rose-stem]\nautomatic-options = MILK=true TEA=darjeeling',
+        'cylc.rose.stem.ResourceLocator.default'
+    )
     yield rose_stem_run_template(rose_stem_opts)
 
 
