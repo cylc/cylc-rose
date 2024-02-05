@@ -73,10 +73,9 @@ from io import StringIO
 from types import SimpleNamespace
 from uuid import uuid4
 
-from cylc.flow.hostuserutil import get_host
-
 
 from metomi.rose.config import ConfigLoader
+from metomi.rose.host_select import HostSelector
 from cylc.flow.pathutil import get_workflow_run_dir
 from metomi.rose.resource import ResourceLocator
 import pytest
@@ -87,7 +86,12 @@ from cylc.rose.stem import (
     rose_stem,
 )
 
-HOST = get_host()
+
+# We want to test Rose-Stem's insertion of the hostname,
+# not Rose's method of getting the hostname, so it doesn't
+# Matter that we are using the same host selector here as
+# in the module under test:
+HOST = HostSelector().get_local_host()
 
 
 class SubprocessesError(Exception):
