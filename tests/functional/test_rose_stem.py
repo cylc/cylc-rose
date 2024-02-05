@@ -72,7 +72,6 @@ import subprocess
 from io import StringIO
 from types import SimpleNamespace
 from uuid import uuid4
-from unittest.mock import MagicMock
 
 from cylc.flow.hostuserutil import get_host
 
@@ -121,13 +120,14 @@ def mock_global_cfg(monkeymodule):
         conf: A fake rose global config as a string.
     """
     def _inner(target, conf):
-        """Mock a config object with a config node."""
-        node = ConfigLoader().load(StringIO(conf))
+        """Get the ResourceLocator.default and patch its get_conf method
+        """
+        obj = ResourceLocator.default()
+        monkeymodule.setattr(
+            obj, 'get_conf', lambda: ConfigLoader().load(StringIO(conf))
+        )
 
-        # Create a fake class imitating ConfigTree with .get_conf method:
-        config = MagicMock(spec=['get_conf'], get_conf=lambda: node)
-
-        monkeymodule.setattr(target, lambda *_, **__: config)
+        monkeymodule.setattr(target, lambda *_, **__: obj)
 
     yield _inner
 
