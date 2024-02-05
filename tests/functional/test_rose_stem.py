@@ -87,7 +87,7 @@ from cylc.rose.stem import (
     rose_stem,
 )
 
-HOST = get_host().split('.')[0]
+HOST = get_host()
 
 
 class SubprocessesError(Exception):
