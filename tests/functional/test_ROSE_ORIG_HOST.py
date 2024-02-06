@@ -119,7 +119,7 @@ def fixture_install_flow(
     )
     install_conf_path = (
         fixture_provide_flow['flowpath'] /
-        'runN/opt/rose-suite-cylc-install.conf'
+        'opt/rose-suite-cylc-install.conf'
     )
     text = install_conf_path.read_text()
     text = re.sub('ROSE_ORIG_HOST=.*', 'ROSE_ORIG_HOST=foo', text)
@@ -142,7 +142,7 @@ def test_cylc_validate_srcdir(fixture_install_flow, mod_cylc_validate_cli):
 def test_cylc_validate_rundir(fixture_install_flow, mod_cylc_validate_cli):
     """Sanity check that workflow validates:
     """
-    flowpath = fixture_install_flow['flowpath'] / 'runN'
+    flowpath = fixture_install_flow['flowpath']
     result = mod_cylc_validate_cli(flowpath)
     assert 'ROSE_ORIG_HOST (env) is:' in result.logging
 

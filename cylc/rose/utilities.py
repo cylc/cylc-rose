@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from cylc.flow import LOG
 from cylc.flow.exceptions import CylcError
 from cylc.flow.flags import cylc7_back_compat
+from cylc.flow.cfgspec.glbl_cfg import glbl_cfg
 from cylc.flow.hostuserutil import get_host
 from metomi.isodatetime.datetimeoper import DateTimeOperator
 from metomi.rose import __version__ as ROSE_VERSION
@@ -868,6 +869,13 @@ def export_environment(environment: Dict[str, str]) -> None:
     # Export environment vars
     for key, val in environment.items():
         os.environ[key] = val
+
+    # If env vars have been set we want to force reload
+    # the global config so that the value of this vars
+    # can be used by Jinja2 in the global config.
+    # https://github.com/cylc/cylc-rose/issues/237
+    if environment:
+        glbl_cfg().load()
 
 
 def record_cylc_install_options(
