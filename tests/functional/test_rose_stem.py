@@ -65,7 +65,6 @@ to investigate failing tests.
 """
 import os
 from pathlib import Path
-import re
 from shlex import split
 import shutil
 import subprocess
@@ -115,7 +114,7 @@ def monkeymodule():
     mpatch.undo()
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 def mock_global_cfg(monkeymodule):
     """Mock the rose ResourceLocator.default
 
@@ -136,7 +135,7 @@ def mock_global_cfg(monkeymodule):
     yield _inner
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 def setup_stem_repo(tmp_path_factory, monkeymodule, request):
     """Setup a Rose Stem Repository for the tests.
 
@@ -173,7 +172,7 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
 
     """
     # Set up required folders:
-    testname = re.findall(r'Function\s(.*?)[\[>]', str(request))[0]
+    testname = request.function.__name__
     basetemp = tmp_path_factory.getbasetemp() / testname
     baseinstall = basetemp / 'baseinstall'
     rose_stem_dir = baseinstall / 'trunk/rose-stem'
@@ -181,7 +180,7 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
     confdir = basetemp / 'conf'
     workingcopy = basetemp / f'cylc-rose-stem-test-{str(uuid4())[:8]}'
     for dir_ in [baseinstall, repo, rose_stem_dir, confdir, workingcopy]:
-        dir_.mkdir(parents=True)
+        dir_.mkdir(parents=True, exist_ok=True)
 
     # Turn repo into an svn repo:
     subprocess.run(['svnadmin', 'create', f'{repo}/foo'])
@@ -228,7 +227,7 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
         ResourceLocator.default(reset=True)
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
     """Runs rose-stem
 
@@ -280,7 +279,7 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
     yield _inner_fn
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 async def rose_stem_run_really_basic(rose_stem_run_template, setup_stem_repo):
     rose_stem_opts = {
         'stem_groups': [],
@@ -291,14 +290,13 @@ async def rose_stem_run_really_basic(rose_stem_run_template, setup_stem_repo):
     yield await rose_stem_run_template(rose_stem_opts)
 
 
-class TestReallyBasic():
-    def test_really_basic(self, rose_stem_run_really_basic):
-        """Check that assorted variables have been exported.
-        """
-        assert rose_stem_run_really_basic['run_stem'].returncode == 0
+def test_really_basic(rose_stem_run_really_basic):
+    """Check that assorted variables have been exported.
+    """
+    assert rose_stem_run_really_basic['run_stem'].returncode == 0
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 async def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
@@ -310,34 +308,33 @@ async def rose_stem_run_basic(rose_stem_run_template, setup_stem_repo):
     yield await rose_stem_run_template(rose_stem_opts)
 
 
-class TestBasic():
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
-            "SOURCE_FOO=\"{workingcopy} fcm:foo.x_tr@head\"",
-            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy} fcm:foo.x_tr@head\"",
-            "SOURCE_FOO_BASE=\"{workingcopy}\"\n",
-            "SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"\n",
-            "SOURCE_FOO_REV=\"\"\n",
-            "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"\n",
-        ]
-    )
-    def test_basic(self, rose_stem_run_basic, expected):
-        """Check that assorted variables have been exported.
-        """
-        if expected == 'run_ok':
-            assert rose_stem_run_basic['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=rose_stem_run_basic['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in rose_stem_run_basic['jobout_content']
+@pytest.mark.parametrize(
+    'expected',
+    [
+        "run_ok",
+        "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
+        "SOURCE_FOO=\"{workingcopy} fcm:foo.x_tr@head\"",
+        "HOST_SOURCE_FOO=\"{hostname}:{workingcopy} fcm:foo.x_tr@head\"",
+        "SOURCE_FOO_BASE=\"{workingcopy}\"\n",
+        "SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"\n",
+        "SOURCE_FOO_REV=\"\"\n",
+        "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"\n",
+    ]
+)
+def test_basic(rose_stem_run_basic, expected):
+    """Check that assorted variables have been exported.
+    """
+    if expected == 'run_ok':
+        assert rose_stem_run_basic['run_stem'].returncode == 0
+    else:
+        expected = expected.format(
+            workingcopy=rose_stem_run_basic['workingcopy'],
+            hostname=HOST
+        )
+        assert expected in rose_stem_run_basic['jobout_content']
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 async def project_override(
     rose_stem_run_template, setup_stem_repo
 ):
@@ -351,42 +348,41 @@ async def project_override(
     yield await rose_stem_run_template(rose_stem_opts)
 
 
-class TestProjectOverride():
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            (
-                "RUN_NAMES=[\'earl_grey\', \'milk\', \'sugar\', "
-                "\'spoon\', \'cup\', \'milk\']"
-            ),
-            "SOURCE_FOO=\"fcm:foo.x_tr@head\"",
-            "HOST_SOURCE_FOO=\"fcm:foo.x_tr@head\"",
-            "SOURCE_BAR=\"{workingcopy}\"",
-            "HOST_SOURCE_BAR=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
-            "HOST_SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
-            "SOURCE_BAR_BASE=\"{workingcopy}\"",
-            "HOST_SOURCE_BAR_BASE=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_REV=\"@1\"",
-            "SOURCE_BAR_REV=\"\"",
-            "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
-        ]
-    )
-    def test_project_override(self, project_override, expected):
-        """Check that assorted variables have been exported.
-        """
-        if expected == 'run_ok':
-            assert project_override['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=project_override['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in project_override['jobout_content']
+@pytest.mark.parametrize(
+    'expected',
+    [
+        "run_ok",
+        (
+            "RUN_NAMES=[\'earl_grey\', \'milk\', \'sugar\', "
+            "\'spoon\', \'cup\', \'milk\']"
+        ),
+        "SOURCE_FOO=\"fcm:foo.x_tr@head\"",
+        "HOST_SOURCE_FOO=\"fcm:foo.x_tr@head\"",
+        "SOURCE_BAR=\"{workingcopy}\"",
+        "HOST_SOURCE_BAR=\"{hostname}:{workingcopy}\"",
+        "SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
+        "HOST_SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
+        "SOURCE_BAR_BASE=\"{workingcopy}\"",
+        "HOST_SOURCE_BAR_BASE=\"{hostname}:{workingcopy}\"",
+        "SOURCE_FOO_REV=\"@1\"",
+        "SOURCE_BAR_REV=\"\"",
+        "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
+    ]
+)
+def test_project_override(project_override, expected):
+    """Check that assorted variables have been exported.
+    """
+    if expected == 'run_ok':
+        assert project_override['run_stem'].returncode == 0
+    else:
+        expected = expected.format(
+            workingcopy=project_override['workingcopy'],
+            hostname=HOST
+        )
+        assert expected in project_override['jobout_content']
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 async def suite_redirection(
     rose_stem_run_template, setup_stem_repo
 ):
@@ -399,31 +395,30 @@ async def suite_redirection(
     yield await rose_stem_run_template(rose_stem_opts)
 
 
-class TestSuiteRedirection:
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            "RUN_NAMES=[\'lapsang\']",
-            "SOURCE_FOO=\"fcm:foo.x_tr@head\"",
-            "SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
-            "SOURCE_FOO_REV=\"@1\"",
-        ]
-    )
-    def test_suite_redirection(self, suite_redirection, expected):
-        """Check that assorted variables have been exported.
-        """
-        if expected == 'run_ok':
-            assert suite_redirection['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=suite_redirection['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in suite_redirection['jobout_content']
+@pytest.mark.parametrize(
+    'expected',
+    [
+        "run_ok",
+        "RUN_NAMES=[\'lapsang\']",
+        "SOURCE_FOO=\"fcm:foo.x_tr@head\"",
+        "SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
+        "SOURCE_FOO_REV=\"@1\"",
+    ]
+)
+def test_suite_redirection(suite_redirection, expected):
+    """Check that assorted variables have been exported.
+    """
+    if expected == 'run_ok':
+        assert suite_redirection['run_stem'].returncode == 0
+    else:
+        expected = expected.format(
+            workingcopy=suite_redirection['workingcopy'],
+            hostname=HOST
+        )
+        assert expected in suite_redirection['jobout_content']
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 async def subdirectory(
     rose_stem_run_template, setup_stem_repo
 ):
@@ -435,34 +430,33 @@ async def subdirectory(
     yield await rose_stem_run_template(rose_stem_opts)
 
 
-class TestSubdirectory:
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            "RUN_NAMES=[\'assam\']",
-            "SOURCE_FOO=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_BASE=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_REV=\"\"",
-            "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
-        ]
-    )
-    def test_subdirectory(self, subdirectory, expected):
-        """Check that assorted variables have been exported.
-        """
-        if expected == 'run_ok':
-            assert subdirectory['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=subdirectory['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in subdirectory['jobout_content']
+@pytest.mark.parametrize(
+    'expected',
+    [
+        "run_ok",
+        "RUN_NAMES=[\'assam\']",
+        "SOURCE_FOO=\"{workingcopy}\"",
+        "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
+        "SOURCE_FOO_BASE=\"{workingcopy}\"",
+        "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
+        "SOURCE_FOO_REV=\"\"",
+        "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
+    ]
+)
+def test_subdirectory(subdirectory, expected):
+    """Check that assorted variables have been exported.
+    """
+    if expected == 'run_ok':
+        assert subdirectory['run_stem'].returncode == 0
+    else:
+        expected = expected.format(
+            workingcopy=subdirectory['workingcopy'],
+            hostname=HOST
+        )
+        assert expected in subdirectory['jobout_content']
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 async def relative_path(
     rose_stem_run_template, setup_stem_repo
 ):
@@ -474,35 +468,32 @@ async def relative_path(
     yield await rose_stem_run_template(rose_stem_opts)
 
 
-class TestRelativePath:
-    """Check relative path with src is working.
+@pytest.mark.parametrize(
+    'expected',
+    [
+        "run_ok",
+        "RUN_NAMES=[\'ceylon\']",
+        "SOURCE_FOO=\"{workingcopy}\"",
+        "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
+        "SOURCE_FOO_BASE=\"{workingcopy}\"",
+        "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
+        "SOURCE_FOO_REV=\"\"",
+    ]
+)
+def test_relative_path(relative_path, expected):
+    """Check that assorted variables have been exported.
     """
-    @pytest.mark.parametrize(
-        'expected',
-        [
-            "run_ok",
-            "RUN_NAMES=[\'ceylon\']",
-            "SOURCE_FOO=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_BASE=\"{workingcopy}\"",
-            "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
-            "SOURCE_FOO_REV=\"\"",
-        ]
-    )
-    def test_relative_path(self, relative_path, expected):
-        """Check that assorted variables have been exported.
-        """
-        if expected == 'run_ok':
-            assert relative_path['run_stem'].returncode == 0
-        else:
-            expected = expected.format(
-                workingcopy=relative_path['workingcopy'],
-                hostname=HOST
-            )
-            assert expected in relative_path['jobout_content']
+    if expected == 'run_ok':
+        assert relative_path['run_stem'].returncode == 0
+    else:
+        expected = expected.format(
+            workingcopy=relative_path['workingcopy'],
+            hostname=HOST
+        )
+        assert expected in relative_path['jobout_content']
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 async def with_config(
     rose_stem_run_template, setup_stem_repo, mock_global_cfg
 ):
@@ -522,28 +513,27 @@ async def with_config(
     yield await rose_stem_run_template(rose_stem_opts)
 
 
-class TestWithConfig:
-    def test_with_config(self, with_config):
-        """test for successful execution with site/user configuration
-        """
-        assert with_config['run_stem'].returncode == 0
-        for line in [
-            "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
-            'SOURCE_FOO="{workingcopy} fcm:foo.x_tr@head"',
-            'HOST_SOURCE_FOO="{hostname}:{workingcopy} fcm:foo.x_tr@head"',
-            'SOURCE_FOO_BASE="{workingcopy}"',
-            'HOST_SOURCE_FOO_BASE="{hostname}:{workingcopy}"',
-            'SOURCE_FOO_REV=""',
-            'MILK="true"',
-        ]:
-            line = line.format(
-                **with_config,
-                hostname=HOST
-            )
-            assert line in with_config['jobout_content']
+def test_with_config(with_config):
+    """test for successful execution with site/user configuration
+    """
+    assert with_config['run_stem'].returncode == 0
+    for line in [
+        "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
+        'SOURCE_FOO="{workingcopy} fcm:foo.x_tr@head"',
+        'HOST_SOURCE_FOO="{hostname}:{workingcopy} fcm:foo.x_tr@head"',
+        'SOURCE_FOO_BASE="{workingcopy}"',
+        'HOST_SOURCE_FOO_BASE="{hostname}:{workingcopy}"',
+        'SOURCE_FOO_REV=""',
+        'MILK="true"',
+    ]:
+        line = line.format(
+            **with_config,
+            hostname=HOST
+        )
+        assert line in with_config['jobout_content']
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture()
 async def with_config2(
     rose_stem_run_template, setup_stem_repo, mock_global_cfg
 ):
@@ -562,20 +552,19 @@ async def with_config2(
     yield await rose_stem_run_template(rose_stem_opts)
 
 
-class TestWithConfig2:
-    def test_with_config2(self, with_config2):
-        """test for successful execution with site/user configuration
-        """
-        assert with_config2['run_stem'].returncode == 0
-        for line in [
-            'MILK="true"',
-            'TEA="darjeeling"',
-        ]:
-            line = line.format(
-                **with_config2,
-                hostname=HOST
-            )
-            assert line in with_config2['jobout_content']
+def test_with_config2(with_config2):
+    """test for successful execution with site/user configuration
+    """
+    assert with_config2['run_stem'].returncode == 0
+    for line in [
+        'MILK="true"',
+        'TEA="darjeeling"',
+    ]:
+        line = line.format(
+            **with_config2,
+            hostname=HOST
+        )
+        assert line in with_config2['jobout_content']
 
 
 async def test_incompatible_versions(
