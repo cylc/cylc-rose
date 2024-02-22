@@ -56,7 +56,7 @@ async def test_global_config_environment_validate(
     """
     conf_path = tmp_path / 'conf'
     conf_path.mkdir()
-    monkeypatch.setenv('CYLC_CONF_PATH', conf_path)
+    monkeypatch.setenv('CYLC_CONF_PATH', str(conf_path))
 
     # Setup workflow config:
     (conf_path / 'global.cylc').write_text(global_conf)
@@ -81,7 +81,7 @@ async def test_global_config_environment_validate(
 
 
 async def test_global_config_environment_validate2(
-    monkeypatch, tmp_path, cylc_install_cli
+    caplog, monkeypatch, tmp_path, cylc_install_cli
 ):
     """It should reload the global config after exporting env variables.
 
@@ -103,7 +103,7 @@ async def test_global_config_environment_validate2(
     glbl_conf_path = tmp_path / 'conf'
     glbl_conf_path.mkdir()
     (glbl_conf_path / 'global.cylc').write_text(global_conf)
-    monkeypatch.setenv('CYLC_CONF_PATH', glbl_conf_path)
+    monkeypatch.setenv('CYLC_CONF_PATH', str(glbl_conf_path))
 
     # Setup workflow config:
     (tmp_path / 'rose-suite.conf').write_text(
@@ -118,16 +118,12 @@ async def test_global_config_environment_validate2(
     """)
 
     # Install the config:
-    output = await cylc_install_cli(tmp_path)
-    import sys
-    for i in output.logging.split('\n'):
-        print(i, file=sys.stderr)
-    assert output.ret == 0
+    _, id_ = await cylc_install_cli(tmp_path)
 
     # Assert symlink created back to test_path/foo:
-    run_dir = get_workflow_run_dir(output.id)
+    run_dir = get_workflow_run_dir(id_)
     expected_msg = (
         f'Symlink created: {run_dir}/log -> '
-        f'{tmp_path}/foo/cylc-run/{output.id}/log'
+        f'{tmp_path}/foo/cylc-run/{id_}/log'
     )
-    assert expected_msg in output.logging.split('\n')[0]
+    assert expected_msg in caplog.messages

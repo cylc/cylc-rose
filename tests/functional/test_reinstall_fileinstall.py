@@ -52,18 +52,13 @@ def fixture_provide_flow(tmp_path_factory, request):
 
 
 async def test_install_flow(fixture_provide_flow, mod_cylc_install_cli):
-    """Run ``cylc install``.
-    """
-    result = await mod_cylc_install_cli(
+    """Run ``cylc install``."""
+    await mod_cylc_install_cli(
         fixture_provide_flow['srcpath'],
         fixture_provide_flow['test_flow_name'],
     )
-    assert result.ret == 0
 
 
 async def test_reinstall_flow(fixture_provide_flow, mod_cylc_reinstall_cli):
-    """Run ``cylc reinstall``.
-    """
-    result = await mod_cylc_reinstall_cli(
-        fixture_provide_flow['test_flow_name'])
-    assert result.ret == 0
+    """Run ``cylc reinstall``."""
+    assert await mod_cylc_reinstall_cli(fixture_provide_flow['test_flow_name'])

@@ -61,7 +61,7 @@ async def fixture_install_flow(
     mod_cylc_install_cli,
 ):
     srcpath, datapath, flow_name = fixture_provide_flow
-    result = await mod_cylc_install_cli(
+    await mod_cylc_install_cli(
         srcpath,
         flow_name,
         {
@@ -73,7 +73,7 @@ async def fixture_install_flow(
     )
     destpath = Path(get_workflow_run_dir(flow_name))
 
-    yield srcpath, datapath, flow_name, result, destpath
+    yield destpath
     if not request.session.testsfailed:
         shutil.rmtree(destpath)
 
@@ -82,20 +82,13 @@ async def test_rose_fileinstall_validate(
     fixture_provide_flow,
     cylc_validate_cli,
 ):
-    """Workflow validates:
-    """
+    """Workflow validates."""
     srcpath, _, _ = fixture_provide_flow
     await cylc_validate_cli(srcpath)
 
 
-def test_rose_fileinstall_run(fixture_install_flow):
-    """Workflow installs:
-    """
-    pass  # this tests the fixture itself
-
-
 def test_rose_fileinstall_rose_conf(fixture_install_flow):
-    _, _, _, result, destpath = fixture_install_flow
+    destpath = fixture_install_flow
     assert (destpath / 'rose-suite.conf').read_text() == (
         "# Config Options 'A B (cylc-install)' from CLI appended to options "
         "already in `rose-suite.conf`.\n"
@@ -104,7 +97,7 @@ def test_rose_fileinstall_rose_conf(fixture_install_flow):
 
 
 def test_rose_fileinstall_rose_suite_cylc_install_conf(fixture_install_flow):
-    _, _, _, result, destpath = fixture_install_flow
+    destpath = fixture_install_flow
     host = get_host()
     assert (destpath / 'opt/rose-suite-cylc-install.conf').read_text() == (
         "# This file records CLI Options.\n\n"

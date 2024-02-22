@@ -113,7 +113,7 @@ async def fixture_install_flow(
     If a test fails then using ``pytest --pdb`` and
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
-    result = await mod_cylc_install_cli(
+    await mod_cylc_install_cli(
         fixture_provide_flow['srcpath'],
         fixture_provide_flow['test_flow_name'],
     )
@@ -126,7 +126,6 @@ async def fixture_install_flow(
     install_conf_path.write_text(text)
     yield {
         **fixture_provide_flow,
-        'result': result
     }
 
 
@@ -134,8 +133,7 @@ async def test_cylc_validate_srcdir(
     fixture_install_flow,
     mod_cylc_validate_cli,
 ):
-    """Sanity check that workflow validates:
-    """
+    """Sanity check that workflow validates."""
     srcpath = fixture_install_flow['srcpath']
     result = await mod_cylc_validate_cli(srcpath)
     search = re.findall(r'ROSE_ORIG_HOST \(.*\) is: (.*)', result.logging)
@@ -146,13 +144,7 @@ async def test_cylc_validate_rundir(
     fixture_install_flow,
     mod_cylc_validate_cli,
 ):
-    """Sanity check that workflow validates:
-    """
+    """Sanity check that workflow validates."""
     flowpath = fixture_install_flow['flowpath']
     result = await mod_cylc_validate_cli(flowpath)
     assert 'ROSE_ORIG_HOST (env) is:' in result.logging
-
-
-def test_cylc_install_run(fixture_install_flow):
-    """install flow works."""
-    assert fixture_install_flow['result'].ret == 0
