@@ -17,8 +17,11 @@
 """Unit tests for utilities."""
 
 from pathlib import Path
+from textwrap import dedent
 
 from cylc.rose.entry_points import copy_config_file
+
+from cylc.flow.pathutil import get_workflow_run_dir
 
 
 def test_basic(tmp_path):
@@ -38,7 +41,7 @@ def test_basic(tmp_path):
     )
 
 
-def test_global_config_environment_validate(
+async def test_global_config_environment_validate(
     monkeypatch, tmp_path, cylc_validate_cli
 ):
     """It should reload the global config after exporting env variables.
@@ -69,7 +72,7 @@ def test_global_config_environment_validate(
     """)
 
     # Validate the config:
-    output = cylc_validate_cli(tmp_path)
+    output = await cylc_validate_cli(tmp_path)
     assert output.ret == 0
 
     # CYLC_SYMLINKS == None the first time the global.cylc
@@ -77,7 +80,7 @@ def test_global_config_environment_validate(
     assert output.logging.split('\n')[-1] == '"Foo"'
 
 
-def test_global_config_environment_validate2(
+async def test_global_config_environment_validate2(
     monkeypatch, tmp_path, cylc_install_cli
 ):
     """It should reload the global config after exporting env variables.
@@ -85,18 +88,18 @@ def test_global_config_environment_validate2(
     See: https://github.com/cylc/cylc-rose/issues/237
     """
     # Setup global config:
-    global_conf = (
-        '#!jinja2\n'
-        '[install]\n'
-        '    [[symlink dirs]]\n'
-        '        [[[localhost]]]\n'
-        '{% set cylc_symlinks = environ.get(\'CYLC_SYMLINKS\', None) %}\n'
-        '{% if cylc_symlinks == "foo" %}\n'
-        f'log = {str(tmp_path)}/foo\n'
-        '{% else %}\n'
-        f'log = {str(tmp_path)}/bar\n'
-        '{% endif %}\n'
-    )
+    global_conf = dedent(f'''
+        #!jinja2
+        [install]
+            [[symlink dirs]]
+                [[[localhost]]]
+        {{% set cylc_symlinks = environ.get(\'CYLC_SYMLINKS\', None) %}}
+        {{% if cylc_symlinks == "foo" %}}
+                    log = {str(tmp_path)}/foo
+        {{% else %}}
+                    log = {str(tmp_path)}/bar
+        {{% endif %}}
+    ''').strip()
     glbl_conf_path = tmp_path / 'conf'
     glbl_conf_path.mkdir()
     (glbl_conf_path / 'global.cylc').write_text(global_conf)
@@ -115,15 +118,16 @@ def test_global_config_environment_validate2(
     """)
 
     # Install the config:
-    output = cylc_install_cli(tmp_path)
+    output = await cylc_install_cli(tmp_path)
     import sys
     for i in output.logging.split('\n'):
         print(i, file=sys.stderr)
     assert output.ret == 0
 
     # Assert symlink created back to test_path/foo:
+    run_dir = get_workflow_run_dir(output.id)
     expected_msg = (
-        f'Symlink created: {output.run_dir}/log -> '
+        f'Symlink created: {run_dir}/log -> '
         f'{tmp_path}/foo/cylc-run/{output.id}/log'
     )
     assert expected_msg in output.logging.split('\n')[0]

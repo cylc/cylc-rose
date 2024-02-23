@@ -40,14 +40,12 @@ def rose_fileinstall(
 
     if any(i.startswith('file') for i in config_tree.node.value):
         try:
-            startpoint = os.getcwd()
+            # NOTE: Cylc will chdir back for us afterwards
             os.chdir(rundir)
         except FileNotFoundError as exc:
             raise exc
         else:
             # Carry out imports.
-            import asyncio
-
             from metomi.rose.config_processor import ConfigProcessorsManager
             from metomi.rose.fs_util import FileSystemUtil
             from metomi.rose.popen import RosePopener
@@ -64,19 +62,8 @@ def rose_fileinstall(
             fs_util = FileSystemUtil(event_handler)
             popen = RosePopener(event_handler)
 
-            # Get an Asyncio loop if one doesn't exist:
-            #   Rose may need an event loop to invoke async interfaces,
-            #   doing this here incase we want to go async in cylc-rose.
-            # See https://github.com/cylc/cylc-rose/pull/130/files
-            try:
-                asyncio.get_event_loop()
-            except RuntimeError:
-                asyncio.set_event_loop(asyncio.new_event_loop())
-
             # Process fileinstall.
             config_pm = ConfigProcessorsManager(event_handler, popen, fs_util)
             config_pm(config_tree, "file")
-        finally:
-            os.chdir(startpoint)
 
     return config_tree.node

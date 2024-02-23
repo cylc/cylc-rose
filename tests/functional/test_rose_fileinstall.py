@@ -17,82 +17,79 @@
 """Functional tests for Rose file installation."""
 
 from pathlib import Path
-import shutil
-from uuid import uuid4
+from textwrap import dedent
 
-from cylc.flow.pathutil import get_workflow_run_dir
 import pytest
 
+from cylc.flow.pathutil import get_workflow_run_dir
 
+
+# @pytest.fixture(scope='module')
 @pytest.fixture
-def fixture_provide_flow(tmp_path):
+def workflow_source_dir(tmp_path):
+    """A source dir with a Rose config that configures file installation."""
     # Set up paths for test:
     srcpath = tmp_path / 'src'
+    srcpath.mkdir()
+
+    # the files to install are stored in a directory alongside this test file
     datapath = Path(__file__).parent / 'fileinstall_data'
-    for path in [srcpath]:
-        path.mkdir()
 
     # Create a unique flow name for this test:
-    flow_name = f'cylc-rose-test-{str(uuid4())[:8]}'
-
     # Create source workflow:
-    (srcpath / 'flow.cylc').write_text(
-        '[scheduling]\n'
-        '    initial cycle point = 2020\n'
-        '    [[dependencies]]\n'
-        '        [[[R1]]]\n'
-        '            graph = pointless\n'
-        '[runtime]\n'
-        '    [[pointless]]\n'
-        '        script = true\n'
-    )
-    (srcpath / 'rose-suite.conf').write_text(
-        '[file:lib/python/lion.py]\n'
-        f'source={str(datapath)}/lion.py\n'
-        '[file:data]\n'
-        f'source={str(datapath)}/*.data\n'
-    )
-    yield srcpath, datapath, flow_name
+    (srcpath / 'flow.cylc').touch()
+    (srcpath / 'rose-suite.conf').write_text(dedent(f'''
+        [file:lib/python/lion.py]
+        source={datapath}/lion.py
+
+        [file:data]
+        source={datapath}/*.data
+    '''))
+    yield srcpath, datapath
 
 
 @pytest.fixture
-def fixture_install_flow(fixture_provide_flow, request, cylc_install_cli):
-    srcpath, datapath, flow_name = fixture_provide_flow
-    result = cylc_install_cli(str(srcpath), {'workflow_name': flow_name})
-    destpath = Path(get_workflow_run_dir(flow_name))
+async def installed_workflow(
+    workflow_source_dir,
+    cylc_install_cli,
+):
+    srcpath, datapath = workflow_source_dir
+    result = await cylc_install_cli(srcpath)
+    assert result.ret == 0  # ensure the workflow installed successfully
+    workflow_id = result.id
+    run_dir = Path(get_workflow_run_dir(workflow_id))
+    yield datapath, workflow_id, result, run_dir
 
-    yield srcpath, datapath, flow_name, result, destpath
-    if not request.session.testsfailed:
-        shutil.rmtree(destpath, ignore_errors=True)
+
+async def test_rose_fileinstall_subfolders(installed_workflow):
+    """It should perform file installation creating directories as needed."""
+    datapath, _, _, destpath = installed_workflow
+    assert (destpath / 'lib/python/lion.py').read_text() == (
+        (datapath / 'lion.py').read_text()
+    )
 
 
-def test_rose_fileinstall_validate(fixture_provide_flow, cylc_validate_cli):
-    """Workflow validates:
+def test_rose_fileinstall_concatenation(installed_workflow):
+    """It should install multiple sources into a single file.
+
+    Note source contains wildcard.
     """
-    srcpath, _, _ = fixture_provide_flow
-    assert cylc_validate_cli(str(srcpath)).ret == 0
+    datapath, _, _, destpath = installed_workflow
+    assert (destpath / 'data').read_text() == (
+        (datapath / 'randoms1.data').read_text()
+        + (datapath / 'randoms3.data').read_text()
+    )
 
 
-def test_rose_fileinstall_run(fixture_install_flow):
-    """Workflow installs:
-    """
-    _, _, _, result, _ = fixture_install_flow
-    assert result.ret == 0
+async def test_rose_fileinstall_error(tmp_path, cylc_install_cli):
+    """It should capture fileinstallation errors."""
+    (tmp_path / 'flow.cylc').touch()
+    (tmp_path / 'rose-suite.conf').write_text(dedent('''
+        [file:bad]
+        source=no-such-file
+    '''))
 
-
-def test_rose_fileinstall_subfolders(fixture_install_flow):
-    """File installed into a sub directory:
-    """
-    _, datapath, _, _, destpath = fixture_install_flow
-    assert ((destpath / 'lib/python/lion.py').read_text() ==
-            (datapath / 'lion.py').read_text())
-
-
-def test_rose_fileinstall_concatenation(fixture_install_flow):
-    """Multiple files concatenated on install(source contained wildcard):
-    """
-    _, datapath, _, _, destpath = fixture_install_flow
-    assert ((destpath / 'data').read_text() ==
-            ((datapath / 'randoms1.data').read_text() +
-            (datapath / 'randoms3.data').read_text()
-             ))
+    result = await cylc_install_cli(tmp_path)
+    assert (
+        'file:bad=source=no-such-file: bad or missing value'
+    ) in str(result.exc)

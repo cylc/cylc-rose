@@ -23,8 +23,10 @@ from pathlib import Path
 import shutil
 from uuid import uuid4
 
-from cylc.flow.pathutil import get_workflow_run_dir
 import pytest
+
+from cylc.flow.pathutil import get_workflow_run_dir
+
 
 WORKFLOW_SRC = Path(__file__).parent / '14_reinstall_fileinstall'
 
@@ -49,18 +51,19 @@ def fixture_provide_flow(tmp_path_factory, request):
         shutil.rmtree(flowpath)
 
 
-def test_install_flow(fixture_provide_flow, mod_cylc_install_cli):
+async def test_install_flow(fixture_provide_flow, mod_cylc_install_cli):
     """Run ``cylc install``.
     """
-    result = mod_cylc_install_cli(
+    result = await mod_cylc_install_cli(
         fixture_provide_flow['srcpath'],
-        {'workflow_name': fixture_provide_flow['test_flow_name']})
+        fixture_provide_flow['test_flow_name'],
+    )
     assert result.ret == 0
 
 
-def test_reinstall_flow(fixture_provide_flow, mod_cylc_reinstall_cli):
+async def test_reinstall_flow(fixture_provide_flow, mod_cylc_reinstall_cli):
     """Run ``cylc reinstall``.
     """
-    result = mod_cylc_reinstall_cli(
+    result = await mod_cylc_reinstall_cli(
         fixture_provide_flow['test_flow_name'])
     assert result.ret == 0
