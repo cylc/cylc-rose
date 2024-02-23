@@ -154,35 +154,36 @@ def patch_jinja2_leading_zeros():
     jinja2.lexer.Lexer.wrap = _lexer_wrap(jinja2.lexer.Lexer.wrap)
 
     # execute the body of the "with" statement
-    yield
-
-    # report any usage of deprecated syntax
-    if jinja2.lexer.Lexer.wrap._instances:
-        num_examples = 5
-        LOG.warning(
-            'Support for integers with leading zeros (including'
-            ' lists of integers) was dropped in Jinja2 v3.'
-            ' Rose will extend support until a future version.'
-            '\nPlease amend your Rose configuration files,'
-            ' which currently contain:'
-            '\n * '
-            + (
-                '\n * '.join(
-                    f'{before} => {_strip_leading_zeros(before)}'
-                    for before in list(
-                        jinja2.lexer.Lexer.wrap._instances
-                    )[:num_examples]
+    try:
+        yield
+    finally:
+        # report any usage of deprecated syntax
+        if jinja2.lexer.Lexer.wrap._instances:
+            num_examples = 5
+            LOG.warning(
+                'Support for integers with leading zeros (including'
+                ' lists of integers) was dropped in Jinja2 v3.'
+                ' Rose will extend support until a future version.'
+                '\nPlease amend your Rose configuration files,'
+                ' which currently contain:'
+                '\n * '
+                + (
+                    '\n * '.join(
+                        f'{before} => {_strip_leading_zeros(before)}'
+                        for before in list(
+                            jinja2.lexer.Lexer.wrap._instances
+                        )[:num_examples]
+                    )
                 )
+
             )
 
-        )
+        # revert the code patch
+        jinja2.lexer.integer_re = _integer_re
+        jinja2.lexer.Lexer.wrap = jinja2.lexer.Lexer.wrap.__wrapped__
 
-    # revert the code patch
-    jinja2.lexer.integer_re = _integer_re
-    jinja2.lexer.Lexer.wrap = jinja2.lexer.Lexer.wrap.__wrapped__
-
-    # clear any patched lexers to return Jinja2 to normal operation
-    jinja2.lexer._lexer_cache.clear()
+        # clear any patched lexers to return Jinja2 to normal operation
+        jinja2.lexer._lexer_cache.clear()
 
 
 class Parser(NativeEnvironment):
