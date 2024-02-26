@@ -21,6 +21,7 @@ from textwrap import dedent
 
 import pytest
 
+from cylc.flow.exceptions import PluginError
 from cylc.flow.pathutil import get_workflow_run_dir
 
 
@@ -54,16 +55,14 @@ async def installed_workflow(
     cylc_install_cli,
 ):
     srcpath, datapath = workflow_source_dir
-    result = await cylc_install_cli(srcpath)
-    assert result.ret == 0  # ensure the workflow installed successfully
-    workflow_id = result.id
-    run_dir = Path(get_workflow_run_dir(workflow_id))
-    yield datapath, workflow_id, result, run_dir
+    _, id_ = await cylc_install_cli(srcpath)
+    run_dir = Path(get_workflow_run_dir(id_))
+    yield datapath, run_dir
 
 
 async def test_rose_fileinstall_subfolders(installed_workflow):
     """It should perform file installation creating directories as needed."""
-    datapath, _, _, destpath = installed_workflow
+    datapath, destpath = installed_workflow
     assert (destpath / 'lib/python/lion.py').read_text() == (
         (datapath / 'lion.py').read_text()
     )
@@ -74,7 +73,7 @@ def test_rose_fileinstall_concatenation(installed_workflow):
 
     Note source contains wildcard.
     """
-    datapath, _, _, destpath = installed_workflow
+    datapath, destpath = installed_workflow
     assert (destpath / 'data').read_text() == (
         (datapath / 'randoms1.data').read_text()
         + (datapath / 'randoms3.data').read_text()
@@ -88,8 +87,8 @@ async def test_rose_fileinstall_error(tmp_path, cylc_install_cli):
         [file:bad]
         source=no-such-file
     '''))
-
-    result = await cylc_install_cli(tmp_path)
-    assert (
-        'file:bad=source=no-such-file: bad or missing value'
-    ) in str(result.exc)
+    with pytest.raises(
+        PluginError,
+        match='file:bad=source=no-such-file: bad or missing value',
+    ):
+        await cylc_install_cli(tmp_path)

@@ -172,7 +172,7 @@ def _cylc_validate_cli(capsys, caplog):
     return _inner
 
 
-def _cylc_install_cli(capsys, caplog, test_dir):
+def _cylc_install_cli(test_dir):
     """Access the install CLI"""
     async def _inner(srcpath, workflow_name=None, opts=None):
         """Install a workflow.
@@ -189,7 +189,7 @@ def _cylc_install_cli(capsys, caplog, test_dir):
                 Dictionary of arguments for cylc install.
 
         """
-        nonlocal capsys, caplog, test_dir
+        nonlocal test_dir
         if not workflow_name:
             workflow_name = str(
                 (test_dir / str(uuid4())[:4]).relative_to(CYLC_RUN_DIR)
@@ -197,26 +197,15 @@ def _cylc_install_cli(capsys, caplog, test_dir):
         options = Options(
             install_gop(), opts or {}
         )(workflow_name=workflow_name)
-        output = SimpleNamespace()
         if not options.workflow_name:
             options.workflow_name = workflow_name
         if not opts or not opts.get('no_run_name', ''):
             options.no_run_name = True
-
-        try:
-            output.name, output.id = await cylc_install(options, str(srcpath))
-            output.ret = 0
-            output.exc = ''
-        except Exception as exc:
-            output.ret = 1
-            output.exc = exc
-        output.logging = '\n'.join([i.message for i in caplog.records])
-        output.out, output.err = capsys.readouterr()
-        return output
+        return await cylc_install(options, str(srcpath))
     return _inner
 
 
-def _cylc_reinstall_cli(capsys, caplog, test_dir):
+def _cylc_reinstall_cli(test_dir):
     """Access the reinstall CLI"""
     async def _inner(workflow_id=None, opts=None):
         """Install a workflow.
@@ -231,44 +220,33 @@ def _cylc_reinstall_cli(capsys, caplog, test_dir):
                 Dictionary of arguments for cylc reinstall.
 
         """
-        nonlocal capsys, caplog, test_dir
+        nonlocal test_dir
         if not workflow_id:
             workflow_id = str(test_dir.relative_to(CYLC_RUN_DIR))
         options = Options(reinstall_gop(), opts or {})()
-        output = SimpleNamespace()
-
-        try:
-            await cylc_reinstall(options, workflow_id)
-            output.ret = 0
-            output.exc = ''
-        except Exception as exc:
-            # raise
-            output.ret = 1
-            output.exc = exc
-        output.logging = '\n'.join([i.message for i in caplog.records])
-        output.out, output.err = capsys.readouterr()
-        return output
+        options.skip_interactive = True
+        return await cylc_reinstall(options, workflow_id)
     return _inner
 
 
 @pytest.fixture
-def cylc_install_cli(capsys, caplog, test_dir):
-    return _cylc_install_cli(capsys, caplog, test_dir)
+def cylc_install_cli(test_dir):
+    return _cylc_install_cli(test_dir)
 
 
 @pytest.fixture(scope='module')
-def mod_cylc_install_cli(mod_capsys, mod_caplog):
-    return _cylc_install_cli(mod_capsys, mod_caplog, mod_test_dir)
+def mod_cylc_install_cli(mod_test_dir):
+    return _cylc_install_cli(mod_test_dir)
 
 
 @pytest.fixture
-def cylc_reinstall_cli(capsys, caplog, test_dir):
-    return _cylc_reinstall_cli(capsys, caplog, test_dir)
+def cylc_reinstall_cli(test_dir):
+    return _cylc_reinstall_cli(test_dir)
 
 
 @pytest.fixture(scope='module')
-def mod_cylc_reinstall_cli(mod_capsys, mod_caplog, mod_test_dir):
-    return _cylc_reinstall_cli(mod_capsys, mod_caplog, mod_test_dir)
+def mod_cylc_reinstall_cli(mod_test_dir):
+    return _cylc_reinstall_cli(mod_test_dir)
 
 
 @pytest.fixture
