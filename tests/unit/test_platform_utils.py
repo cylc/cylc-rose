@@ -119,7 +119,8 @@ def fake_flow():
     flow_name: str = f'cylc-rose-platform-utils-test-{str(uuid4())[:6]}'
     flow_path = Path(os.path.expandvars('$HOME/cylc-run')) / flow_name
     flow_path.mkdir(parents=True)
-    (flow_path / 'flow.cylc').write_text("""
+    flow_cylc = flow_path / 'flow.cylc'
+    flow_cylc.write_text("""
         [scheduling]
             [[graph]]
                 R1 = foo & bar & baz & qux & child_of_bar
@@ -143,10 +144,12 @@ def fake_flow():
             [[child_of_bar]]
                 inherit = BAR
     """)
+    flow_processed = flow_path / 'log/config/flow-processed.cylc'
+    flow_processed.parent.mkdir(exist_ok=True, parents=True)
+    flow_processed.symlink_to(flow_path / 'flow.cylc')
 
     # Set up a database
     db_file = get_workflow_run_pub_db_path(flow_name)
-    Path(db_file).parent.mkdir()
     with CylcWorkflowDAO(db_file, create_tables=True) as dao:
         conn = dao.connect()
         conn.execute(
