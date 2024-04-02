@@ -13,15 +13,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Cylc reinstall is able to use the async fileinstall from rose without
+
+"""
+Ensure Cylc reinstall is able to use the async fileinstall from rose without
 trouble.
 """
 
-import pytest
-import shutil
-
 from pathlib import Path
+import shutil
 from uuid import uuid4
+
+import pytest
 
 from cylc.flow.pathutil import get_workflow_run_dir
 
@@ -49,18 +51,14 @@ def fixture_provide_flow(tmp_path_factory, request):
         shutil.rmtree(flowpath)
 
 
-def test_install_flow(fixture_provide_flow, mod_cylc_install_cli):
-    """Run ``cylc install``.
-    """
-    result = mod_cylc_install_cli(
+async def test_install_flow(fixture_provide_flow, mod_cylc_install_cli):
+    """Run ``cylc install``."""
+    await mod_cylc_install_cli(
         fixture_provide_flow['srcpath'],
-        {'workflow_name': fixture_provide_flow['test_flow_name']})
-    assert result.ret == 0
+        fixture_provide_flow['test_flow_name'],
+    )
 
 
-def test_reinstall_flow(fixture_provide_flow, mod_cylc_reinstall_cli):
-    """Run ``cylc reinstall``.
-    """
-    result = mod_cylc_reinstall_cli(
-        fixture_provide_flow['test_flow_name'])
-    assert result.ret == 0
+async def test_reinstall_flow(fixture_provide_flow, mod_cylc_reinstall_cli):
+    """Run ``cylc reinstall``."""
+    assert await mod_cylc_reinstall_cli(fixture_provide_flow['test_flow_name'])
