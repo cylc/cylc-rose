@@ -26,7 +26,11 @@ from typing import Any, Dict
 
 from cylc.flow.config import WorkflowConfig
 from cylc.flow.id_cli import parse_id
-from cylc.flow.pathutil import get_workflow_run_pub_db_path
+from cylc.flow.pathutil import (
+    get_workflow_run_config_log_dir,
+    get_workflow_run_pub_db_path,
+)
+from cylc.flow.workflow_files import WorkflowFiles
 from cylc.flow.platforms import (
     HOST_REC_COMMAND,
     get_platform,
@@ -48,7 +52,11 @@ def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
     Returns:
         Platform Dictionary.
     """
-    _, _, flow_file = parse_id(flow, constraint='workflows', src=True)
+    workflow_id, _, _ = parse_id(flow, constraint='workflows', src=True)
+    flow_file = get_workflow_run_config_log_dir(
+        workflow_id,
+        WorkflowFiles.FLOW_FILE_PROCESSED,
+    )
     config = WorkflowConfig(flow, flow_file, Values())
     # Get entire task spec to allow Cylc 7 platform from host guessing.
     task_spec = config.pcfg.get(['runtime', task])
