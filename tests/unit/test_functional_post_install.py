@@ -355,3 +355,20 @@ def test_cylc_no_rose(tmp_path):
 def test_copy_config_file_fails(tmp_path):
     """It fails if source not a rose suite."""
     copy_config_file(tmp_path, tmp_path)
+
+
+def test_CLI_opts_cleared(monkeypatch):
+    """The post install entry point should clear the three rose opts"""
+    path = 'cylc.rose.entry_points.'
+    monkeypatch.setattr(
+        f'{path}record_cylc_install_options', lambda *_, **__: False)
+    monkeypatch.setattr(f'{path}copy_config_file', lambda *_, **__: False)
+    monkeypatch.setattr(f'{path}rose_config_exists', lambda *_, **__: True)
+
+    opts = SimpleNamespace(
+        rose_template_vars=['gee', 'whiz'],
+        defines=['foo', 'bar'],
+        opt_conf_keys=['thomas', 'percy'])
+
+    post_install('', '', opts)
+    assert any(opts.__dict__.values()) is False

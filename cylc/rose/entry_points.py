@@ -71,6 +71,12 @@ def post_install(srcdir: Path, rundir: str, opts: 'Values') -> bool:
     if config_node:
         dump_rose_log(rundir=_rundir, node=config_node)
 
+    # Clear opts before returning; they have now been stored in
+    # rose-suite-cylc-install.conf
+    opts.rose_template_vars = []
+    opts.defines = []
+    opts.opt_conf_keys = []
+
     return True
 
 
