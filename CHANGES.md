@@ -14,7 +14,7 @@ ones in. -->
 set in ``rose-suite.conf`` to be used when parsing ``global.cylc``.
 
 
-## __cylc-rose-1.3.3 (<span actions:bind='release-date'>Awaiting Release</span>)__
+## __cylc-rose-1.3.3 (<span actions:bind='release-date'>Released 2024-04-05</span>)__
 
 ### Fixes
 
