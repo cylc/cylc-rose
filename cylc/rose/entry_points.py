@@ -73,6 +73,7 @@ def post_install(srcdir: Path, rundir: str, opts: 'Values') -> bool:
 
     # Clear opts before returning; they have now been stored in
     # rose-suite-cylc-install.conf
+    # https://github.com/cylc/cylc-flow/issues/6058
     opts.rose_template_vars = []
     opts.defines = []
     opts.opt_conf_keys = []
