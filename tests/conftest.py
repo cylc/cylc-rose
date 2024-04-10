@@ -16,8 +16,13 @@
 """Functional tests for top-level function record_cylc_install_options and
 """
 
+from pathlib import Path
 import pytest
+from subprocess import run
+from shlex import split
+from time import sleep
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from cylc.flow import __version__ as CYLC_VERSION
@@ -37,6 +42,10 @@ from cylc.flow.scripts.reinstall import (
     reinstall_cli as cylc_reinstall,
     get_option_parser as reinstall_gop
 )
+
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_workflow_name():
@@ -209,3 +218,39 @@ def cylc_validate_cli(capsys, caplog):
 @pytest.fixture(scope='module')
 def mod_cylc_validate_cli(mod_capsys, mod_caplog):
     return _cylc_validate_cli(mod_capsys, mod_caplog)
+
+
+@pytest.fixture
+def file_poll():
+    """Poll for the existance of a file.
+    """
+    def _inner(fpath: "Path", timeout: int = 5, file_exists=True):
+        for _ in range(timeout):
+            if file_exists and fpath.exists():
+                break
+            elif not file_exists and not fpath.exists():
+                break
+            sleep(1)
+        else:
+            raise TimeoutError(
+                f'file {fpath} not found after {timeout} seconds')
+    return _inner
+
+
+@pytest.fixture
+def cylc_stop(file_poll):
+    """Cylc stop & check the contact file"""
+    def _inner(id_):
+        run(split(f'cylc stop --now --now {id_}'))
+        contactfile = Path.home() / f'cylc-run{id_}.service/contact'
+        file_poll(contactfile, file_exists=False)
+        sleep(3)
+    return _inner
+
+
+@pytest.fixture
+def purge_workflow(cylc_stop):
+    def _inner(id_):
+        cylc_stop(id_)
+        run(split(f'cylc clean {id_}'))
+    return _inner

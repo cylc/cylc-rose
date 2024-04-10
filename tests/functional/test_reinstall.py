@@ -29,6 +29,7 @@ At each step it checks the contents of
 
 import pytest
 import shutil
+from subprocess import run
 
 from itertools import product
 from pathlib import Path
