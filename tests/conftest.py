@@ -18,6 +18,7 @@
 
 import pytest
 from types import SimpleNamespace
+from uuid import uuid4
 
 from cylc.flow import __version__ as CYLC_VERSION
 from cylc.flow.option_parsers import Options
@@ -36,6 +37,11 @@ from cylc.flow.scripts.reinstall import (
     reinstall_cli as cylc_reinstall,
     get_option_parser as reinstall_gop
 )
+
+
+def test_workflow_name():
+    """Return a UUID to use as a test name"""
+    return f'cylc-rose-test-{str(uuid4())[:8]}'
 
 
 @pytest.fixture(scope='module')
@@ -128,8 +134,14 @@ def _cylc_install_cli(capsys, caplog):
             srcpath:
             args: Dictionary of arguments.
         """
+        if not args or not args.get('workflow_name', ''):
+            id_ = test_workflow_name()
+            args = {'workflow_name': id_}
+
+        args.update({'no_run_name': True})
         options = Options(install_gop(), args)()
         output = SimpleNamespace()
+        output.id = args['workflow_name']
 
         try:
             cylc_install(options, str(srcpath))

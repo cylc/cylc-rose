@@ -108,7 +108,7 @@ def test_cylc_install_run(fixture_install_flow):
     'file_, expect',
     [
         (
-            'run1/opt/rose-suite-cylc-install.conf', (
+            'opt/rose-suite-cylc-install.conf', (
                 '# This file records CLI Options.\n\n'
                 '!opts=bar\n\n'
                 '[env]\n'
@@ -141,7 +141,7 @@ def fixture_reinstall_flow(
     """
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
     result = mod_cylc_reinstall_cli(
-        f'{fixture_provide_flow["test_flow_name"]}/run1',
+        f'{fixture_provide_flow["test_flow_name"]}',
         {
             'opt_conf_keys': ['baz'],
             'defines': ['[env]BAR=2'],
@@ -162,7 +162,7 @@ def test_cylc_reinstall_run(fixture_reinstall_flow):
     'file_, expect',
     [
         (
-            'run1/opt/rose-suite-cylc-install.conf', (
+            'opt/rose-suite-cylc-install.conf', (
                 '# This file records CLI Options.\n\n'
                 '!opts=baz\n\n'
                 '[env]\n'
