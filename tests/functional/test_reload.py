@@ -92,7 +92,7 @@ def test_reinstall_overrides(
     purge_workflow(install_results.id)
 
 
-def test_reload_overrides(
+def test_restart_overrides(
     cylc_install_cli, cylc_reinstall_cli, tmp_path, file_poll,
     provide_template_vars_workflow, purge_workflow, cylc_stop
 ):
