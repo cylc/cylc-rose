@@ -18,7 +18,7 @@ set in ``rose-suite.conf`` to be used when parsing ``global.cylc``.
 
 ### Fixes
 
-[#300](https://github.com/cylc/cylc-rose/pull/300) -
+[#302](https://github.com/cylc/cylc-rose/pull/302) -
 Fix issues which could cause "fcm_make" and "rose_prune" tasks intermittently
 fail with the message
 "Workflow database is incompatible with Cylc x.y.z, or is corrupted".
