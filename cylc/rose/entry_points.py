@@ -75,6 +75,11 @@ def post_install(srcdir=None, opts=None, rundir=None):
     if results['fileinstall']:
         dump_rose_log(rundir=rundir, node=results['fileinstall'])
 
+    # Having dumped the config we clear rose options:
+    opts.rose_template_vars = []
+    opts.opt_conf_keys = []
+    opts.defines = []
+
     return results
 
 
