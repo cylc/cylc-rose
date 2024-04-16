@@ -62,43 +62,6 @@ def test_no_rose_suite_conf_in_devdir(tmp_path):
     assert result is False
 
 
-def test_post_install_clears_rose_opts(tmp_path, monkeypatch):
-    """Ensure that rose opts are cleared after being dumped to
-    rose-suite-cylc-install.conf - we don't want them polluting downstream
-    Cylc configurations.
-    """
-    # Mock functions which would otherwise fail, but we aren't interested
-    # in here:
-    for func in ['rose_config_exists', 'copy_config_file']:
-        monkeypatch.setattr(
-            f'cylc.rose.entry_points.{func}', lambda *_, **__: True)
-
-    # Setup opts-like object
-    opts = SimpleNamespace(
-        rose_template_vars=['FOO=42'],
-        defines=['[section]BAR="MOUTH"'],
-        opt_conf_keys=['gules'],
-        elephants=['Dumbo', 'BaBar']
-    )
-
-    # Setup workflow folder:
-    opt = (tmp_path / 'opt')
-    opt.mkdir(parents=True)
-    (opt / 'rose-suite-gules.conf').touch()
-    (tmp_path / 'rose-suite.conf').touch()
-
-    # Function under test
-    post_install(rundir=tmp_path, opts=opts, srcdir=tmp_path)
-
-    # All the opts values for Rose Have been cleared:
-    assert opts.rose_template_vars == []
-    assert opts.opt_conf_keys == []
-    assert opts.defines == []
-
-    # All the non-rose opts have been left alone:
-    assert opts.elephants == ['Dumbo', 'BaBar']
-
-
 def test_rose_fileinstall_no_config_in_folder():
     # It returns false if no rose-suite.conf
     assert rose_fileinstall(Path('/dev/null')) is False
@@ -390,3 +353,10 @@ def test_rose_fileinstall_exception(tmp_path, monkeypatch):
     (tmp_path / 'rose-suite.conf').touch()
     with pytest.raises(FileNotFoundError):
         rose_fileinstall(srcdir=tmp_path, rundir=tmp_path)
+
+
+def test_cylc_no_rose(tmp_path):
+    """A Cylc workflow that contains no ``rose-suite.conf`` installs OK.
+    """
+    from cylc.rose.entry_points import post_install
+    assert post_install(srcdir=tmp_path, rundir=tmp_path) is False
