@@ -13,27 +13,21 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Functional tests for top-level function record_cylc_install_options and
-"""
 
-import os
-import pytest
-import re
+"""Test pre_configure entry point."""
 
 from itertools import product
+import os
 from pathlib import Path
-from pytest import param
+import re
 from shlex import split
 from subprocess import run
 from types import SimpleNamespace
 
-import cylc
-from cylc.rose.entry_points import get_rose_vars, NotARoseSuiteException
+import pytest
+from pytest import param
 
-
-def envar_exporter(dict_):
-    for key, val in dict_.items():
-        os.environ[key] = val
+from cylc.rose.utilities import NotARoseSuiteException, load_rose_config
 
 
 @pytest.mark.parametrize(
@@ -51,9 +45,9 @@ def envar_exporter(dict_):
         )
     ]
 )
-def test_validate_fail(srcdir, expect, cylc_validate_cli):
+async def test_validate_fail(srcdir, expect, cylc_validate_cli):
     srcdir = Path(__file__).parent / srcdir
-    validate = cylc_validate_cli(srcdir)
+    validate = await cylc_validate_cli(srcdir)
     assert validate.ret == 1
     if expect:
         assert re.findall(expect, str(validate.exc))
@@ -83,40 +77,36 @@ def test_validate_fail(srcdir, expect, cylc_validate_cli):
         ('09_template_vars_vanilla', {'XYZ': 'xyz'}, None),
     ],
 )
-def test_validate(tmp_path, srcdir, envvars, args, cylc_validate_cli):
-    if envvars is not None:
-        envvars = os.environ.update(envvars)
+async def test_validate(monkeypatch, srcdir, envvars, args, cylc_validate_cli):
+    for key, value in (envvars or {}).items():
+        monkeypatch.setenv(key, value)
     srcdir = Path(__file__).parent / srcdir
-    validate = cylc_validate_cli(str(srcdir), args)
+    validate = await cylc_validate_cli(str(srcdir), args)
     assert validate.ret == 0
 
 
 @pytest.mark.parametrize(
-    'srcdir, envvars, args',
+    'srcdir, envvars',
     [
-        ('00_jinja2_basic', None, None),
-        ('01_empy', None, None),
+        ('00_jinja2_basic', None),
+        ('01_empy', None),
         (
             '04_opts_set_from_env',
             {'ROSE_SUITE_OPT_CONF_KEYS': 'Gaelige'},
-            None
         ),
         (
             '05_opts_set_from_rose_suite_conf',
             {'ROSE_SUITE_OPT_CONF_KEYS': ''},
-            None
         ),
-        ('06_jinja2_thorough', {'XYZ': 'xyz'}, None),
+        ('06_jinja2_thorough', {'XYZ': 'xyz'}),
     ],
 )
-def test_process(tmp_path, srcdir, envvars, args):
-    if envvars is not None:
-        envvars = os.environ.update(envvars)
+def test_process(srcdir, envvars):
     srcdir = Path(__file__).parent / srcdir
     result = run(
         ['cylc', 'view', '-p', str(srcdir)],
         capture_output=True,
-        env=envvars
+        env={**os.environ, **(envvars or {})}
     ).stdout.decode()
     expect = (srcdir / 'processed.conf.control').read_text()
     assert expect == result
@@ -131,7 +121,7 @@ def test_process(tmp_path, srcdir, envvars, args):
 def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
     """Test using unsupported root-dir config raises error."""
     (tmp_path / 'rose-suite.conf').write_text(root_dir_config)
-    get_rose_vars(srcdir=tmp_path)
+    load_rose_config(tmp_path)
     msg = 'rose-suite.conf[root-dir]'
     assert msg in caplog.records[0].msg
 
@@ -157,10 +147,10 @@ def test_warn_if_old_templating_set(
 ):
     """Test using unsupported root-dir config raises error."""
     monkeypatch.setattr(
-        cylc.rose.utilities, 'cylc7_back_compat', compat_mode
+        'cylc.rose.utilities.cylc7_back_compat', compat_mode
     )
     (tmp_path / 'rose-suite.conf').write_text(f'[{rose_config}]')
-    get_rose_vars(srcdir=tmp_path)
+    load_rose_config(tmp_path)
     msg = "Use [template variables]"
     if compat_mode:
         assert not caplog.records
@@ -184,7 +174,7 @@ def test_fail_if_options_but_no_rose_suite_conf(opts, tmp_path):
         NotARoseSuiteException,
         match='^Cylc-Rose CLI'
     ):
-        get_rose_vars(tmp_path, opts)
+        load_rose_config(tmp_path, opts)
 
 
 def generate_params():

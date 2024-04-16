@@ -60,7 +60,6 @@ Jinja2 Variables
         is intended to specify the revision of `fcm-make` config files.
 """
 
-from ansimarkup import parse as cparse
 from contextlib import suppress
 from optparse import OptionGroup
 import os
@@ -68,22 +67,25 @@ from pathlib import Path
 import re
 import sys
 
+from ansimarkup import parse as cparse
 from cylc.flow.exceptions import CylcError
-from cylc.flow.scripts.install import (
-    get_option_parser,
-    install as cylc_install
-)
-
-from cylc.rose.entry_points import get_rose_vars
-from cylc.rose.utilities import id_templating_section
-
+from cylc.flow.scripts.install import get_option_parser
+from cylc.flow.scripts.install import install as cylc_install
 import metomi.rose.config
 from metomi.rose.fs_util import FileSystemUtil
 from metomi.rose.host_select import HostSelector
 from metomi.rose.popen import RosePopener
-from metomi.rose.reporter import Reporter, Event
+from metomi.rose.reporter import Event, Reporter
 from metomi.rose.resource import ResourceLocator
 
+from cylc.rose.entry_points import (
+    export_environment,
+    load_rose_config,
+)
+from cylc.rose.utilities import (
+    id_templating_section,
+    process_config,
+)
 
 EXC_EXIT = cparse('<red><bold>{name}: </bold>{exc}</red>')
 DEFAULT_TEST_DIR = 'rose-stem'
@@ -102,21 +104,13 @@ class ConfigVariableSetEvent(Event):
     __str__ = __repr__
 
 
-class ConfigSourceTreeSetEvent(Event):
-
-    """Event to report a source tree for config files."""
-
-    LEVEL = Event.V
-
-    def __repr__(self):
-        return "Using config files from source %s" % (self.args[0])
-
-    __str__ = __repr__
-
-
 class NameSetEvent(Event):
 
-    """Event to report a name for the suite being set."""
+    """Event to report a name for the suite being set.
+
+    Simple parser of output expected to be in the format:
+    Key: Value.
+    """
 
     LEVEL = Event.V
 
@@ -438,6 +432,21 @@ class StemRunner:
             url = self.host_selector.get_local_host() + ':' + url
         return url
 
+    def _parse_auto_opts(self):
+        """Load the site config file and return any automatic-options.
+
+        Parse options in the form of a space separated list of key=value
+        pairs.
+        """
+        auto_opts = self._read_auto_opts()
+        if auto_opts:
+            automatic_options = auto_opts.split()
+            for option in automatic_options:
+                elements = option.split("=")
+                if len(elements) == 2:
+                    self._add_define_option(
+                        elements[0], '"' + elements[1] + '"')
+
     def process(self):
         """Process STEM options into 'rose suite-run' options."""
         # Generate options for source trees
@@ -453,8 +462,12 @@ class StemRunner:
             self.opts.project.append(project)
 
             if i == 0:
-                template_type = get_rose_vars(
-                    Path(url) / "rose-stem")["templating_detected"]
+                config_tree = load_rose_config(Path(url) / "rose-stem")
+                plugin_result = process_config(config_tree)
+                # set environment variables
+                export_environment(plugin_result['env'])
+                template_type = plugin_result['templating_detected']
+
                 self.template_section = id_templating_section(
                     template_type, with_brackets=True)
 
@@ -497,15 +510,7 @@ class StemRunner:
             self.opts.defines.append(
                 f"{self.template_section}RUN_NAMES={str(expanded_groups)}")
 
-        # Load the config file and return any automatic-options
-        auto_opts = self._read_auto_opts()
-        if auto_opts:
-            automatic_options = auto_opts.split()
-            for option in automatic_options:
-                elements = option.split("=")
-                if len(elements) == 2:
-                    self._add_define_option(
-                        elements[0], '"' + elements[1] + '"')
+        self._parse_auto_opts()
 
         # Change into the suite directory
         if getattr(self.opts, 'workflow_conf_dir', None):
@@ -553,7 +558,7 @@ def get_source_opt_from_args(opts, args):
     return opts
 
 
-def _get_rose_stem_opts():
+def get_rose_stem_opts():
     """Implement rose stem."""
     # use the cylc install option parser
     parser = get_option_parser()
@@ -604,18 +609,13 @@ def _get_rose_stem_opts():
     return parser, opts
 
 
-def main():
-    parser, opts = _get_rose_stem_opts()
-    rose_stem(parser, opts)
-
-
-def rose_stem(parser, opts):
+async def rose_stem(parser, opts):
     try:
         # modify the CLI options to add whatever rose stem would like to add
         opts = StemRunner(opts).process()
 
         # call cylc install
-        cylc_install(opts, opts.workflow_conf_dir)
+        await cylc_install(opts, opts.workflow_conf_dir)
 
     except CylcError as exc:
         if opts.verbosity > 1:

@@ -15,11 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-"""Interfaces for Cylc Platforms for use by rose apps.
-"""
-import subprocess
+
+"""Interfaces for Cylc Platforms for use by rose apps."""
+
 from optparse import Values
 import sqlite3
+import subprocess
 from time import sleep
 from typing import Any, Dict
 
@@ -33,7 +34,7 @@ from cylc.flow.workflow_files import WorkflowFiles
 from cylc.flow.platforms import (
     HOST_REC_COMMAND,
     get_platform,
-    is_platform_definition_subshell
+    is_platform_definition_subshell,
 )
 from cylc.flow.rundb import CylcWorkflowDAO
 

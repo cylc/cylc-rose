@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
+
 """
 Tests for cylc.rose.stem
 ========================
@@ -59,16 +60,14 @@ to investigate failing tests.
 
 """
 
-import pytest
+from pathlib import Path
 import re
 import shutil
-
-from pathlib import Path
 from uuid import uuid4
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
-
+import pytest
 
 HOST = get_host()
 
@@ -103,7 +102,7 @@ def fixture_provide_flow(tmp_path_factory, request):
 
 
 @pytest.fixture(scope='module')
-def fixture_install_flow(
+async def fixture_install_flow(
     fixture_provide_flow, monkeymodule, mod_cylc_install_cli
 ):
     """Run ``cylc install``.
@@ -114,40 +113,38 @@ def fixture_install_flow(
     If a test fails then using ``pytest --pdb`` and
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
-    result = mod_cylc_install_cli(
+    await mod_cylc_install_cli(
         fixture_provide_flow['srcpath'],
-        {'workflow_name': fixture_provide_flow['test_flow_name']}
+        fixture_provide_flow['test_flow_name'],
     )
     install_conf_path = (
         fixture_provide_flow['flowpath'] /
-        'runN/opt/rose-suite-cylc-install.conf'
+        'opt/rose-suite-cylc-install.conf'
     )
     text = install_conf_path.read_text()
     text = re.sub('ROSE_ORIG_HOST=.*', 'ROSE_ORIG_HOST=foo', text)
     install_conf_path.write_text(text)
     yield {
         **fixture_provide_flow,
-        'result': result
     }
 
 
-def test_cylc_validate_srcdir(fixture_install_flow, mod_cylc_validate_cli):
-    """Sanity check that workflow validates:
-    """
+async def test_cylc_validate_srcdir(
+    fixture_install_flow,
+    mod_cylc_validate_cli,
+):
+    """Sanity check that workflow validates."""
     srcpath = fixture_install_flow['srcpath']
-    result = mod_cylc_validate_cli(srcpath)
+    result = await mod_cylc_validate_cli(srcpath)
     search = re.findall(r'ROSE_ORIG_HOST \(.*\) is: (.*)', result.logging)
     assert search == [HOST, HOST]
 
 
-def test_cylc_validate_rundir(fixture_install_flow, mod_cylc_validate_cli):
-    """Sanity check that workflow validates:
-    """
-    flowpath = fixture_install_flow['flowpath'] / 'runN'
-    result = mod_cylc_validate_cli(flowpath)
+async def test_cylc_validate_rundir(
+    fixture_install_flow,
+    mod_cylc_validate_cli,
+):
+    """Sanity check that workflow validates."""
+    flowpath = fixture_install_flow['flowpath']
+    result = await mod_cylc_validate_cli(flowpath)
     assert 'ROSE_ORIG_HOST (env) is:' in result.logging
-
-
-def test_cylc_install_run(fixture_install_flow):
-    """install flow works."""
-    assert fixture_install_flow['result'].ret == 0
