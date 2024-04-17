@@ -75,7 +75,9 @@ def post_install(srcdir, opts, rundir):
     if results['fileinstall']:
         dump_rose_log(rundir=rundir, node=results['fileinstall'])
 
-    # Having dumped the config we clear rose options:
+    # Having dumped the config we clear rose options
+    # as they do not apply after this.
+    # see https://github.com/cylc/cylc-rose/pull/312
     opts.rose_template_vars = []
     opts.opt_conf_keys = []
     opts.defines = []

@@ -249,7 +249,7 @@ def run_ok():
     """Run a bash script.
     Fail if it fails and return its output.
     """
-    def _inner(script):
+    def _inner(script: str):
         result = run(split(script), capture_output=True)
         assert result.returncode == 0
         return result
