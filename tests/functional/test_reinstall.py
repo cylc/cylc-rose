@@ -28,9 +28,8 @@ At each step it checks the contents of
 """
 
 import pytest
-from shlex import split
 import shutil
-from subprocess import run
+from textwrap import dedent
 
 from itertools import product
 from pathlib import Path
@@ -301,14 +300,15 @@ def test_reinstall_overrides(
 
     See https://github.com/cylc/cylc-flow/issues/5968
     """
-    (tmp_path / 'flow.cylc').write_text(
-        '#!jinja2\n'
-        '[scheduling]\n'
-        '    [[graph]]\n'
-        '       R1 = foo\n'
-        '[runtime]\n'
-        '    [[foo]]\n'
-        '        script = cylc message -- {{var}}')
+    (tmp_path / 'flow.cylc').write_text(dedent("""
+        #!jinja2
+        [scheduling]\n
+            [[graph]]\n
+               R1 = foo\n
+        [runtime]\n
+            [[foo]]\n
+                script = cylc message -- {{var}}
+        """))
     (tmp_path / 'rose-suite.conf').write_text(
         '[template variables]\nvar="rose-suite.conf"')
 
