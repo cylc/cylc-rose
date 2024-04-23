@@ -56,6 +56,10 @@ This plugin provides support for the `rose-suite.conf` file, namely:
   the new Cylc `symlink dirs` functionality.
 * Graphical configuration editors.
 
+### How It Works
+
+For developer documentation, see [DEVELOPING](DEVELOPING.md).
+
 ### Contributing
 
 [![Contributors](https://img.shields.io/github/contributors/cylc/cylc-rose.svg?color=9cf)](https://github.com/cylc/cylc-rose/graphs/contributors)
