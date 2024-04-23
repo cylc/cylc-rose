@@ -18,51 +18,8 @@
 # along with Rose. If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
 
-"""
-Tests for cylc.rose.stem
-========================
+"""Tests for cylc.rose.stem"""
 
-These tests are based on the Rose 2019 tests for Rose Stem.
-
-Structure
----------
-
-#. ``setup_stem_repo`` is a module scoped fixture which creates a Rose Stem
-   repository which is used for all the tests.
-#. ``rose_stem_run_template`` is a class scoped fixture, which runs a rose
-   stem command. Most of the tests are encapsulated in classes to allow
-   this expensive fixture to be run only once per class. Most of the tests
-   check that the ``rose stem`` has returned 0, and then check that variables
-   have been written to a job file.
-#. For each test class there is a fixture encapsulating the test to be run.
-
-.. code::
-
-    ┌───────┬──────────┬───────────┬───────────┬───────────────┐
-    │       │          │           │           │Test rose stem │
-    │       │ test     │ rose stem │ Class     │returned 0     │
-    │set-up │ specific │ runner    │ container ├───────────────┤
-    │repo   │ fixture  │ fixture   │           │Test for output│
-    │fixture│ (set up  │           │ Only run  │strings "foo"  │
-    │       │ rose stem│ (run      │ class     ├───────────────┤
-    │       │ command) │ rose stem)│ fixture   │Test for output│
-    │       │          │           │ once      │strings "bar"  │
-    │       ├──────────┼─ ── ── ── ├───────────┼───────────────┤
-    │       │          │           │           │               │
-    │       │          │           │           ├───────────────┤
-    │       │          │           │           │               │
-    │       │          │           │           ├───────────────┤
-    │       │          │           │           │               │
-
-Debugging
----------
-Because of the tasks being run in subprocesses debugging can be a little
-tricky. As a result there is a commented ``breakpoint`` in
-``rose_stem_run_template`` indicating a location where it might be useful
-to investigate failing tests.
-
-
-"""
 import os
 from pathlib import Path
 from shlex import split
@@ -71,7 +28,6 @@ import subprocess
 from io import StringIO
 from types import SimpleNamespace
 from uuid import uuid4
-
 
 from metomi.rose.config import ConfigLoader
 from metomi.rose.host_select import HostSelector
@@ -91,10 +47,6 @@ from cylc.rose.stem import (
 # Matter that we are using the same host selector here as
 # in the module under test:
 HOST = HostSelector().get_local_host()
-
-
-class SubprocessesError(Exception):
-    ...
 
 
 # Check that FCM is present on system, skipping checks elsewise:
@@ -129,9 +81,7 @@ def mock_global_cfg(monkeymodule):
 def setup_stem_repo(tmp_path_factory, monkeymodule, request):
     """Setup a Rose Stem Repository for the tests.
 
-    creates the following repo structure:
-
-    .. code::
+    creates the following repo structure::
 
        |-- baseinstall
        |   `-- trunk
@@ -219,7 +169,7 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
 
 @pytest.fixture()
 def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
-    """Runs rose-stem
+    """Runs rose-stem.
 
     Uses an inner function to allow inheriting fixtures to run different
     cylc-run commands.
@@ -269,7 +219,10 @@ def rose_stem_run_template(setup_stem_repo, pytestconfig, monkeymodule):
     yield _inner_fn
 
 
-async def test_rose_stem_run_really_basic(rose_stem_run_template, setup_stem_repo):
+async def test_rose_stem_run_really_basic(
+    rose_stem_run_template,
+    setup_stem_repo,
+):
     rose_stem_opts = {
         'stem_groups': [],
         'stem_sources': [
@@ -476,12 +429,7 @@ async def test_with_config2(
         assert line in plugin_result['jobout_content']
 
 
-async def test_incompatible_versions(
-    setup_stem_repo,
-    monkeymodule,
-    caplog,
-    capsys,
-):
+async def test_incompatible_versions(setup_stem_repo, monkeymodule):
     """It fails if trying to install an incompatible version.
     """
     # Copy suite into working copy.
