@@ -97,15 +97,12 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
 
     Yields:
         dictionary:
-            basetemp:
-                The location of the base temporary file, which allows tests
-                to modify any part of the rose-stem suite.
             workingcopy:
                 Path to the location of the working copy.
             suitename:
                 The name of the suite, which will be name of the suite/workflow
                 installed in ``~/cylc-run``.
-            suite_install_directory:
+            suite_install_dir:
                 The path to the installed suite/workflow. Handy for cleaning
                 up after tests.
 
@@ -152,7 +149,6 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
     )
 
     yield {
-        'basetemp': basetemp,
         'workingcopy': workingcopy,
         'suitename': suitename,
         'suite_install_dir': suite_install_dir
@@ -167,13 +163,12 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
 
 
 @pytest.fixture()
-def rose_stem_runner(setup_stem_repo, pytestconfig, monkeymodule):
+def rose_stem_runner(setup_stem_repo, monkeymodule):
     """Runs rose-stem."""
-    verbosity = pytestconfig.getoption('verbose')
 
-    async def _inner_fn(rose_stem_opts, verbosity=verbosity):
+    async def _inner_fn(rose_stem_opts, cwd=None):
         monkeymodule.setattr('sys.argv', ['stem'])
-        monkeymodule.chdir(setup_stem_repo['workingcopy'])
+        monkeymodule.chdir(cwd or setup_stem_repo['workingcopy'])
         parser, opts = get_rose_stem_opts()
         for key, val in rose_stem_opts.items():
             setattr(opts, key, val)
@@ -190,10 +185,8 @@ def get_cylc_install_opt_config(suite_install_dir):
     ).read_text()
 
 
-async def test_rose_stem_run_really_basic(
-    rose_stem_runner,
-    setup_stem_repo,
-):
+async def test_hello_world(rose_stem_runner, setup_stem_repo):
+    """It should run a hello-world example without erroring."""
     rose_stem_opts = {
         'stem_groups': [],
         'stem_sources': [
@@ -203,10 +196,12 @@ async def test_rose_stem_run_really_basic(
     await rose_stem_runner(rose_stem_opts)
 
 
-async def test_rose_stem_run_basic(
-    rose_stem_runner,
-    setup_stem_repo,
-):
+async def test_template_variables(rose_stem_runner, setup_stem_repo):
+    """It should set various template variables.
+
+    https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L56-L78
+    """
+    # run rose stem
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
         'stem_sources': [
@@ -216,10 +211,10 @@ async def test_rose_stem_run_basic(
     }
     await rose_stem_runner(rose_stem_opts)
 
+    # check the template variables set in the optional config
     opt_conf = get_cylc_install_opt_config(
         setup_stem_repo['suite_install_dir']
     )
-
     for line in [
         "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
         "SOURCE_FOO=\"{workingcopy} fcm:foo.x_tr@head\"",
@@ -236,11 +231,16 @@ async def test_rose_stem_run_basic(
         assert line in opt_conf
 
 
-async def test_project_override(rose_stem_runner, setup_stem_repo):
+async def test_manual_project_override(rose_stem_runner, setup_stem_repo):
+    """It should accept named project sources.
+
+    https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L80-L112
+    """
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
         'stem_sources': [
-            f'bar={str(setup_stem_repo["workingcopy"])}', "fcm:foo.x_tr@head"
+            # specify a named source called "bar"
+            f'bar={setup_stem_repo["workingcopy"]}', "fcm:foo.x_tr@head"
         ],
         'workflow_name': setup_stem_repo['suitename']
     }
@@ -272,17 +272,27 @@ async def test_project_override(rose_stem_runner, setup_stem_repo):
         assert line in opt_conf
 
 
-async def test_suite_redirection(rose_stem_runner, setup_stem_repo):
-    """Check that assorted variables have been exported."""
+async def test_config_dir_absolute(rose_stem_runner, setup_stem_repo):
+    """It should allow you to specify the config directory as an absolute path.
+
+    This is an alternative approach to running the "rose stem" command
+    in the directory itelf.
+
+    https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L114-L128
+    """
     rose_stem_opts = {
         'workflow_conf_dir': f'{setup_stem_repo["workingcopy"]}/rose-stem',
         'stem_groups': ['lapsang'],
         'stem_sources': ["fcm:foo.x_tr@head"],
         'workflow_name': setup_stem_repo['suitename']
     }
-    await rose_stem_runner(rose_stem_opts)
+    await rose_stem_runner(
+        rose_stem_opts,
+        # don't CD into the project directory first
+        cwd=Path.cwd(),
+    )
     opt_conf = get_cylc_install_opt_config(
-        setup_stem_repo['suite_install_dir']
+        setup_stem_repo['suite_install_dir'],
     )
     for line in [
         "RUN_NAMES=[\'lapsang\']",
@@ -297,35 +307,14 @@ async def test_suite_redirection(rose_stem_runner, setup_stem_repo):
         assert line in opt_conf
 
 
-async def test_subdirectory(rose_stem_runner, setup_stem_repo):
-    """Check that assorted variables have been exported."""
-    rose_stem_opts = {
-        'stem_groups': ['assam'],
-        'stem_sources': [f'{setup_stem_repo["workingcopy"]}/rose-stem'],
-        'workflow_name': setup_stem_repo['suitename']
-    }
-    await rose_stem_runner(rose_stem_opts)
-    opt_conf = get_cylc_install_opt_config(
-        setup_stem_repo['suite_install_dir']
-    )
-    for line in [
-        "RUN_NAMES=[\'assam\']",
-        "SOURCE_FOO=\"{workingcopy}\"",
-        "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
-        "SOURCE_FOO_BASE=\"{workingcopy}\"",
-        "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
-        "SOURCE_FOO_REV=\"\"",
-        "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
-    ]:
-        line = line.format(
-            workingcopy=setup_stem_repo['workingcopy'],
-            hostname=HOST
-        )
-        assert line in opt_conf
+async def test_config_dir_relative(rose_stem_runner, setup_stem_repo):
+    """It should allow you to specify the config directory as a relative path.
 
+    This is an alternative approach to running the "rose stem" command
+    in the directory itelf.
 
-async def test_relative_path(rose_stem_runner, setup_stem_repo):
-    """Check that assorted variables have been exported."""
+    https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L152-L171
+    """
     rose_stem_opts = {
         'workflow_conf_dir': './rose-stem',
         'stem_groups': ['ceylon'],
@@ -350,10 +339,42 @@ async def test_relative_path(rose_stem_runner, setup_stem_repo):
         assert line in opt_conf
 
 
-async def test_with_config(
-    rose_stem_runner, setup_stem_repo, mock_global_cfg
-):
-    """Test for successful execution with site/user configuration."""
+async def test_source_in_a_subdirectory(rose_stem_runner, setup_stem_repo):
+    """It should accept a source in a subdirectory.
+
+    https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L130-L150
+    """
+    rose_stem_opts = {
+        'stem_groups': ['assam'],
+        # stem source in a sub directory
+        'stem_sources': [f'{setup_stem_repo["workingcopy"]}/rose-stem'],
+        'workflow_name': setup_stem_repo['suitename']
+    }
+    await rose_stem_runner(rose_stem_opts)
+    opt_conf = get_cylc_install_opt_config(
+        setup_stem_repo['suite_install_dir']
+    )
+    for line in [
+        "RUN_NAMES=[\'assam\']",
+        "SOURCE_FOO=\"{workingcopy}\"",
+        "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
+        "SOURCE_FOO_BASE=\"{workingcopy}\"",
+        "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
+        "SOURCE_FOO_REV=\"\"",
+        "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
+    ]:
+        line = line.format(
+            workingcopy=setup_stem_repo['workingcopy'],
+            hostname=HOST
+        )
+        assert line in opt_conf
+
+
+async def test_automatic_options(rose_stem_runner, setup_stem_repo, mock_global_cfg):
+    """It should use automatic options from the site/user configuration.
+
+    https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L182-L204
+    """
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
         'stem_sources': [
@@ -362,6 +383,7 @@ async def test_with_config(
     }
     mock_global_cfg(
         'cylc.rose.stem.ResourceLocator.default',
+        # automatic options defined in the site/user config
         '[rose-stem]\nautomatic-options = MILK=true',
     )
     await rose_stem_runner(rose_stem_opts)
@@ -384,10 +406,13 @@ async def test_with_config(
         assert line in opt_conf
 
 
-async def test_with_config2(
+async def test_automatic_options_multi(
     rose_stem_runner, setup_stem_repo, mock_global_cfg
 ):
-    """Test for successful execution with site/user configuration."""
+    """It should use MULTIPLE automatic options from the site/user conf.
+
+    https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L206-L221
+    """
     rose_stem_opts = {
         'stem_groups': ['assam'],
         'stem_sources': [
@@ -396,6 +421,7 @@ async def test_with_config2(
     }
     mock_global_cfg(
         'cylc.rose.stem.ResourceLocator.default',
+        # *multiple* automatic options defined in the site/user config
         '[rose-stem]\nautomatic-options = MILK=true TEA=darjeeling',
     )
     await rose_stem_runner(rose_stem_opts)
@@ -413,8 +439,13 @@ async def test_with_config2(
         assert line in opt_conf
 
 
-async def test_incompatible_versions(setup_stem_repo, monkeymodule):
-    """It fails if trying to install an incompatible version.
+async def test_incompatible_rose_stem_versions(setup_stem_repo, monkeymodule):
+    """It should fail if trying to install an incompatible rose-stem config.
+
+    Rose Stem configurations must specify a Rose Stem version, it should fail
+    if the versions don't match.
+
+    https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L223-L232
     """
     # Copy suite into working copy.
     test_src_dir = Path(__file__).parent / '12_rose_stem'
@@ -446,8 +477,7 @@ async def test_incompatible_versions(setup_stem_repo, monkeymodule):
 
 
 async def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
-    """It fails if it cannot extract project name from FCM keywords.
-    """
+    """It fails if it cannot extract project name from FCM keywords."""
     # Copy suite into working copy.
     monkeymodule.delenv('FCM_CONF_PATH')
     rose_stem_opts = {
@@ -465,13 +495,16 @@ async def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
     [setattr(opts, key, val) for key, val in rose_stem_opts.items()]
 
     await rose_stem(parser, opts)
-
     assert 'ProjectNotFoundException' in capsys.readouterr().err
 
 
 async def test_picks_template_section(setup_stem_repo, monkeymodule, capsys):
-    """It can cope with template variables section being either
+    """test error message when project not in keywords
+
+    Note, it can cope with template variables section being either
     ``template variables`` or ``jinja2:suite.rc``.
+
+    https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L234-L245
     """
     monkeymodule.setattr('sys.argv', ['stem'])
     monkeymodule.chdir(setup_stem_repo['workingcopy'])
