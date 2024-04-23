@@ -35,7 +35,7 @@ These options are currently hardcoded in the cylc-flow source code as we
 do not yet have the ability for Cylc plugins (such as cylc-rose) to inject
 options into cylc-flow commands.
 
-There is also the `ROSE_SUITE_OPT_CONF_KEYS` environment variable which compliments
+There is also the `ROSE_SUITE_OPT_CONF_KEYS` environment variable which complements
 the `-O` option.
 
 ### Storage
