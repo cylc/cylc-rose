@@ -27,6 +27,7 @@ import shutil
 import subprocess
 from io import StringIO
 from uuid import uuid4
+from typing import Dict
 
 from metomi.rose.config import ConfigLoader
 from metomi.rose.host_select import HostSelector
@@ -167,22 +168,54 @@ def rose_stem_runner(setup_stem_repo, monkeymodule):
     """Runs rose-stem."""
 
     async def _inner_fn(rose_stem_opts, cwd=None):
+        # make it look like we're running the "rose stem" CLI
         monkeymodule.setattr('sys.argv', ['stem'])
+
+        # cd into the working copy (unless overridden)
         monkeymodule.chdir(cwd or setup_stem_repo['workingcopy'])
+
+        # merge the opts in with the defaults
         parser, opts = get_rose_stem_opts()
         for key, val in rose_stem_opts.items():
             setattr(opts, key, val)
 
-        return await rose_stem(parser, opts)
+        # run rose stem
+        await rose_stem(parser, opts)
+
+        # return a dictionary of template variables found in the
+        # cylc-install optional configuration
+        opt_conf = ConfigLoader().load(
+            str(
+                Path(
+                    setup_stem_repo['suite_install_dir'],
+                    'runN/opt/rose-suite-cylc-install.conf',
+                )
+            )
+        )
+        return {
+            key: node.value  # noqa B035 (false positive)
+            for [_, key], node in opt_conf.get(('template variables',)).walk()
+        }
 
     yield _inner_fn
 
 
-def get_cylc_install_opt_config(suite_install_dir):
-    return Path(
-        suite_install_dir,
-        'runN/opt/rose-suite-cylc-install.conf',
-    ).read_text()
+def check_template_variables(
+    expected: Dict[str, str], got: Dict[str, str]
+) -> None:
+    """Check template variable dictionaries.
+
+    Check the template vars in "expected" are present and match those in "got".
+
+    Raises:
+        AssertionError
+
+    """
+    for key in expected:
+        assert key in got, f'template var {key} missing from config'
+        assert (
+            expected[key] == got[key]
+        ), f'template var {key}={got[key]}, expected {expected[key]}'
 
 
 async def test_hello_world(rose_stem_runner, setup_stem_repo):
@@ -201,7 +234,6 @@ async def test_template_variables(rose_stem_runner, setup_stem_repo):
 
     https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L56-L78
     """
-    # run rose stem
     rose_stem_opts = {
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
         'stem_sources': [
@@ -209,26 +241,22 @@ async def test_template_variables(rose_stem_runner, setup_stem_repo):
         ],
         'workflow_name': setup_stem_repo['suitename']
     }
-    await rose_stem_runner(rose_stem_opts)
+    template_vars = await rose_stem_runner(rose_stem_opts)
 
-    # check the template variables set in the optional config
-    opt_conf = get_cylc_install_opt_config(
-        setup_stem_repo['suite_install_dir']
+    workingcopy = setup_stem_repo["workingcopy"]
+    check_template_variables(
+        {
+            "RUN_NAMES":
+                "['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
+            "SOURCE_FOO": f'"{workingcopy} fcm:foo.x_tr@head"',
+            "HOST_SOURCE_FOO": f'"{HOST}:{workingcopy} fcm:foo.x_tr@head"',
+            "SOURCE_FOO_BASE": f'"{workingcopy}"',
+            "HOST_SOURCE_FOO_BASE": f'"{HOST}:{workingcopy}"',
+            "SOURCE_FOO_REV": '""',
+            "SOURCE_FOO_MIRROR": '"fcm:foo.xm/trunk@1"',
+        },
+        template_vars,
     )
-    for line in [
-        "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
-        "SOURCE_FOO=\"{workingcopy} fcm:foo.x_tr@head\"",
-        "HOST_SOURCE_FOO=\"{hostname}:{workingcopy} fcm:foo.x_tr@head\"",
-        "SOURCE_FOO_BASE=\"{workingcopy}\"\n",
-        "SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"\n",
-        "SOURCE_FOO_REV=\"\"\n",
-        "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"\n",
-    ]:
-        line = line.format(
-            workingcopy=setup_stem_repo['workingcopy'],
-            hostname=HOST
-        )
-        assert line in opt_conf
 
 
 async def test_manual_project_override(rose_stem_runner, setup_stem_repo):
@@ -237,39 +265,35 @@ async def test_manual_project_override(rose_stem_runner, setup_stem_repo):
     https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L80-L112
     """
     rose_stem_opts = {
-        'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
-        'stem_sources': [
+        "stem_groups": ["earl_grey", "milk,sugar", "spoon,cup,milk"],
+        "stem_sources": [
             # specify a named source called "bar"
-            f'bar={setup_stem_repo["workingcopy"]}', "fcm:foo.x_tr@head"
+            f'bar={setup_stem_repo["workingcopy"]}',
+            "fcm:foo.x_tr@head",
         ],
-        'workflow_name': setup_stem_repo['suitename']
+        "workflow_name": setup_stem_repo["suitename"],
     }
-    await rose_stem_runner(rose_stem_opts)
-    opt_conf = get_cylc_install_opt_config(
-        setup_stem_repo['suite_install_dir']
+    template_vars = await rose_stem_runner(rose_stem_opts)
+
+    workingcopy = setup_stem_repo['workingcopy']
+    check_template_variables(
+        {
+            "RUN_NAMES":
+                "['earl_grey', 'milk', 'sugar', " "'spoon', 'cup', 'milk']",
+            "SOURCE_FOO": '"fcm:foo.x_tr@head"',
+            "HOST_SOURCE_FOO": '"fcm:foo.x_tr@head"',
+            "SOURCE_BAR": f'"{workingcopy}"',
+            "HOST_SOURCE_BAR": f'"{HOST}:{workingcopy}"',
+            "SOURCE_FOO_BASE": '"fcm:foo.x_tr"',
+            "HOST_SOURCE_FOO_BASE": '"fcm:foo.x_tr"',
+            "SOURCE_BAR_BASE": f'"{workingcopy}"',
+            "HOST_SOURCE_BAR_BASE": f'"{HOST}:{workingcopy}"',
+            "SOURCE_FOO_REV": '"@1"',
+            "SOURCE_BAR_REV": '""',
+            "SOURCE_FOO_MIRROR": '"fcm:foo.xm/trunk@1"',
+        },
+        template_vars,
     )
-    for line in [
-        (
-            "RUN_NAMES=[\'earl_grey\', \'milk\', \'sugar\', "
-            "\'spoon\', \'cup\', \'milk\']"
-        ),
-        "SOURCE_FOO=\"fcm:foo.x_tr@head\"",
-        "HOST_SOURCE_FOO=\"fcm:foo.x_tr@head\"",
-        "SOURCE_BAR=\"{workingcopy}\"",
-        "HOST_SOURCE_BAR=\"{hostname}:{workingcopy}\"",
-        "SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
-        "HOST_SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
-        "SOURCE_BAR_BASE=\"{workingcopy}\"",
-        "HOST_SOURCE_BAR_BASE=\"{hostname}:{workingcopy}\"",
-        "SOURCE_FOO_REV=\"@1\"",
-        "SOURCE_BAR_REV=\"\"",
-        "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
-    ]:
-        line = line.format(
-            workingcopy=setup_stem_repo['workingcopy'],
-            hostname=HOST
-        )
-        assert line in opt_conf
 
 
 async def test_config_dir_absolute(rose_stem_runner, setup_stem_repo):
@@ -286,25 +310,20 @@ async def test_config_dir_absolute(rose_stem_runner, setup_stem_repo):
         'stem_sources': ["fcm:foo.x_tr@head"],
         'workflow_name': setup_stem_repo['suitename']
     }
-    await rose_stem_runner(
+    template_vars = await rose_stem_runner(
         rose_stem_opts,
         # don't CD into the project directory first
         cwd=Path.cwd(),
     )
-    opt_conf = get_cylc_install_opt_config(
-        setup_stem_repo['suite_install_dir'],
+    check_template_variables(
+        {
+            "RUN_NAMES": "['lapsang']",
+            "SOURCE_FOO": '"fcm:foo.x_tr@head"',
+            "SOURCE_FOO_BASE": '"fcm:foo.x_tr"',
+            "SOURCE_FOO_REV": '"@1"',
+        },
+        template_vars,
     )
-    for line in [
-        "RUN_NAMES=[\'lapsang\']",
-        "SOURCE_FOO=\"fcm:foo.x_tr@head\"",
-        "SOURCE_FOO_BASE=\"fcm:foo.x_tr\"",
-        "SOURCE_FOO_REV=\"@1\"",
-    ]:
-        line = line.format(
-            workingcopy=setup_stem_repo['workingcopy'],
-            hostname=HOST
-        )
-        assert line in opt_conf
 
 
 async def test_config_dir_relative(rose_stem_runner, setup_stem_repo):
@@ -320,23 +339,19 @@ async def test_config_dir_relative(rose_stem_runner, setup_stem_repo):
         'stem_groups': ['ceylon'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    await rose_stem_runner(rose_stem_opts)
-    opt_conf = get_cylc_install_opt_config(
-        setup_stem_repo['suite_install_dir']
+    template_vars = await rose_stem_runner(rose_stem_opts)
+    workingcopy = setup_stem_repo["workingcopy"]
+    check_template_variables(
+        {
+            "RUN_NAMES": "['ceylon']",
+            "SOURCE_FOO": f'"{workingcopy}"',
+            "HOST_SOURCE_FOO": f'"{HOST}:{workingcopy}"',
+            "SOURCE_FOO_BASE": f'"{workingcopy}"',
+            "HOST_SOURCE_FOO_BASE": f'"{HOST}:{workingcopy}"',
+            "SOURCE_FOO_REV": '""',
+        },
+        template_vars,
     )
-    for line in [
-        "RUN_NAMES=[\'ceylon\']",
-        "SOURCE_FOO=\"{workingcopy}\"",
-        "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
-        "SOURCE_FOO_BASE=\"{workingcopy}\"",
-        "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
-        "SOURCE_FOO_REV=\"\"",
-    ]:
-        line = line.format(
-            workingcopy=setup_stem_repo['workingcopy'],
-            hostname=HOST
-        )
-        assert line in opt_conf
 
 
 async def test_source_in_a_subdirectory(rose_stem_runner, setup_stem_repo):
@@ -350,24 +365,20 @@ async def test_source_in_a_subdirectory(rose_stem_runner, setup_stem_repo):
         'stem_sources': [f'{setup_stem_repo["workingcopy"]}/rose-stem'],
         'workflow_name': setup_stem_repo['suitename']
     }
-    await rose_stem_runner(rose_stem_opts)
-    opt_conf = get_cylc_install_opt_config(
-        setup_stem_repo['suite_install_dir']
+    template_vars = await rose_stem_runner(rose_stem_opts)
+    workingcopy = setup_stem_repo["workingcopy"]
+    check_template_variables(
+        {
+            "RUN_NAMES": "['assam']",
+            "SOURCE_FOO": f'"{workingcopy}"',
+            "HOST_SOURCE_FOO": f'"{HOST}:{workingcopy}"',
+            "SOURCE_FOO_BASE": f'"{workingcopy}"',
+            "HOST_SOURCE_FOO_BASE": f'"{HOST}:{workingcopy}"',
+            "SOURCE_FOO_REV": '""',
+            "SOURCE_FOO_MIRROR": '"fcm:foo.xm/trunk@1"',
+        },
+        template_vars,
     )
-    for line in [
-        "RUN_NAMES=[\'assam\']",
-        "SOURCE_FOO=\"{workingcopy}\"",
-        "HOST_SOURCE_FOO=\"{hostname}:{workingcopy}\"",
-        "SOURCE_FOO_BASE=\"{workingcopy}\"",
-        "HOST_SOURCE_FOO_BASE=\"{hostname}:{workingcopy}\"",
-        "SOURCE_FOO_REV=\"\"",
-        "SOURCE_FOO_MIRROR=\"fcm:foo.xm/trunk@1\"",
-    ]:
-        line = line.format(
-            workingcopy=setup_stem_repo['workingcopy'],
-            hostname=HOST
-        )
-        assert line in opt_conf
 
 
 async def test_automatic_options(rose_stem_runner, setup_stem_repo, mock_global_cfg):
@@ -386,24 +397,20 @@ async def test_automatic_options(rose_stem_runner, setup_stem_repo, mock_global_
         # automatic options defined in the site/user config
         '[rose-stem]\nautomatic-options = MILK=true',
     )
-    await rose_stem_runner(rose_stem_opts)
-    opt_conf = get_cylc_install_opt_config(
-        setup_stem_repo['suite_install_dir']
+    template_vars = await rose_stem_runner(rose_stem_opts)
+    workingcopy = setup_stem_repo["workingcopy"]
+    check_template_variables(
+        {
+            "RUN_NAMES": "['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
+            "SOURCE_FOO": f'"{workingcopy} fcm:foo.x_tr@head"',
+            "HOST_SOURCE_FOO": f'"{HOST}:{workingcopy} fcm:foo.x_tr@head"',
+            "SOURCE_FOO_BASE": f'"{workingcopy}"',
+            "HOST_SOURCE_FOO_BASE": f'"{HOST}:{workingcopy}"',
+            "SOURCE_FOO_REV": '""',
+            "MILK": '"true"',
+        },
+        template_vars,
     )
-    for line in [
-        "RUN_NAMES=['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
-        'SOURCE_FOO="{workingcopy} fcm:foo.x_tr@head"',
-        'HOST_SOURCE_FOO="{hostname}:{workingcopy} fcm:foo.x_tr@head"',
-        'SOURCE_FOO_BASE="{workingcopy}"',
-        'HOST_SOURCE_FOO_BASE="{hostname}:{workingcopy}"',
-        'SOURCE_FOO_REV=""',
-        'MILK="true"',
-    ]:
-        line = line.format(
-            **setup_stem_repo,
-            hostname=HOST
-        )
-        assert line in opt_conf
 
 
 async def test_automatic_options_multi(
@@ -424,19 +431,14 @@ async def test_automatic_options_multi(
         # *multiple* automatic options defined in the site/user config
         '[rose-stem]\nautomatic-options = MILK=true TEA=darjeeling',
     )
-    await rose_stem_runner(rose_stem_opts)
-    opt_conf = get_cylc_install_opt_config(
-        setup_stem_repo['suite_install_dir']
+    template_vars = await rose_stem_runner(rose_stem_opts)
+    check_template_variables(
+        {
+            "MILK": '"true"',
+            "TEA": '"darjeeling"',
+        },
+        template_vars,
     )
-    for line in [
-        'MILK="true"',
-        'TEA="darjeeling"',
-    ]:
-        line = line.format(
-            **setup_stem_repo,
-            hostname=HOST
-        )
-        assert line in opt_conf
 
 
 async def test_incompatible_rose_stem_versions(setup_stem_repo, monkeymodule):
