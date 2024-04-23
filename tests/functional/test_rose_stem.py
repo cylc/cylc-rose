@@ -104,16 +104,6 @@ except FileNotFoundError:
     pytest.skip("\"FCM\" not installed", allow_module_level=True)
 
 
-@pytest.fixture(scope='module')
-def monkeymodule():
-    """Make monkeypatching available in a module scope.
-    """
-    from _pytest.monkeypatch import MonkeyPatch
-    mpatch = MonkeyPatch()
-    yield mpatch
-    mpatch.undo()
-
-
 @pytest.fixture()
 def mock_global_cfg(monkeymodule):
     """Mock the rose ResourceLocator.default

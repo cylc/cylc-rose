@@ -62,6 +62,14 @@ def event_loop():
     loop.close()
 
 
+@pytest.fixture(scope='module')
+def monkeymodule():
+    """Make monkeypatching available in a module scope."""
+    mpatch = pytest.MonkeyPatch()
+    yield mpatch
+    mpatch.undo()
+
+
 @pytest.fixture()
 def workflow_name():
     return 'cylc-rose-test-' + str(uuid4())[:8]
@@ -97,8 +105,7 @@ def mod_caplog(request):
 
 @pytest.fixture(scope='package', autouse=True)
 def set_cylc_version():
-    from _pytest.monkeypatch import MonkeyPatch
-    mpatch = MonkeyPatch()
+    mpatch = pytest.MonkeyPatch()
     yield mpatch.setenv('CYLC_VERSION', CYLC_VERSION)
     mpatch.undo()
 
