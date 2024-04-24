@@ -27,6 +27,7 @@ from pathlib import Path
 from metomi.rose.config import ConfigLoader, ConfigDumper
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
+    ROSE_SUITE_OPT_CONF_KEYS,
     deprecation_warnings,
     dump_rose_log,
     get_rose_vars_from_config_node,
@@ -81,6 +82,7 @@ def post_install(srcdir, opts, rundir):
     opts.rose_template_vars = []
     opts.opt_conf_keys = []
     opts.defines = []
+    os.unsetenv(ROSE_SUITE_OPT_CONF_KEYS)
 
     return results
 

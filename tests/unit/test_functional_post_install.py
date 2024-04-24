@@ -58,7 +58,7 @@ def assert_rose_conf_full_equal(left, right, no_ignore=True):
 
 
 def test_no_rose_suite_conf_in_devdir(tmp_path):
-    result = post_install(srcdir=tmp_path)
+    result = post_install(srcdir=tmp_path, rundir=None, opts=None)
     assert result is False
 
 
@@ -359,4 +359,4 @@ def test_cylc_no_rose(tmp_path):
     """A Cylc workflow that contains no ``rose-suite.conf`` installs OK.
     """
     from cylc.rose.entry_points import post_install
-    assert post_install(srcdir=tmp_path, rundir=tmp_path) is False
+    assert post_install(srcdir=tmp_path, rundir=tmp_path, opts={}) is False
