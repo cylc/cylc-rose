@@ -100,9 +100,6 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
         dictionary:
             workingcopy:
                 Path to the location of the working copy.
-            suitename:
-                The name of the suite, which will be name of the suite/workflow
-                installed in ``~/cylc-run``.
             suite_install_dir:
                 The path to the installed suite/workflow. Handy for cleaning
                 up after tests.
@@ -151,7 +148,6 @@ def setup_stem_repo(tmp_path_factory, monkeymodule, request):
 
     yield {
         'workingcopy': workingcopy,
-        'suitename': suitename,
         'suite_install_dir': suite_install_dir
     }
     # Only clean up if all went well.
@@ -239,7 +235,6 @@ async def test_template_variables(rose_stem_runner, setup_stem_repo):
         'stem_sources': [
             str(setup_stem_repo['workingcopy']), "fcm:foo.x_tr@head"
         ],
-        'workflow_name': setup_stem_repo['suitename']
     }
     template_vars = await rose_stem_runner(rose_stem_opts)
 
@@ -271,7 +266,6 @@ async def test_manual_project_override(rose_stem_runner, setup_stem_repo):
             f'bar={setup_stem_repo["workingcopy"]}',
             "fcm:foo.x_tr@head",
         ],
-        "workflow_name": setup_stem_repo["suitename"],
     }
     template_vars = await rose_stem_runner(rose_stem_opts)
 
@@ -308,7 +302,8 @@ async def test_config_dir_absolute(rose_stem_runner, setup_stem_repo):
         'workflow_conf_dir': f'{setup_stem_repo["workingcopy"]}/rose-stem',
         'stem_groups': ['lapsang'],
         'stem_sources': ["fcm:foo.x_tr@head"],
-        'workflow_name': setup_stem_repo['suitename']
+        # specify the workflow name to standardise the installed ID
+        'workflow_name': setup_stem_repo['workingcopy'].parts[-1],
     }
     template_vars = await rose_stem_runner(
         rose_stem_opts,
@@ -337,7 +332,6 @@ async def test_config_dir_relative(rose_stem_runner, setup_stem_repo):
     rose_stem_opts = {
         'workflow_conf_dir': './rose-stem',
         'stem_groups': ['ceylon'],
-        'workflow_name': setup_stem_repo['suitename']
     }
     template_vars = await rose_stem_runner(rose_stem_opts)
     workingcopy = setup_stem_repo["workingcopy"]
@@ -363,7 +357,6 @@ async def test_source_in_a_subdirectory(rose_stem_runner, setup_stem_repo):
         'stem_groups': ['assam'],
         # stem source in a sub directory
         'stem_sources': [f'{setup_stem_repo["workingcopy"]}/rose-stem'],
-        'workflow_name': setup_stem_repo['suitename']
     }
     template_vars = await rose_stem_runner(rose_stem_opts)
     workingcopy = setup_stem_repo["workingcopy"]
@@ -390,7 +383,6 @@ async def test_automatic_options(rose_stem_runner, setup_stem_repo, mock_global_
         'stem_groups': ['earl_grey', 'milk,sugar', 'spoon,cup,milk'],
         'stem_sources': [
             f'{setup_stem_repo["workingcopy"]}', 'fcm:foo.x_tr@head'],
-        'workflow_name': setup_stem_repo['suitename']
     }
     mock_global_cfg(
         'cylc.rose.stem.ResourceLocator.default',
@@ -424,7 +416,6 @@ async def test_automatic_options_multi(
         'stem_groups': ['assam'],
         'stem_sources': [
             f'{setup_stem_repo["workingcopy"]}'],
-        'workflow_name': setup_stem_repo['suitename']
     }
     mock_global_cfg(
         'cylc.rose.stem.ResourceLocator.default',
@@ -463,7 +454,6 @@ async def test_incompatible_rose_stem_versions(setup_stem_repo, monkeymodule):
             str(setup_stem_repo['workingcopy']),
             "fcm:foo.x_tr@head",
         ],
-        'workflow_name': str(setup_stem_repo['suitename']),
         'verbosity': 2,
     }
 
@@ -488,7 +478,6 @@ async def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
             str(setup_stem_repo['workingcopy']),
             "fcm:foo.x_tr@head",
         ],
-        'workflow_name': str(setup_stem_repo['suitename'])
     }
 
     monkeymodule.setattr('sys.argv', ['stem'])
