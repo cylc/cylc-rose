@@ -180,18 +180,20 @@ def rose_stem_runner(setup_stem_repo, monkeymodule):
 
         # return a dictionary of template variables found in the
         # cylc-install optional configuration
-        opt_conf = ConfigLoader().load(
-            str(
-                Path(
-                    setup_stem_repo['suite_install_dir'],
-                    'runN/opt/rose-suite-cylc-install.conf',
-                )
-            )
+        cylc_install_opt_conf = Path(
+            setup_stem_repo['suite_install_dir'],
+            'runN/opt/rose-suite-cylc-install.conf',
         )
-        return {
-            key: node.value  # noqa B035 (false positive)
-            for [_, key], node in opt_conf.get(('template variables',)).walk()
-        }
+        if cylc_install_opt_conf.exists():
+            opt_conf = ConfigLoader().load(str(cylc_install_opt_conf))
+            return {
+                key: node.value  # noqa B035 (false positive)
+                for [_, key], node in opt_conf.get(
+                    ('template variables',)
+                ).walk()
+            }
+        else:
+            return {}
 
     yield _inner_fn
 
@@ -432,7 +434,7 @@ async def test_automatic_options_multi(
     )
 
 
-async def test_incompatible_rose_stem_versions(setup_stem_repo, monkeymodule):
+async def test_incompatible_rose_stem_versions(setup_stem_repo, rose_stem_runner):
     """It should fail if trying to install an incompatible rose-stem config.
 
     Rose Stem configurations must specify a Rose Stem version, it should fail
@@ -457,18 +459,13 @@ async def test_incompatible_rose_stem_versions(setup_stem_repo, monkeymodule):
         'verbosity': 2,
     }
 
-    monkeymodule.setattr('sys.argv', ['stem'])
-    monkeymodule.chdir(setup_stem_repo['workingcopy'])
-    parser, opts = get_rose_stem_opts()
-    [setattr(opts, key, val) for key, val in rose_stem_opts.items()]
-
     with pytest.raises(
         RoseStemVersionException, match='1 but suite is at version 0'
     ):
-        await rose_stem(parser, opts)
+        await rose_stem_runner(rose_stem_opts)
 
 
-async def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
+async def test_project_not_in_keywords(setup_stem_repo, rose_stem_runner, monkeymodule, capsys):
     """It fails if it cannot extract project name from FCM keywords."""
     # Copy suite into working copy.
     monkeymodule.delenv('FCM_CONF_PATH')
@@ -480,16 +477,11 @@ async def test_project_not_in_keywords(setup_stem_repo, monkeymodule, capsys):
         ],
     }
 
-    monkeymodule.setattr('sys.argv', ['stem'])
-    monkeymodule.chdir(setup_stem_repo['workingcopy'])
-    parser, opts = get_rose_stem_opts()
-    [setattr(opts, key, val) for key, val in rose_stem_opts.items()]
-
-    await rose_stem(parser, opts)
+    await rose_stem_runner(rose_stem_opts)
     assert 'ProjectNotFoundException' in capsys.readouterr().err
 
 
-async def test_picks_template_section(setup_stem_repo, monkeymodule, capsys):
+async def test_picks_template_section(setup_stem_repo, rose_stem_runner, capsys):
     """test error message when project not in keywords
 
     Note, it can cope with template variables section being either
@@ -497,13 +489,10 @@ async def test_picks_template_section(setup_stem_repo, monkeymodule, capsys):
 
     https://github.com/metomi/rose/blob/2c8956a9464bd277c8eb24d38af4803cba4c1243/t/rose-stem/00-run-basic.t#L234-L245
     """
-    monkeymodule.setattr('sys.argv', ['stem'])
-    monkeymodule.chdir(setup_stem_repo['workingcopy'])
     (setup_stem_repo['workingcopy'] / 'rose-stem/rose-suite.conf').write_text(
         'ROSE_STEM_VERSION=1\n'
         '[template_variables]\n'
     )
-    parser, opts = get_rose_stem_opts()
-    await rose_stem(parser, opts)
+    await rose_stem_runner({})
     _, err = capsys.readouterr()
     assert "[jinja2:suite.rc]' is deprecated" not in err
