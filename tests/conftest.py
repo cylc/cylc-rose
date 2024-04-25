@@ -74,9 +74,8 @@ def event_loop():
 @pytest.fixture(scope='module')
 def monkeymodule():
     """Make monkeypatching available in a module scope."""
-    mpatch = pytest.MonkeyPatch()
-    yield mpatch
-    mpatch.undo()
+    with pytest.MonkeyPatch.context() as mp:
+        yield mp
 
 
 @pytest.fixture()
@@ -281,7 +280,7 @@ def rose_stem(test_dir, monkeypatch, request):
 
     Wraps the "rose_stem" async function for use in tests.
 
-    Cleans up afterwards if the test was successfull.
+    Cleans up afterwards if the test was successful.
     """
     run_dir = test_dir / str(uuid4())[:4]
 
