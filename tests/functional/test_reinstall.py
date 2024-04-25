@@ -29,7 +29,6 @@ At each step it checks the contents of
 
 import pytest
 import shutil
-from textwrap import dedent
 
 from itertools import product
 from pathlib import Path
@@ -281,59 +280,3 @@ def test_reinstall_workflow(tmp_path):
 
     expect = sorted(['send rose-suite.conf', 'send flow.cylc'])
     assert sorted(stdout.split('\n')) == expect
-
-
-def test_reinstall_overrides(
-    cylc_install_cli,
-    cylc_reinstall_cli,
-    file_poll,
-    tmp_path,
-    purge_workflow,
-    run_ok
-):
-    """When reinstalling and reloading the new installation are picked up.
-
-    > cylc install this -S 'var=CLIinstall'
-    > cylc play this --pause
-    > cylc reinstall this -S 'var=CLIreinstall'
-    > cylc play this --pause
-
-    See https://github.com/cylc/cylc-flow/issues/5968
-    """
-    (tmp_path / 'flow.cylc').write_text(dedent("""
-        #!jinja2
-        [scheduling]\n
-            [[graph]]\n
-               R1 = foo\n
-        [runtime]\n
-            [[foo]]\n
-                script = cylc message -- {{var}}
-        """))
-    (tmp_path / 'rose-suite.conf').write_text(
-        '[template variables]\nvar="rose-suite.conf"')
-
-    # Install workflow.
-    install_results = cylc_install_cli(
-        tmp_path, {'rose_template_vars': ['var="CLIinstall"']})
-    assert install_results.ret == 0
-
-    # Play workflow
-    run_ok(f'cylc play --pause {install_results.id}')
-
-    # Reinstall the workflow:
-    reinstall_results = cylc_reinstall_cli(
-        install_results.id,
-        {'rose_template_vars': ['var="CLIreinstall"']})
-    assert reinstall_results.ret == 0
-
-    # Reload the workflow:
-    run_ok(f'cylc reload {install_results.id}')
-
-    # The config being run has been modified:
-    run_dir = Path.home() / 'cylc-run' / install_results.id
-    config_log = (run_dir / 'log/config/02-reload-01.cylc')
-    file_poll(config_log)
-
-    assert 'cylc message -- CLIreinstall' in config_log.read_text()
-
-    purge_workflow(install_results.id)

@@ -18,10 +18,10 @@
 from functools import partial
 from subprocess import run
 from shlex import split
+from pathlib import Path
 import pytest
 from time import sleep
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from cylc.flow import __version__ as CYLC_VERSION
@@ -41,10 +41,6 @@ from cylc.flow.scripts.reinstall import (
     reinstall_cli as cylc_reinstall,
     get_option_parser as reinstall_gop
 )
-
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def test_workflow_name():
@@ -223,24 +219,39 @@ def mod_cylc_validate_cli(mod_capsys, mod_caplog):
 def file_poll():
     """Poll for the existance of a file.
     """
-    def _inner(fpath: "Path", timeout: int = 5):
+    def _inner(
+        fpath: "Path", timeout: int = 5, inverse: bool = False
+    ):
+        if inverse:
+            def check(f):
+                not f.exists()
+        else:
+            def check(f):
+                f.exists()
+
         timeout_func(
-            fpath.exists,
+            partial(check, fpath),
             f'file {fpath} not found after {timeout} seconds'
         )
     return _inner
 
 
 @pytest.fixture
-def purge_workflow(run_ok):
+def purge_workflow(run_ok, file_poll):
     """Ensure workflow is stopped and cleaned"""
     def _inner(id_, timeout=5):
-        run_ok(f'cylc stop {id_} --now --now')
+        stop = f'cylc stop {id_} --now --now'
         clean = f'cylc clean {id_}'
         timeout_func(
-            partial(run_ok, clean),
-            message=f'Not run after {timeout} seconds: {clean}'
+            partial(run_ok, stop),
+            message=f'Not run after {timeout} seconds: {stop}')
+        file_poll(
+            Path.home() / 'cylc-run' / id_ / '.service/contact',
+            inverse=True,
         )
+        timeout_func(
+            partial(run_ok, clean),
+            message=f'Not run after {timeout} seconds: {clean}')
     return _inner
 
 
@@ -251,7 +262,7 @@ def run_ok():
     """
     def _inner(script: str):
         result = run(split(script), capture_output=True)
-        assert result.returncode == 0
+        assert result.returncode == 0, f'{script} failed: {result.stderr}'
         return result
     return _inner
 
