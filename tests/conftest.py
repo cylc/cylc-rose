@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+from io import StringIO
 from pathlib import Path
 from shutil import rmtree
 from types import SimpleNamespace
@@ -32,6 +33,14 @@ from cylc.flow.scripts.reinstall import reinstall_cli as cylc_reinstall
 from cylc.flow.scripts.validate import run as cylc_validate
 from cylc.flow.scripts.validate import get_option_parser as validate_gop
 from cylc.flow.wallclock import get_current_time_string
+
+from metomi.rose.resource import ResourceLocator
+from metomi.rose.config import ConfigLoader
+
+from cylc.rose.stem import (
+    get_rose_stem_opts,
+    rose_stem as _rose_stem,
+)
 
 
 CYLC_RUN_DIR = Path(get_cylc_run_dir())
@@ -60,6 +69,13 @@ def event_loop():
     for task in asyncio.all_tasks(loop):
         task.cancel()
     loop.close()
+
+
+@pytest.fixture(scope='module')
+def monkeymodule():
+    """Make monkeypatching available in a module scope."""
+    with pytest.MonkeyPatch.context() as mp:
+        yield mp
 
 
 @pytest.fixture()
@@ -97,8 +113,7 @@ def mod_caplog(request):
 
 @pytest.fixture(scope='package', autouse=True)
 def set_cylc_version():
-    from _pytest.monkeypatch import MonkeyPatch
-    mpatch = MonkeyPatch()
+    mpatch = pytest.MonkeyPatch()
     yield mpatch.setenv('CYLC_VERSION', CYLC_VERSION)
     mpatch.undo()
 
@@ -257,6 +272,80 @@ def cylc_validate_cli(capsys, caplog):
 @pytest.fixture(scope='module')
 def mod_cylc_validate_cli(mod_capsys, mod_caplog):
     return _cylc_validate_cli(mod_capsys, mod_caplog)
+
+
+@pytest.fixture
+def rose_stem(test_dir, monkeypatch, request):
+    """The Rose Stem command.
+
+    Wraps the "rose_stem" async function for use in tests.
+
+    Cleans up afterwards if the test was successful.
+    """
+    run_dir = test_dir / str(uuid4())[:4]
+
+    async def _inner(source_dir, cwd=None, **rose_stem_opts):
+        nonlocal monkeypatch, request, run_dir
+
+        # point rose-stem at the desired run directory
+        rose_stem_opts['no_run_name'] = True
+        rose_stem_opts['workflow_name'] = str(
+            run_dir.relative_to(CYLC_RUN_DIR)
+        )
+
+        # make it look like we're running the "rose stem" CLI
+        monkeypatch.setattr('sys.argv', ['stem'])
+
+        # cd into the rose stem project directory (unless overridden)
+        monkeypatch.chdir(cwd or source_dir)
+
+        # merge the opts in with the defaults
+        parser, opts = get_rose_stem_opts()
+        for key, val in rose_stem_opts.items():
+            setattr(opts, key, val)
+
+        # run rose stem
+        await _rose_stem(parser, opts)
+
+        # return a dictionary of template variables found in the
+        # cylc-install optional configuration
+        cylc_install_opt_conf = Path(
+            run_dir,
+            'opt/rose-suite-cylc-install.conf',
+        )
+        if cylc_install_opt_conf.exists():
+            opt_conf = ConfigLoader().load(str(cylc_install_opt_conf))
+            return {
+                key: node.value  # noqa B035 (false positive)
+                for [_, key], node in opt_conf.get(
+                    ('template variables',)
+                ).walk()
+            }
+        else:
+            return {}
+
+    return _inner
+
+
+@pytest.fixture()
+def mock_global_cfg(monkeypatch):
+    """Mock the rose ResourceLocator.default
+
+    Args:
+        target: The module to patch.
+        conf: A fake rose global config as a string.
+
+    """
+    def _inner(target, conf):
+        """Get the ResourceLocator.default and patch its get_conf method."""
+        obj = ResourceLocator.default()
+        monkeypatch.setattr(
+            obj, 'get_conf', lambda: ConfigLoader().load(StringIO(conf))
+        )
+
+        monkeypatch.setattr(target, lambda *_, **__: obj)
+
+    yield _inner
 
 
 @pytest.fixture(scope='session')
