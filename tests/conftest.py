@@ -224,10 +224,10 @@ def file_poll():
     ):
         if inverse:
             def check(f):
-                not f.exists()
+                return not f.exists()
         else:
             def check(f):
-                f.exists()
+                return f.exists()
 
         timeout_func(
             partial(check, fpath),
