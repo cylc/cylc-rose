@@ -55,7 +55,7 @@ class NotARoseSuiteException(Exception):
         return msg
 
 
-def pre_configure(srcdir, opts, rundir=None):
+def pre_configure(srcdir, opts):
     srcdir, rundir = paths_to_pathlib([srcdir, rundir])
     return get_rose_vars(srcdir=srcdir, opts=opts)
 
