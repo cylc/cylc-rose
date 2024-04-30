@@ -222,16 +222,11 @@ def file_poll():
     def _inner(
         fpath: "Path", timeout: int = 5, inverse: bool = False
     ):
-        if inverse:
-            def check(f):
-                return not f.exists()
-        else:
-            def check(f):
-                return f.exists()
-
         timeout_func(
-            partial(check, fpath),
-            f'file {fpath} not found after {timeout} seconds'
+            lambda: fpath.exists() != inverse,
+            f"file {fpath} {'still' if inverse else 'not'} found after "
+            f"{timeout} seconds",
+            timeout
         )
     return _inner
 
