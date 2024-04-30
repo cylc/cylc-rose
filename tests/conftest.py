@@ -240,7 +240,7 @@ def purge_workflow(run_ok, file_poll):
         timeout_func(
             partial(run_ok, stop),
             message=f'Not run after {timeout} seconds: {stop}',
-            timeout
+            timeout=timeout
         )
         file_poll(
             Path.home() / 'cylc-run' / id_ / '.service/contact',
@@ -249,7 +249,7 @@ def purge_workflow(run_ok, file_poll):
         timeout_func(
             partial(run_ok, clean),
             message=f'Not run after {timeout} seconds: {clean}',
-            timeout
+            timeout=timeout
         )
     return _inner
 
