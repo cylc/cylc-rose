@@ -15,9 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Functional tests for top-level function record_cylc_install_options and
 """
-
+from functools import partial
+from subprocess import run
+from shlex import split
+from pathlib import Path
 import pytest
+from time import sleep
 from types import SimpleNamespace
+from uuid import uuid4
 
 from cylc.flow import __version__ as CYLC_VERSION
 from cylc.flow.option_parsers import Options
@@ -36,6 +41,11 @@ from cylc.flow.scripts.reinstall import (
     reinstall_cli as cylc_reinstall,
     get_option_parser as reinstall_gop
 )
+
+
+def test_workflow_name():
+    """Return a UUID to use as a test name"""
+    return f'cylc-rose-test-{str(uuid4())[:8]}'
 
 
 @pytest.fixture(scope='module')
@@ -128,8 +138,14 @@ def _cylc_install_cli(capsys, caplog):
             srcpath:
             args: Dictionary of arguments.
         """
+        if not args or not args.get('workflow_name', ''):
+            id_ = test_workflow_name()
+            args = {'workflow_name': id_}
+
+        args.update({'no_run_name': True})
         options = Options(install_gop(), args)()
         output = SimpleNamespace()
+        output.id = args['workflow_name']
 
         try:
             cylc_install(options, str(srcpath))
@@ -197,3 +213,64 @@ def cylc_validate_cli(capsys, caplog):
 @pytest.fixture(scope='module')
 def mod_cylc_validate_cli(mod_capsys, mod_caplog):
     return _cylc_validate_cli(mod_capsys, mod_caplog)
+
+
+@pytest.fixture
+def file_poll():
+    """Poll for the existance of a file.
+    """
+    def _inner(
+        fpath: "Path", timeout: int = 5, inverse: bool = False
+    ):
+        timeout_func(
+            lambda: fpath.exists() != inverse,
+            f"file {fpath} {'still' if inverse else 'not'} found after "
+            f"{timeout} seconds",
+            timeout
+        )
+    return _inner
+
+
+@pytest.fixture
+def purge_workflow(run_ok, file_poll):
+    """Ensure workflow is stopped and cleaned"""
+    def _inner(id_, timeout=5):
+        stop = f'cylc stop {id_} --now --now'
+        clean = f'cylc clean {id_}'
+        timeout_func(
+            partial(run_ok, stop),
+            message=f'Not run after {timeout} seconds: {stop}',
+            timeout=timeout
+        )
+        file_poll(
+            Path.home() / 'cylc-run' / id_ / '.service/contact',
+            inverse=True,
+        )
+        timeout_func(
+            partial(run_ok, clean),
+            message=f'Not run after {timeout} seconds: {clean}',
+            timeout=timeout
+        )
+    return _inner
+
+
+@pytest.fixture
+def run_ok():
+    """Run a bash script.
+    Fail if it fails and return its output.
+    """
+    def _inner(script: str):
+        result = run(split(script), capture_output=True)
+        assert result.returncode == 0, f'{script} failed: {result.stderr}'
+        return result
+    return _inner
+
+
+def timeout_func(func, message, timeout=5):
+    """Wrap a function in a timeout"""
+    for _ in range(timeout):
+        if func():
+            break
+        sleep(1)
+    else:
+        raise TimeoutError(message)

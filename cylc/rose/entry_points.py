@@ -27,6 +27,7 @@ from pathlib import Path
 from metomi.rose.config import ConfigLoader, ConfigDumper
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
+    ROSE_SUITE_OPT_CONF_KEYS,
     deprecation_warnings,
     dump_rose_log,
     get_rose_vars_from_config_node,
@@ -54,12 +55,12 @@ class NotARoseSuiteException(Exception):
         return msg
 
 
-def pre_configure(srcdir=None, opts=None, rundir=None):
-    srcdir, rundir = paths_to_pathlib([srcdir, rundir])
+def pre_configure(srcdir, opts):
+    srcdir = Path(srcdir)
     return get_rose_vars(srcdir=srcdir, opts=opts)
 
 
-def post_install(srcdir=None, opts=None, rundir=None):
+def post_install(srcdir, opts, rundir):
     if not rose_config_exists(srcdir, opts):
         return False
     srcdir, rundir = paths_to_pathlib([srcdir, rundir])
@@ -74,6 +75,14 @@ def post_install(srcdir=None, opts=None, rundir=None):
     # Finally dump a log of the rose-conf in its final state.
     if results['fileinstall']:
         dump_rose_log(rundir=rundir, node=results['fileinstall'])
+
+    # Having dumped the config we clear rose options
+    # as they do not apply after this.
+    # see https://github.com/cylc/cylc-rose/pull/312
+    opts.rose_template_vars = []
+    opts.opt_conf_keys = []
+    opts.defines = []
+    os.unsetenv(ROSE_SUITE_OPT_CONF_KEYS)
 
     return results
 

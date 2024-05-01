@@ -117,14 +117,14 @@ def test_cylc_install_run(fixture_install_flow):
     'file_, expect',
     [
         (
-            'run1/rose-suite.conf', (
+            'rose-suite.conf', (
                 '# Config Options \'b c (cylc-install)\' from CLI appended to'
                 ' options already in `rose-suite.conf`.\n'
                 'opts=a b c (cylc-install)\n'
             )
         ),
         (
-            'run1/opt/rose-suite-cylc-install.conf', (
+            'opt/rose-suite-cylc-install.conf', (
                 '# This file records CLI Options.\n\n'
                 '!opts=b c\n'
                 f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
@@ -152,7 +152,7 @@ def fixture_reinstall_flow(
     """
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
     result = mod_cylc_reinstall_cli(
-        f'{fixture_provide_flow["test_flow_name"]}/run1',
+        f'{fixture_provide_flow["test_flow_name"]}',
         {
             'opt_conf_keys': ['d']
         }
@@ -171,14 +171,14 @@ def test_cylc_reinstall_run(fixture_reinstall_flow):
     'file_, expect',
     [
         (
-            'run1/rose-suite.conf', (
+            'rose-suite.conf', (
                 '# Config Options \'b c d (cylc-install)\' from CLI appended '
                 'to options already in `rose-suite.conf`.\n'
                 'opts=a b c d (cylc-install)\n'
             )
         ),
         (
-            'run1/opt/rose-suite-cylc-install.conf', (
+            'opt/rose-suite-cylc-install.conf', (
                 '# This file records CLI Options.\n\n'
                 '!opts=b c d\n'
                 f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
@@ -213,7 +213,7 @@ def fixture_reinstall_flow2(
         'opts=z\n'
     )
     result = mod_cylc_reinstall_cli(
-        f'{fixture_provide_flow["test_flow_name"]}/run1'
+        f'{fixture_provide_flow["test_flow_name"]}'
     )
     yield {
         'fixture_provide_flow': fixture_provide_flow,
@@ -229,14 +229,14 @@ def test_cylc_reinstall_run2(fixture_reinstall_flow2):
     'file_, expect',
     [
         (
-            'run1/rose-suite.conf', (
+            'rose-suite.conf', (
                 '# Config Options \'b c d (cylc-install)\' from CLI appended '
                 'to options already in `rose-suite.conf`.\n'
                 'opts=z b c d (cylc-install)\n'
             )
         ),
         (
-            'run1/opt/rose-suite-cylc-install.conf', (
+            'opt/rose-suite-cylc-install.conf', (
                 '# This file records CLI Options.\n\n'
                 '!opts=b c d\n'
                 f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
