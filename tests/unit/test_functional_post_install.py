@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 """Functional tests for top-level function record_cylc_install_options and
 rose_fileinstall
 
@@ -20,23 +21,25 @@ Check functions which would be called by
 ``cylc install -D [fileinstall:myfile]example`` will lead to the correct file
 installation.
 """
-import pytest
 
-from pathlib import Path
 from types import SimpleNamespace
 
-from metomi.isodatetime.datetimeoper import DateTimeOperator
-
 from cylc.flow.hostuserutil import get_host
+from metomi.isodatetime.datetimeoper import DateTimeOperator
+from metomi.rose.config import ConfigLoader
+from metomi.rose.config_tree import ConfigTree
+import pytest
+
 from cylc.rose.entry_points import (
-    record_cylc_install_options, rose_fileinstall, post_install
+    copy_config_file,
+    post_install,
+    record_cylc_install_options,
 )
+from cylc.rose.fileinstall import rose_fileinstall
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
-    MultipleTemplatingEnginesError
+    MultipleTemplatingEnginesError,
 )
-from metomi.rose.config import ConfigLoader
-
 
 HOST = get_host()
 
@@ -58,13 +61,8 @@ def assert_rose_conf_full_equal(left, right, no_ignore=True):
 
 
 def test_no_rose_suite_conf_in_devdir(tmp_path):
-    result = post_install(srcdir=tmp_path, rundir=None, opts=None)
+    result = post_install(tmp_path, tmp_path, SimpleNamespace())
     assert result is False
-
-
-def test_rose_fileinstall_no_config_in_folder():
-    # It returns false if no rose-suite.conf
-    assert rose_fileinstall(Path('/dev/null')) is False
 
 
 def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
@@ -85,8 +83,8 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
     )
 
     # Run both record_cylc_install options and fileinstall.
-    record_cylc_install_options(opts=opts, rundir=destdir)
-    rose_fileinstall(srcdir, opts, destdir)
+    record_cylc_install_options(srcdir, destdir, opts)
+    rose_fileinstall(destdir, opts)
     assert ((destdir / 'installedme').read_text() ==
             'Galileo No! We will not let you go.'
             )
@@ -251,14 +249,8 @@ def test_functional_record_cylc_install_options(
     loader = ConfigLoader()
 
     # Run the entry point top-level function:
-    rose_suite_cylc_install_node, rose_suite_opts_node = (
-        record_cylc_install_options(
-            rundir=testdir, opts=opts, srcdir=testdir
-        )
-    )
-    rose_fileinstall(
-        rundir=testdir, opts=opts, srcdir=testdir
-    )
+    record_cylc_install_options(testdir, testdir, opts=opts)
+    rose_fileinstall(testdir, opts)
     ritems = sorted([i.relative_to(refdir) for i in refdir.rglob('*')])
     titems = sorted([i.relative_to(testdir) for i in testdir.rglob('*')])
     assert titems == ritems
@@ -284,20 +276,9 @@ def test_functional_rose_database_dumped_correctly(tmp_path):
         "[file:Gnu]\nsrc=nicest_work_of.nature\n"
     )
     (rundir / 'cylc.flow').touch()
-    rose_fileinstall(srcdir=srcdir, rundir=rundir)
+    rose_fileinstall(rundir, SimpleNamespace())
 
     assert (rundir / '.rose-config_processors-file.db').is_file()
-
-
-def test_functional_rose_database_dumped_errors(tmp_path):
-    srcdir = (tmp_path / 'srcdir')
-    srcdir.mkdir()
-    (srcdir / 'nicest_work_of.nature').touch()
-    (srcdir / 'rose-suite.conf').write_text(
-        "[file:Gnu]\nsrc=nicest_work_of.nature\n"
-    )
-    (srcdir / 'cylc.flow').touch()
-    assert rose_fileinstall(srcdir=Path('/this/path/goes/nowhere')) is False
 
 
 @pytest.mark.parametrize(
@@ -337,26 +318,40 @@ def test_template_section_conflict(
 
     with pytest.raises(MultipleTemplatingEnginesError) as exc_info:
         # Run the entry point top-level function:
-        rose_suite_cylc_install_node, rose_suite_opts_node = (
-            record_cylc_install_options(
-                rundir=testdir, opts=opts, srcdir=testdir
-            )
-        )
+        record_cylc_install_options(testdir, testdir, opts)
     assert exc_info.match(expect)
 
 
 def test_rose_fileinstall_exception(tmp_path, monkeypatch):
-    def broken():
-        raise FileNotFoundError('Any Old Error')
-    import os
-    monkeypatch.setattr(os, 'getcwd', broken)
-    (tmp_path / 'rose-suite.conf').touch()
+    """It throws an exception if you try to install files to a non existent
+    destination.
+
+    (And returns to the directory you started at)
+    """
+    def fakenode(_, __):
+        tree = ConfigTree()
+        tree.node.value = {'file': ''}
+        return tree
+
+    monkeypatch.setattr(
+        'cylc.rose.utilities.rose_config_tree_loader',
+        fakenode,
+    )
+    monkeypatch.setattr(
+        'cylc.rose.fileinstall.rose_config_exists',
+        lambda x: True,
+    )
     with pytest.raises(FileNotFoundError):
-        rose_fileinstall(srcdir=tmp_path, rundir=tmp_path)
+        rose_fileinstall('/oiruhgaqhnaigujhj', SimpleNamespace())
 
 
 def test_cylc_no_rose(tmp_path):
     """A Cylc workflow that contains no ``rose-suite.conf`` installs OK.
     """
     from cylc.rose.entry_points import post_install
-    assert post_install(srcdir=tmp_path, rundir=tmp_path, opts={}) is False
+    assert post_install(tmp_path, tmp_path, SimpleNamespace()) is False
+
+
+def test_copy_config_file_fails(tmp_path):
+    """It fails if source not a rose suite."""
+    copy_config_file(tmp_path, tmp_path)

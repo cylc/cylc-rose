@@ -13,17 +13,16 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Functional tests for top-level function record_cylc_install_options and
-"""
 
-import pytest
-import shutil
+"""Unit tests for Rose file installation."""
 
 from pathlib import Path
+import shutil
 from uuid import uuid4
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
+import pytest
 
 from cylc.rose.utilities import ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
 
@@ -57,12 +56,15 @@ def fixture_provide_flow(tmp_path_factory):
 
 
 @pytest.fixture(scope='module')
-def fixture_install_flow(fixture_provide_flow, request, mod_cylc_install_cli):
+async def fixture_install_flow(
+    fixture_provide_flow, request,
+    mod_cylc_install_cli,
+):
     srcpath, datapath, flow_name = fixture_provide_flow
-    result = mod_cylc_install_cli(
+    await mod_cylc_install_cli(
         srcpath,
+        flow_name,
         {
-            'workflow_name': flow_name,
             'no_run_name': True,
             'opt_conf_keys': ['A', 'B'],
             'defines': ["[env]FOO=42", "[jinja2:suite.rc]BAR=84"],
@@ -71,27 +73,22 @@ def fixture_install_flow(fixture_provide_flow, request, mod_cylc_install_cli):
     )
     destpath = Path(get_workflow_run_dir(flow_name))
 
-    yield srcpath, datapath, flow_name, result, destpath
+    yield destpath
     if not request.session.testsfailed:
         shutil.rmtree(destpath)
 
 
-def test_rose_fileinstall_validate(fixture_provide_flow, cylc_validate_cli):
-    """Workflow validates:
-    """
+async def test_rose_fileinstall_validate(
+    fixture_provide_flow,
+    cylc_validate_cli,
+):
+    """Workflow validates."""
     srcpath, _, _ = fixture_provide_flow
-    cylc_validate_cli(srcpath)
-
-
-def test_rose_fileinstall_run(fixture_install_flow):
-    """Workflow installs:
-    """
-    _, _, _, result, _ = fixture_install_flow
-    assert result.ret == 0
+    await cylc_validate_cli(srcpath)
 
 
 def test_rose_fileinstall_rose_conf(fixture_install_flow):
-    _, _, _, result, destpath = fixture_install_flow
+    destpath = fixture_install_flow
     assert (destpath / 'rose-suite.conf').read_text() == (
         "# Config Options 'A B (cylc-install)' from CLI appended to options "
         "already in `rose-suite.conf`.\n"
@@ -100,7 +97,7 @@ def test_rose_fileinstall_rose_conf(fixture_install_flow):
 
 
 def test_rose_fileinstall_rose_suite_cylc_install_conf(fixture_install_flow):
-    _, _, _, result, destpath = fixture_install_flow
+    destpath = fixture_install_flow
     host = get_host()
     assert (destpath / 'opt/rose-suite-cylc-install.conf').read_text() == (
         "# This file records CLI Options.\n\n"

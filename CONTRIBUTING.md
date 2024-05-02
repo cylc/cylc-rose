@@ -44,6 +44,7 @@ below.
  - Mel Hall
  - Bruno Kinoshita
  - Hilary Oliver
+ - Jonny Williams
  - Mark Dawson
 <!-- end-shortlog -->
 

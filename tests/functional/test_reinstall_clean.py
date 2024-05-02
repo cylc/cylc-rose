@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 """Functional tests for reinstalling of config files.
 This test does the following:
 
@@ -27,17 +28,17 @@ At each step it checks the contents of
 - ~/cylc-run/temporary-id/opt/rose-suite-cylc-install.conf
 """
 
-import pytest
-import shutil
-
 from pathlib import Path
+import shutil
 from uuid import uuid4
 
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
-from cylc.rose.utilities import (
-    ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as ROHIOS)
+import pytest
 
+from cylc.rose.utilities import (
+    ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as ROHIOS,
+)
 
 HOST = get_host()
 
@@ -75,7 +76,7 @@ def fixture_provide_flow(tmp_path_factory, request):
 
 
 @pytest.fixture(scope='module')
-def fixture_install_flow(
+async def fixture_install_flow(
     fixture_provide_flow, monkeymodule, mod_cylc_install_cli
 ):
     """Run ``cylc install``.
@@ -86,22 +87,17 @@ def fixture_install_flow(
     If a test fails using ``pytest --pdb then``
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
-    result = mod_cylc_install_cli(
+    await mod_cylc_install_cli(
         fixture_provide_flow['srcpath'],
+        fixture_provide_flow['test_flow_name'],
         {
-            'workflow_name': fixture_provide_flow['test_flow_name'],
             'opt_conf_keys': ['bar'],
             'defines': ['[env]FOO=1']
         }
     )
     yield {
         'fixture_provide_flow': fixture_provide_flow,
-        'result': result
     }
-
-
-def test_cylc_install_run(fixture_install_flow):
-    assert fixture_install_flow['result'].ret == 0
 
 
 @pytest.mark.parametrize(
@@ -124,40 +120,6 @@ def test_cylc_install_files(fixture_install_flow, file_, expect):
     assert (fpath / file_).read_text() == expect
 
 
-@pytest.fixture(scope='module')
-def fixture_reinstall_flow(
-    fixture_provide_flow, monkeymodule, mod_cylc_reinstall_cli
-):
-    """Run ``cylc reinstall --clear-rose-install-options``.
-
-    Ensure that a reinstalled workflow ignores existing
-    rose-suite-cylc-install.conf if asked to do so.
-
-    By running in a fixture with modular scope we
-    can run tests on different aspects of its output as separate tests.
-
-    If a test fails using ``pytest --pdb then``
-    ``fixture_install_flow['result'].stderr`` may help with debugging.
-    """
-    monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
-    result = mod_cylc_reinstall_cli(
-        f'{fixture_provide_flow["test_flow_name"]}',
-        {
-            'opt_conf_keys': ['baz'],
-            'defines': ['[env]BAR=2'],
-            'clear_rose_install_opts': True
-        }
-    )
-    yield {
-        'fixture_provide_flow': fixture_provide_flow,
-        'result': result
-    }
-
-
-def test_cylc_reinstall_run(fixture_reinstall_flow):
-    assert fixture_reinstall_flow['result'].ret == 0
-
-
 @pytest.mark.parametrize(
     'file_, expect',
     [
@@ -173,6 +135,31 @@ def test_cylc_reinstall_run(fixture_reinstall_flow):
         )
     ]
 )
-def test_cylc_reinstall_files(fixture_reinstall_flow, file_, expect):
-    fpath = fixture_reinstall_flow['fixture_provide_flow']['flowpath']
+async def test_cylc_reinstall_files(
+    fixture_install_flow,
+    monkeymodule,
+    mod_cylc_reinstall_cli,
+    file_,
+    expect,
+):
+    """Run ``cylc reinstall --clear-rose-install-options``.
+
+    Ensure that a reinstalled workflow ignores existing
+    rose-suite-cylc-install.conf if asked to do so.
+
+    By running in a fixture with modular scope we
+    can run tests on different aspects of its output as separate tests.
+    """
+    monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
+    assert await mod_cylc_reinstall_cli(
+        (
+            fixture_install_flow['fixture_provide_flow']['test_flow_name']
+        ),
+        {
+            'opt_conf_keys': ['baz'],
+            'defines': ['[env]BAR=2'],
+            'clear_rose_install_opts': True
+        }
+    )
+    fpath = fixture_install_flow['fixture_provide_flow']['flowpath']
     assert (fpath / file_).read_text() == expect

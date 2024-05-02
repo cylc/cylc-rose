@@ -1,3 +1,4 @@
+
 # THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC WORKFLOW ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
@@ -15,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Functional tests checking Cylc reinstall and reload behaviour is correct
 WRT to deletion of Rose Options at the end of the post install plugin.
-
 https://github.com/cylc/cylc-rose/pull/312
 """
 
@@ -24,9 +24,10 @@ from pathlib import Path
 from textwrap import dedent
 
 
-def test_reinstall_overrides(
+async def test_reinstall_overrides(
     cylc_install_cli,
     cylc_reinstall_cli,
+    workflow_name,
     file_poll,
     tmp_path,
     purge_workflow,
@@ -51,26 +52,26 @@ def test_reinstall_overrides(
         '[template variables]\nvar="rose-suite.conf"')
 
     # Install workflow.
-    install_results = cylc_install_cli(
-        tmp_path, {'rose_template_vars': ['var="CLIinstall"']})
-    assert install_results.ret == 0
+    wid, _ = await cylc_install_cli(
+        tmp_path,
+        workflow_name=workflow_name,
+        opts={'rose_template_vars': ['var="CLIinstall"']})
 
     # Play workflow
-    run_ok(f'cylc play --pause {install_results.id}')
+    run_ok(f'cylc play --pause {wid}')
 
     # Reinstall the workflow:
-    reinstall_results = cylc_reinstall_cli(
-        install_results.id,
+    await cylc_reinstall_cli(
+        wid,
         {'rose_template_vars': ['var="CLIreinstall"']})
-    assert reinstall_results.ret == 0
 
     # Reload the workflow:
-    run_ok(f'cylc reload {install_results.id}')
+    run_ok(f'cylc reload {wid}')
 
     # The config being run has been modified:
-    run_dir = Path.home() / 'cylc-run' / install_results.id
+    run_dir = Path.home() / 'cylc-run' / wid
     config_log = (run_dir / 'log/config/02-reload-01.cylc')
     file_poll(config_log)
     assert 'cylc message -- CLIreinstall' in config_log.read_text()
 
-    purge_workflow(install_results.id)
+    purge_workflow(wid)
