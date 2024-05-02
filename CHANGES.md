@@ -6,7 +6,7 @@ creating a new release entry be sure to copy & paste the span tag with the
 updated. Only the first match gets replaced, so it's fine to leave the old
 ones in. -->
 
-## __cylc-rose-1.3.3 (<span actions:bind='release-date'>Released 2024-04-05</span>)__
+## __cylc-rose-1.3.3 (<span actions:bind='release-date'>Released 2024-05-02</span>)__
 
 [#302](https://github.com/cylc/cylc-rose/pull/302) -
 Fix issues which could cause "fcm_make" and "rose_prune" tasks intermittently
