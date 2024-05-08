@@ -124,7 +124,7 @@ async def test_cylc_validate(fixture_provide_flow, cylc_validate_cli):
         ),
         (
             'opt/rose-suite-cylc-install.conf', (
-                '# This file records CLI Options.\n\n'
+                '# This file records CLI Options.{version_info}\n'
                 '!opts=b c\n'
                 f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
                 f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
@@ -132,7 +132,8 @@ async def test_cylc_validate(fixture_provide_flow, cylc_validate_cli):
         )
     ]
 )
-def test_cylc_install_files(fixture_install_flow, file_, expect):
+def test_cylc_install_files(fixture_install_flow, file_, expect, version_info):
+    expect = expect.format(version_info=version_info)
     fpath = fixture_install_flow['fixture_provide_flow']['flowpath']
     assert (fpath / file_).read_text() == expect
 
@@ -149,7 +150,7 @@ def test_cylc_install_files(fixture_install_flow, file_, expect):
         ),
         (
             'opt/rose-suite-cylc-install.conf', (
-                '# This file records CLI Options.\n\n'
+                '# This file records CLI Options.{version_info}\n'
                 '!opts=b c d\n'
                 f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
                 f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
@@ -163,12 +164,14 @@ async def test_cylc_reinstall_files(
     mod_cylc_reinstall_cli,
     file_,
     expect,
+    version_info,
 ):
     """Run ``cylc reinstall``.
 
     By running in a fixture with modular scope we
     can run tests on different aspects of its output as separate tests.
     """
+    expect = expect.format(version_info=version_info)
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
     assert await mod_cylc_reinstall_cli(
         fixture_install_flow['id'],
@@ -190,7 +193,7 @@ async def test_cylc_reinstall_files(
         ),
         (
             'opt/rose-suite-cylc-install.conf', (
-                '# This file records CLI Options.\n\n'
+                '# This file records CLI Options.{version_info}\n'
                 '!opts=b c d\n'
                 f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
                 f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
@@ -204,6 +207,7 @@ async def test_cylc_reinstall_files2(
     mod_cylc_reinstall_cli,
     file_,
     expect,
+    version_info,
 ):
     """Run ``cylc reinstall``.
 
@@ -217,6 +221,7 @@ async def test_cylc_reinstall_files2(
     If a test fails using ``pytest --pdb then``
     ``fixture_install_flow['result'].stderr`` may help with debugging.
     """
+    expect = expect.format(version_info=version_info)
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
     (
         fixture_install_flow

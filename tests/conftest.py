@@ -49,8 +49,21 @@ from cylc.rose.stem import (
     rose_stem as _rose_stem,
 )
 
+from metomi.rose import __version__ as ROSE_VERSION
+from cylc.rose import __version__ as CYLC_ROSE_VERSION
 
 CYLC_RUN_DIR = Path(get_cylc_run_dir())
+VERSIONINFO = f"""
+# Installed with:
+#     * Cylc Rose: {CYLC_ROSE_VERSION}
+#     * Rose     : {ROSE_VERSION}
+#     * Cylc     : {CYLC_VERSION}
+"""
+
+
+@pytest.fixture
+def version_info():
+    return VERSIONINFO
 
 
 @pytest.fixture(scope='module')

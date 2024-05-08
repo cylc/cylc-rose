@@ -221,7 +221,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
     ]
 )
 def test_functional_record_cylc_install_options(
-    monkeypatch, tmp_path, opts, files, env_inserts
+    monkeypatch, tmp_path, opts, files, env_inserts, request
 ):
     """It works the way the proposal says it should.
     """
@@ -260,6 +260,15 @@ def test_functional_record_cylc_install_options(
                 loader.load(str(reference)),
                 no_ignore=False
             )
+
+    # Test comments dumped:
+    # Do this for just one case:
+    if request.node.callspec.id == 'opts0-files0-env_inserts0':
+        filetext = (testdir / 'opt/rose-suite-cylc-install.conf').read_text()
+        assert "Installed with" in filetext
+        assert "Cylc Rose: 1." in filetext
+        assert "Cylc     : 8." in filetext
+        assert "Rose     : 2." in filetext
 
 
 def test_functional_rose_database_dumped_correctly(tmp_path):
