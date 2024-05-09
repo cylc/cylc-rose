@@ -15,10 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Top level module providing entry point functions."""
 
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from cylc.rose.utilities import (
+    ROSE_SUITE_OPT_CONF_KEYS,
     copy_config_file,
     dump_rose_log,
     export_environment,
@@ -70,6 +72,14 @@ def post_install(srcdir: Path, rundir: str, opts: 'Values') -> bool:
     config_node = rose_fileinstall(_rundir, opts)
     if config_node:
         dump_rose_log(rundir=_rundir, node=config_node)
+
+    # Having dumped the config we clear rose options
+    # as they do not apply after this.
+    # see https://github.com/cylc/cylc-rose/pull/312
+    opts.rose_template_vars = []
+    opts.opt_conf_keys = []
+    opts.defines = []
+    os.unsetenv(ROSE_SUITE_OPT_CONF_KEYS)
 
     return True
 

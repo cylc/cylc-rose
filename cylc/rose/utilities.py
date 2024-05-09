@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from cylc.flow.option_parsers import Values
 
 
+ROSE_SUITE_OPT_CONF_KEYS = 'ROSE_SUITE_OPT_CONF_KEYS'
 SECTIONS = {'jinja2:suite.rc', 'empy:suite.rc', 'template variables'}
 SET_BY_CYLC = 'set by Cylc'
 ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING = (
@@ -275,7 +276,7 @@ def rose_config_tree_loader(
     opt_conf_keys = []
 
     # get optional config key set as environment variable:
-    opt_conf_keys_env = os.getenv("ROSE_SUITE_OPT_CONF_KEYS")
+    opt_conf_keys_env = os.getenv(ROSE_SUITE_OPT_CONF_KEYS)
     if opt_conf_keys_env:
         opt_conf_keys += shlex.split(opt_conf_keys_env)
 
@@ -615,8 +616,8 @@ def merge_opts(config, opt_conf_keys):
     """
     all_opt_conf_keys = []
     all_opt_conf_keys.append(config['opts'].value)
-    if "ROSE_SUITE_OPT_CONF_KEYS" in os.environ:
-        all_opt_conf_keys.append(os.environ["ROSE_SUITE_OPT_CONF_KEYS"])
+    if ROSE_SUITE_OPT_CONF_KEYS in os.environ:
+        all_opt_conf_keys.append(os.environ[ROSE_SUITE_OPT_CONF_KEYS])
     if opt_conf_keys and isinstance(opt_conf_keys, str):
         all_opt_conf_keys.append(opt_conf_keys)
     if opt_conf_keys and isinstance(opt_conf_keys, list):
