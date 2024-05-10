@@ -19,6 +19,7 @@
 """Interfaces for Cylc Platforms for use by rose apps."""
 
 from optparse import Values
+from pathlib import Path
 import sqlite3
 import subprocess
 from time import sleep
@@ -57,7 +58,12 @@ def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
         workflow_id,
         WorkflowFiles.FLOW_FILE_PROCESSED,
     )
-    config = WorkflowConfig(flow, flow_file, Values())
+
+    config = WorkflowConfig(
+        flow,
+        flow_file, Values(),
+        force_compat_mode=force_compat_mode(flow_file)
+    )
     # Get entire task spec to allow Cylc 7 platform from host guessing.
     task_spec = config.pcfg.get(['runtime', task])
     # check for subshell and evaluate
@@ -74,6 +80,15 @@ def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
             task_spec['remote']['host'])
     platform = get_platform(task_spec)
     return platform
+
+
+def force_compat_mode(flow_file):
+    """Check whether this is a Cylc 7 Back compatibility mode workflow:
+    https://github.com/cylc/cylc-rose/issues/319
+    """
+    return (
+        Path(flow_file).parent.parent.parent / WorkflowFiles.SUITE_RC
+    ).exists()
 
 
 def eval_subshell(platform):
