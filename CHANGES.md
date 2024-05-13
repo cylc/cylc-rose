@@ -14,6 +14,11 @@ ones in. -->
 set in ``rose-suite.conf`` to be used when parsing ``global.cylc``.
 
 
+## __cylc-rose-1.3.4 (<span actions:bind='release-date'>Released 2024-05-02</span>)__
+
+[#312](https://github.com/cylc/cylc-rose/pull/312) - Fixed an issue that could cause the cylc-rose CLI options (`-S`, `-D`, `-O`) to be applied incorrectly.
+
+
 ## __cylc-rose-1.3.3 (<span actions:bind='release-date'>Released 2024-04-05</span>)__
 
 ### Fixes
