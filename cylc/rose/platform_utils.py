@@ -19,15 +19,17 @@
 """Interfaces for Cylc Platforms for use by rose apps."""
 
 from optparse import Values
+from pathlib import Path
 import sqlite3
 import subprocess
 from time import sleep
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from cylc.flow.config import WorkflowConfig
 from cylc.flow.id_cli import parse_id
 from cylc.flow.pathutil import (
     get_workflow_run_config_log_dir,
+    get_workflow_run_dir,
     get_workflow_run_pub_db_path,
 )
 from cylc.flow.workflow_files import WorkflowFiles
@@ -57,7 +59,12 @@ def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
         workflow_id,
         WorkflowFiles.FLOW_FILE_PROCESSED,
     )
-    config = WorkflowConfig(flow, flow_file, Values())
+
+    config = WorkflowConfig(
+        flow,
+        flow_file, Values(),
+        force_compat_mode=get_compat_mode(get_workflow_run_dir(workflow_id))
+    )
     # Get entire task spec to allow Cylc 7 platform from host guessing.
     task_spec = config.pcfg.get(['runtime', task])
     # check for subshell and evaluate
@@ -74,6 +81,17 @@ def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
             task_spec['remote']['host'])
     platform = get_platform(task_spec)
     return platform
+
+
+def get_compat_mode(run_dir: Union[str, Path]) -> bool:
+    """Check whether this is a Cylc 7 Back compatibility mode workflow:
+
+    See https://github.com/cylc/cylc-rose/issues/319
+
+    Args:
+        run_dir: Cylc workflow run directory.
+    """
+    return (Path(run_dir) / WorkflowFiles.SUITE_RC).exists()
 
 
 def eval_subshell(platform):
