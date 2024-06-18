@@ -6,12 +6,17 @@ creating a new release entry be sure to copy & paste the span tag with the
 updated. Only the first match gets replaced, so it's fine to leave the old
 ones in. -->
 
-## __cylc-rose-1.4.0 (<span actions:bind='release-date'>Upcoming</span>)__
+## __cylc-rose-1.4.0 (<span actions:bind='release-date'>Released 2024-06-18</span>)__
 
 ### Features
 
 [#269](https://github.com/cylc/cylc-rose/pull/269) - Allow environment variables
 set in ``rose-suite.conf`` to be used when parsing ``global.cylc``.
+
+### Fixes
+
+[#319](https://github.com/cylc/cylc-rose/pull/319) - Prevent Cylc Rose
+from modifying Cylc's compatibility mode.
 
 
 ## __cylc-rose-1.3.4 (<span actions:bind='release-date'>Released 2024-05-02</span>)__

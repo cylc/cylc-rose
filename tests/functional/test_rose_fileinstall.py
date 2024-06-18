@@ -89,6 +89,6 @@ async def test_rose_fileinstall_error(tmp_path, cylc_install_cli):
     '''))
     with pytest.raises(
         PluginError,
-        match='file:bad=source=no-such-file: bad or missing value',
+        match='path does not exist or not accessible: no-such-file',
     ):
         await cylc_install_cli(tmp_path)
