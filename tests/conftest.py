@@ -26,6 +26,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
+from xdist import is_xdist_controller
 
 from cylc.flow import __version__ as CYLC_VERSION
 from cylc.flow.option_parsers import Options
@@ -376,12 +377,15 @@ def mod_test_dir(request, ses_test_dir):
     path = Path(ses_test_dir, request.module.__name__)
     path.mkdir(exist_ok=True)
     yield path
-    if _pytest_passed(request):
-        # test passed -> remove all files
-        rmtree(path, ignore_errors=False)
-    else:
-        # test failed -> remove the test dir if empty
-        _rm_if_empty(path)
+    # Only clean up if this is the xdist controller process:
+    if is_xdist_controller(request):
+        if _pytest_passed(request):
+            # test passed -> remove all files
+            rmtree(path, ignore_errors=False)
+
+        else:
+            # test failed -> remove the test dir if empty
+            _rm_if_empty(path)
 
 
 @pytest.fixture
@@ -390,12 +394,13 @@ def test_dir(request, mod_test_dir):
     path = Path(mod_test_dir, request.function.__name__)
     path.mkdir(parents=True, exist_ok=True)
     yield path
-    if _pytest_passed(request):
-        # test passed -> remove all files
-        rmtree(path, ignore_errors=False)
-    else:
-        # test failed -> remove the test dir if empty
-        _rm_if_empty(path)
+    if is_xdist_controller(request):
+        if _pytest_passed(request):
+            # test passed -> remove all files
+            rmtree(path, ignore_errors=False)
+        else:
+            # test failed -> remove the test dir if empty
+            _rm_if_empty(path)
 
 
 @pytest.fixture

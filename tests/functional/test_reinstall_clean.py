@@ -35,6 +35,7 @@ from uuid import uuid4
 from cylc.flow.hostuserutil import get_host
 from cylc.flow.pathutil import get_workflow_run_dir
 import pytest
+from xdist import is_xdist_controller
 
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING as ROHIOS,
@@ -70,7 +71,10 @@ def fixture_provide_flow(tmp_path_factory, request):
         'flowpath': flowpath,
         'srcpath': srcpath
     }
-    if not request.session.testsfailed:
+    if (
+        is_xdist_controller(request)
+        and not request.session.testsfailed
+    ):
         shutil.rmtree(srcpath)
         shutil.rmtree(flowpath)
 
