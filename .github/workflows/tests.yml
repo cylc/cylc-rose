@@ -82,7 +82,7 @@ jobs:
 
       - name: Test
         run: |
-          pytest tests/
+          pytest -n 5 tests/
 
       - name: Doctest
         run: |
