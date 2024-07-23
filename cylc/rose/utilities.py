@@ -876,7 +876,7 @@ def export_environment(environment: Dict[str, str]) -> None:
     # can be used by Jinja2 in the global config.
     # https://github.com/cylc/cylc-rose/issues/237
     if environment:
-        glbl_cfg().load()
+        glbl_cfg(reload=True)
 
 
 def record_cylc_install_options(
