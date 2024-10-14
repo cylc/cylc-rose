@@ -883,6 +883,7 @@ def record_cylc_install_options(
     srcdir: Path,
     rundir: Path,
     opts: 'Values',
+    modify: bool = True,
 ) -> Tuple[ConfigNode, ConfigNode]:
     """Create/modify files recording Cylc install config options.
 
@@ -909,6 +910,9 @@ def record_cylc_install_options(
                 Equivalent of ``rose suite-run --define KEY=VAL``
             - rose_template_vars (list of str):
                 Equivalent of ``rose suite-run --define-suite KEY=VAL``
+        modify:
+            If ``True``, the modified rose-suite-cylc-install.conf will be
+            written. If ``False``, this will only read files.
 
     Returns:
         Tuple - (cli_config, rose_suite_conf)
@@ -957,8 +961,9 @@ def record_cylc_install_options(
                 ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
             ]
 
-    cli_config.comments = [' This file records CLI Options.']
-    dumper.dump(cli_config, str(conf_filepath))
+    if modify:
+        cli_config.comments = [' This file records CLI Options.']
+        dumper.dump(cli_config, str(conf_filepath))
 
     # Merge the opts section of the rose-suite.conf with those set by CLI:
     rose_conf_filepath.touch()
@@ -968,7 +973,8 @@ def record_cylc_install_options(
     )
     identify_templating_section(rose_suite_conf)
 
-    dumper(rose_suite_conf, rose_conf_filepath)
+    if modify:
+        dumper(rose_suite_conf, rose_conf_filepath)
 
     return cli_config, rose_suite_conf
 
@@ -999,3 +1005,61 @@ def copy_config_file(
     shutil.copy2(srcdir_rose_conf, rundir_rose_conf)
 
     return True
+
+
+def retrieve_installed_cli_opts(srcdir, opts):
+    """Merge options from previous install, this install and the CLI.
+
+    Allows validation of merged config for pre-configure where the
+    --against-source argument is used in a Cylc script.
+    """
+
+    # if opts.against_source is a path then we are validating a source
+    # directory against installed options
+    rundir = opts.against_source
+
+    # If the calling script doesn't have this option (Everything except
+    # Cylc VR) then this defaults to false. If it's true we skip all
+    # following logic:
+    if not getattr(opts, 'clear_rose_install_opts', False):
+        opts.clear_rose_install_opts = False
+    else:
+        return opts
+
+    # NOTE: we only need to load the rose-suite-cylc-install for this
+    cli_config, _ = record_cylc_install_options(
+        srcdir, rundir, opts, modify=False
+    )
+
+    # Get opt_conf_keys stored in rose-suite-cylc-install.conf
+    opt_conf_keys = cli_config.value.pop('opts').value.split(' ')
+    if any(opt_conf_keys):
+        opts.opt_conf_keys = opt_conf_keys
+
+    # Get --suite-defines/-S
+    # Work out whether user has used "template variables", "jinja2:suite.rc"
+    # or "empy:suite.rc" (There is an assumption that they aren't mixing
+    # them that is not guarded against):
+    for section in SECTIONS:
+        if cli_config.value.get(section, False):
+            template_variables = cli_config.value.pop(section)
+            break
+
+    if any(template_variables):
+        opts.rose_template_vars = [
+            f'{k}={v.value}'
+            for k, v in template_variables.value.items()
+            if v.state == ''
+        ]
+
+    # Get all other keys (-D):
+    new_defines = []
+    for l1_key, l1_item in cli_config.value.items():
+        if isinstance(l1_item.value, Dict):
+            for l2_key, l2_item in l1_item.value.items():
+                new_defines.append(f'[{l1_key}]{l2_key}={l2_item.value}')
+        else:
+            new_defines.append(f'{l1_key}={l1_item.value}')
+    opts.defines = new_defines
+
+    return opts

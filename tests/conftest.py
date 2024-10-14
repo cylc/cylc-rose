@@ -16,16 +16,18 @@
 
 import asyncio
 from functools import partial
+import importlib
 from io import StringIO
 from pathlib import Path
 from shlex import split
-from shutil import rmtree
+from shutil import rmtree, copytree
 from subprocess import run
 from time import sleep
 from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
+from pytest import UsageError
 
 from cylc.flow import __version__ as CYLC_VERSION
 from cylc.flow.option_parsers import Options
@@ -169,15 +171,20 @@ def _pytest_passed(request: pytest.FixtureRequest) -> bool:
     ))
 
 
-def _cylc_validate_cli(capsys, caplog):
-    """Access the validate CLI"""
-    async def _inner(srcpath, args=None):
-        parser = validate_gop()
+def _cylc_inspection_cli(capsys, caplog, script, gop):
+    """Access the CLI for cylc scripts inspecting configurations
+    """
+    async def _inner(srcpath, args=None, n_args=3):
+        parser = gop()
         options = Options(parser, args)()
         output = SimpleNamespace()
 
         try:
-            await cylc_validate(parser, options, str(srcpath))
+            if n_args == 3:
+                await script(parser, options, str(srcpath))
+            if n_args == 2:
+                # Don't include the parser:
+                await script(options, str(srcpath))
             output.ret = 0
             output.exc = ''
         except Exception as exc:
@@ -270,12 +277,76 @@ def mod_cylc_reinstall_cli(mod_test_dir):
 
 @pytest.fixture
 def cylc_validate_cli(capsys, caplog):
-    return _cylc_validate_cli(capsys, caplog)
+    return _cylc_inspection_cli(capsys, caplog, cylc_validate, validate_gop)
 
 
 @pytest.fixture(scope='module')
 def mod_cylc_validate_cli(mod_capsys, mod_caplog):
-    return _cylc_validate_cli(mod_capsys, mod_caplog)
+    return _cylc_inspection_cli(
+        mod_capsys, mod_caplog, cylc_validate, validate_gop
+    )
+
+
+@pytest.fixture
+async def cylc_inspect_scripts(capsys, caplog):
+    """Run all the common Cylc Test scripts likely to call pre-configure.
+
+    * config
+    * graph
+    * list
+    * validate
+    * view
+
+    n.b.
+    * Function adds arg ``--reference`` to supress image being displayed.
+    """
+
+    async def _inner(wid, args):
+        results = {}
+
+        # Handle scripts taking a parser or just the output of the parser:
+        for script_name, n_args in {
+            'config': 3,
+            'list': 3,
+            'graph': 3,
+            'view': 2,
+            'validate': 3,
+        }.items():
+
+            # Import the script modules:
+            script_module = importlib.import_module(
+                f'cylc.flow.scripts.{script_name}'
+            )
+
+            # Deal with inconsistent API from Cylc:
+            if hasattr(script_module, '_main'):
+                script = script_module._main
+            elif hasattr(script_module, 'run'):
+                script = script_module.run
+            else:
+                raise UsageError(
+                    f'Script "{script}\'s" module does not contain a '
+                    '"_main" or "run" function'
+                )
+
+            # Supress cylc-graph giving a graphical output:
+            if script_name == 'graph':
+                args['reference'] = True
+
+            results[script_name] = await _cylc_inspection_cli(
+                capsys,
+                caplog,
+                script,
+                script_module.get_option_parser,
+            )(wid, args, n_args=n_args)
+
+        # Check outputs
+        assert all(output.ret == 0 for output in results.values())
+
+        # Return results for more checking if required:
+        return results
+
+    return _inner
 
 
 @pytest.fixture
@@ -457,3 +528,26 @@ def timeout_func(func, message, timeout=5):
         sleep(1)
     else:
         raise TimeoutError(message)
+
+
+@pytest.fixture
+def setup_workflow_source_dir(tmp_path):
+    """Copy a workflow from the codebase to a temp-file-path
+    and provide that path for use in tests
+    """
+
+    def _inner(code_src):
+        nonlocal tmp_path
+        # Set up paths for test:
+        srcpath = tmp_path / 'src'
+        srcpath.mkdir()
+
+        # the files to install are stored in a directory alongside this
+        # test file:
+        datapath = Path(__file__).parent / code_src
+        copytree(datapath, srcpath, dirs_exist_ok=True)
+
+        # Create source workflow:
+        return srcpath, datapath
+
+    yield _inner

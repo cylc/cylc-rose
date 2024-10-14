@@ -6,6 +6,11 @@ creating a new release entry be sure to copy & paste the span tag with the
 updated. Only the first match gets replaced, so it's fine to leave the old
 ones in. -->
 
+## __cylc-rose-1.4.2 (<span actions:bind='release-date'>Upcoming</span>)__
+
+[#345](https://github.com/cylc/cylc-rose/pull/345) - Merge new CLI
+options with earlier ones when validating against source.
+
 ## __cylc-rose-1.4.1 (<span actions:bind='release-date'>Released 2024-07-23</span>)__
 
 No significant change - Updated to use feature added at Cylc 8.3.3.
