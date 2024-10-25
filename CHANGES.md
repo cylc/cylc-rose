@@ -8,8 +8,8 @@ ones in. -->
 
 ## __cylc-rose-1.4.2 (<span actions:bind='release-date'>Upcoming</span>)__
 
-[#345](https://github.com/cylc/cylc-rose/pull/345) - Merge new CLI
-options with earlier ones when validating against source.
+[#345](https://github.com/cylc/cylc-rose/pull/345) - Fix an issue
+where `cylc vr` could report erroneous validation failures.
 
 ## __cylc-rose-1.4.1 (<span actions:bind='release-date'>Released 2024-07-23</span>)__
 

@@ -1013,7 +1013,6 @@ def retrieve_installed_cli_opts(srcdir, opts):
     Allows validation of merged config for pre-configure where the
     --against-source argument is used in a Cylc script.
     """
-
     # if opts.against_source is a path then we are validating a source
     # directory against installed options
     rundir = opts.against_source
@@ -1040,6 +1039,7 @@ def retrieve_installed_cli_opts(srcdir, opts):
     # Work out whether user has used "template variables", "jinja2:suite.rc"
     # or "empy:suite.rc" (There is an assumption that they aren't mixing
     # them that is not guarded against):
+    template_variables = []
     for section in SECTIONS:
         if cli_config.value.get(section, False):
             template_variables = cli_config.value.pop(section)
