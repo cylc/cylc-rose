@@ -24,9 +24,11 @@ from shlex import split
 from subprocess import run
 from types import SimpleNamespace
 
+from packaging.version import Version
 import pytest
 from pytest import param
 
+from cylc.flow import __version__ as cylc_version
 from cylc.rose.utilities import NotARoseSuiteException, load_rose_config
 
 
@@ -240,18 +242,35 @@ async def test_validate_against_source(
         "opt_conf_keys": ['choc'],
     }
 
-    # Check that we can validate the source dir with options:
-    await cylc_inspect_scripts(src, opts)
+    if Version(cylc_version) > Version('8.3.5'):
+        # Check that we can validate the source dir with options:
+        await cylc_inspect_scripts(src, opts)
 
-    # Install our workflow with options.
-    wid, _ = await cylc_install_cli(src, opts=opts)
+        # Install our workflow with options.
+        wid, _ = await cylc_install_cli(src, opts=opts)
 
-    # Check all scripts:
-    await cylc_inspect_scripts(wid, {"against_source": True})
+        # Check all scripts:
+        await cylc_inspect_scripts(wid, {"against_source": True})
 
-    # Reinstall fails if we clear rose install opts:
-    clear_install_validate = await cylc_validate_cli(
-        wid, {"against_source": True, 'clear_rose_install_opts': True}
-    )
-    assert clear_install_validate.ret != 0
-    assert 'Jinja2 Assertion Error' in str(clear_install_validate.exc.args[0])
+        # Reinstall fails if we clear rose install opts:
+        clear_install_validate = await cylc_validate_cli(
+            wid, {"against_source": True, 'clear_rose_install_opts': True}
+        )
+        assert clear_install_validate.ret != 0
+        assert 'Jinja2 Assertion Error' in str(
+            clear_install_validate.exc.args[0]
+        )
+
+    else:
+        # We are warned that this feature won't work:
+        wid, _ = await cylc_install_cli(src, opts=opts)
+        results = await cylc_inspect_scripts(
+            wid, {"against_source": True}, xfail=True
+        )
+        for _, result in results.items():
+            last_entry = result.logging.split('\n')[-1]
+            assert last_entry == (
+                'Validate --against-source will not check Rose Options'
+                ' until after installation. (Upgrade to Cylc ≥ 8.3.6 for'
+                ' this feature).'
+            )
