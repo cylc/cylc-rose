@@ -1039,27 +1039,26 @@ def retrieve_installed_cli_opts(srcdir, opts):
     # Work out whether user has used "template variables", "jinja2:suite.rc"
     # or "empy:suite.rc" (There is an assumption that they aren't mixing
     # them that is not guarded against):
-    template_variables = []
     for section in SECTIONS:
         if cli_config.value.get(section, False):
             template_variables = cli_config.value.pop(section)
             break
-
+    # Create new -S list.
     if any(template_variables):
         opts.rose_template_vars = [
-            f'{k}={v.value}'
-            for k, v in template_variables.value.items()
-            if v.state == ''
+            f'{i[0][1]}={i[1].value}' for i in template_variables.walk()
         ]
 
     # Get all other keys (-D):
     new_defines = []
-    for l1_key, l1_item in cli_config.value.items():
-        if isinstance(l1_item.value, Dict):
-            for l2_key, l2_item in l1_item.value.items():
-                new_defines.append(f'[{l1_key}]{l2_key}={l2_item.value}')
-        else:
-            new_defines.append(f'{l1_key}={l1_item.value}')
+    for keys, value in cli_config.walk():
+        # Filter out section headings:
+        if not isinstance(value.value, dict):
+            section, key = keys
+            # Don't include section for top level items:
+            section = f"[{section}]" if section else ''
+            new_defines.append(f'{section}{key}={value.value}')
+
     opts.defines = new_defines
 
     return opts

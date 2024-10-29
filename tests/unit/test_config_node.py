@@ -403,16 +403,16 @@ def test_retrieve_installed_cli_opts(tmp_path, tv_string):
         o for o in opts.rose_template_vars if 'ROSE_ORIG_HOST' not in o
     ]
     assert rose_template_vars == [
-        'TV_LEAVE=true',
-        'TV_OVERRIDE_D=True',
         'TV_OVERRIDE_S=True',
+        'TV_OVERRIDE_D=True',
+        'TV_LEAVE=true',
     ]
 
     defines = [d for d in opts.defines if 'ROSE_ORIG_HOST' not in d]
     assert defines == [
-        'TOP_LEVEL=true',
-        '[env]ENV_LEAVE=true',
         '[env]ENV_OVERRIDE=true',
+        '[env]ENV_LEAVE=true',
+        'TOP_LEVEL=true',
     ]
 
 
