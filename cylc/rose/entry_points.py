@@ -19,7 +19,6 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from cylc.flow import LOG
 from cylc.rose.utilities import (
     ROSE_SUITE_OPT_CONF_KEYS,
     copy_config_file,
@@ -49,14 +48,6 @@ def pre_configure(srcdir: Path, opts: 'Values') -> dict:
         and isinstance(opts.against_source, Path)
     ):
         opts = retrieve_installed_cli_opts(srcdir, opts)
-    elif (
-        getattr(opts, 'against_source', False)
-        and not isinstance(opts.against_source, Path)
-    ):
-        LOG.warning(
-            'Validate --against-source will not check Rose Options until'
-            ' after installation. (Upgrade to Cylc ≥ 8.3.6 for this feature).'
-        )
 
     # load the source Rose config
     config_tree = load_rose_config(Path(srcdir), opts=opts)

@@ -301,7 +301,7 @@ async def cylc_inspect_scripts(capsys, caplog):
     * Function adds arg ``--reference`` to supress image being displayed.
     """
 
-    async def _inner(wid, args, xfail=False):
+    async def _inner(wid, args):
         results = {}
 
         # Handle scripts taking a parser or just the output of the parser:
@@ -341,8 +341,7 @@ async def cylc_inspect_scripts(capsys, caplog):
             )(wid, args, n_args=n_args)
 
         # Check outputs
-        if not xfail:
-            assert all(output.ret == 0 for output in results.values())
+        assert all(output.ret == 0 for output in results.values())
 
         # Return results for more checking if required:
         return results
