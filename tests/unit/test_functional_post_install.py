@@ -48,7 +48,7 @@ def assert_rose_conf_full_equal(left, right, no_ignore=True):
     for keys_1, node_1 in left.walk(no_ignore=no_ignore):
         node_2 = right.get(keys_1, no_ignore=no_ignore)
         assert not (  # noqa: E721
-            type(node_1) != type(node_2) or
+            type(node_1) is not type(node_2) or
             (
                 not isinstance(node_1.value, dict) and
                 node_1.value != node_2.value
@@ -120,7 +120,6 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                 ),
                 'ref/rose-suite.conf': '!opts=foo (cylc-install)',
                 'ref/opt/rose-suite-foo.conf': '',
-                'ref/rose-suite.conf': '!opts=foo (cylc-install)'
             },
             # ENVIRONMENT VARS
             {},
@@ -155,7 +154,6 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                 'ref/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-bar.conf': '',
                 'ref/opt/rose-suite-baz.conf': '',
-                'ref/rose-suite.conf': '!opts=foo bar baz (cylc-install)'
             },
             # ENVIRONMENT VARS
             {},

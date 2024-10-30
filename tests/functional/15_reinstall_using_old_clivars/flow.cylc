@@ -1,0 +1,11 @@
+#!jinja2
+{{ assert(SUITE is defined, "1.1 Test --rose-template-variable") }}
+{{ assert(DEFINE is defined, "1.2 Test --define") }}
+{{ assert(VAL_FROM_OPT is defined, "1.3 Test --opt-conf-keys") }}
+
+# Just enough Cylc to validate:
+[scheduler]
+    allow implicit tasks = True
+[scheduling]
+    [[graph]]
+        R1 = foo
