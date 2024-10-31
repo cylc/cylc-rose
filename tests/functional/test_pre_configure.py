@@ -19,7 +19,6 @@
 from itertools import product
 import os
 from pathlib import Path
-import re
 from shlex import split
 from subprocess import run
 from types import SimpleNamespace
@@ -35,12 +34,15 @@ from cylc.rose.utilities import NotARoseSuiteException, load_rose_config
     [
         param(
             '07_cli_override',
-            'CLI_VAR=="Wobble", "failed 1.1"',
+            'failed 1.1\n(add --verbose for more context)',
             id='template variable not set'
         ),
         param(
             '08_template_engine_conflict',
-            '.*empy.*#!jinja2.*',
+            (
+                'A plugin set the templating engine to empy which does'
+                ' not match #!jinja2 set in flow.cylc.'
+            ),
             id='template engine conflict'
         )
     ]
@@ -50,7 +52,7 @@ async def test_validate_fail(srcdir, expect, cylc_validate_cli):
     validate = await cylc_validate_cli(srcdir)
     assert validate.ret == 1
     if expect:
-        assert re.findall(expect, str(validate.exc))
+        assert expect == str(validate.exc)
 
 
 @pytest.mark.parametrize(
