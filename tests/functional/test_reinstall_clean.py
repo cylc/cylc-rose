@@ -105,7 +105,7 @@ async def fixture_install_flow(
     [
         (
             'opt/rose-suite-cylc-install.conf', (
-                '# This file records CLI Options.\n\n'
+                '# This file records CLI Options.{version_info}\n'
                 '!opts=bar\n\n'
                 '[env]\n'
                 f'FOO=1\n#{ROHIOS}\n'
@@ -115,7 +115,8 @@ async def fixture_install_flow(
         ),
     ]
 )
-def test_cylc_install_files(fixture_install_flow, file_, expect):
+def test_cylc_install_files(fixture_install_flow, file_, expect, version_info):
+    expect = expect.format(version_info=version_info)
     fpath = fixture_install_flow['fixture_provide_flow']['flowpath']
     assert (fpath / file_).read_text() == expect
 
@@ -125,7 +126,7 @@ def test_cylc_install_files(fixture_install_flow, file_, expect):
     [
         (
             'opt/rose-suite-cylc-install.conf', (
-                '# This file records CLI Options.\n\n'
+                '# This file records CLI Options.{version_info}\n'
                 '!opts=baz\n\n'
                 '[env]\n'
                 f'BAR=2\n#{ROHIOS}\n'
@@ -141,6 +142,7 @@ async def test_cylc_reinstall_files(
     mod_cylc_reinstall_cli,
     file_,
     expect,
+    version_info,
 ):
     """Run ``cylc reinstall --clear-rose-install-options``.
 
@@ -150,6 +152,7 @@ async def test_cylc_reinstall_files(
     By running in a fixture with modular scope we
     can run tests on different aspects of its output as separate tests.
     """
+    expect = expect.format(version_info=version_info)
     monkeymodule.delenv('ROSE_SUITE_OPT_CONF_KEYS', raising=False)
     assert await mod_cylc_reinstall_cli(
         (
