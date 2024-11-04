@@ -513,9 +513,12 @@ def run_ok():
     """Run a bash script.
     Fail if it fails and return its output.
     """
+
     def _inner(script: str):
         result = run(split(script), capture_output=True)
-        assert result.returncode == 0, f'{script} failed: {result.stderr}'
+        assert (
+            result.returncode == 0
+        ), f'{script} failed: {result.stderr.decode}'
         return result
     return _inner
 
