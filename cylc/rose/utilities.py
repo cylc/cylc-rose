@@ -1028,13 +1028,13 @@ def retrieve_installed_cli_opts(srcdir, opts):
         srcdir, rundir, opts, modify=False
     )
 
-    # # Set ROSE_ORIG_HOST to ignored, and choose not to ignore it
-    # # if this is a validation against source:
-    # if rundir:
-    #     no_ignore = False
-    #     for keys, node in cli_config.walk():
-    #         if keys[-1] == 'ROSE_ORIG_HOST':
-    #             node.state = cli_config.STATE_SYST_IGNORED
+    # Set ROSE_ORIG_HOST to ignored, and choose not to ignore it
+    # if this is a validation against source:
+    if rundir:
+        no_ignore = True
+        for keys, node in cli_config.walk():
+            if keys[-1] == 'ROSE_ORIG_HOST':
+                node.state = cli_config.STATE_SYST_IGNORED
 
     # Get opt_conf_keys stored in rose-suite-cylc-install.conf
     opt_conf_keys = cli_config.value.pop('opts').value.split(' ')
@@ -1053,12 +1053,12 @@ def retrieve_installed_cli_opts(srcdir, opts):
     if any(template_variables):
         opts.rose_template_vars = [
             f'{keys[1]}={val.value}'
-            for keys, val in template_variables.walk()
+            for keys, val in template_variables.walk(no_ignore=no_ignore)
         ]
 
     # Get all other keys (-D):
     new_defines = []
-    for keys, value in cli_config.walk():
+    for keys, value in cli_config.walk(no_ignore=no_ignore):
         # Filter out section headings:
         if not isinstance(value.value, dict):
             section, key = keys
