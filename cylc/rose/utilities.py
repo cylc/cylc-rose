@@ -139,7 +139,7 @@ def process_config(
                 user_var = config_node[section].value[var_name].value
                 LOG.warning(
                     f'[{section}]{var_name}={user_var}'
-                    f' will be ignored: {var_name} will be: {replace_with}'
+                    f' will be ignored. {var_name} will be: {replace_with}'
                 )
 
             # Handle replacement of stored variable if appropriate:
