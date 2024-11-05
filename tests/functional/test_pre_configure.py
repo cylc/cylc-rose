@@ -27,6 +27,7 @@ from types import SimpleNamespace
 import pytest
 from pytest import param
 
+from cylc.rose.entry_points import pre_configure
 from cylc.rose.utilities import NotARoseSuiteException, load_rose_config
 
 
@@ -255,3 +256,26 @@ async def test_validate_against_source(
     )
     assert clear_install_validate.ret != 0
     assert 'Jinja2 Assertion Error' in str(clear_install_validate.exc.args[0])
+
+
+def test_invalid_cli_opts(tmp_path, caplog):
+    """Ensure that CLI options which won't be used because
+    they are variables set by Rose raise a warning."""
+    (tmp_path / 'flow.cylc').touch()
+    (tmp_path / 'rose-suite.conf').touch()
+
+    opts = SimpleNamespace(
+        rose_template_vars=['ROSE_ORIG_HOST=42'],
+        opt_conf_keys=[],
+        defines=[],
+        against_source=tmp_path,
+    )
+
+    pre_configure(tmp_path, opts)
+    # Assert we have the warning that we need:
+    assert (
+        "ROSE_ORIG_HOST=42 from command line args will be ignored"
+        in caplog.messages[0]
+    )
+    # Assert we haven't got any unwanted dupicate warnings:
+    assert len(caplog.messages) == 1

@@ -1030,6 +1030,7 @@ def retrieve_installed_cli_opts(srcdir, opts):
 
     # Set ROSE_ORIG_HOST to ignored, and choose not to ignore it
     # if this is a validation against source:
+    no_ignore = False
     if rundir:
         no_ignore = True
         for keys, node in cli_config.walk():
@@ -1086,7 +1087,7 @@ def sanitize_opts(opts):
     for (section, item), (var_name, replace) in itertools.product(
         options, STANDARD_VARS
     ):
-        if re.match(rf'{var_name}=', item):
+        if re.match(rf'.*{var_name}=', item):
             LOG.warning(
                 f'{section}:{item} from command line args'
                 f' will be ignored: {var_name} will be: {replace}'
