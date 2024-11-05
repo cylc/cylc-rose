@@ -29,6 +29,7 @@ from cylc.rose.utilities import (
     record_cylc_install_options,
     retrieve_installed_cli_opts,
     rose_config_exists,
+    sanitize_opts,
 )
 
 if TYPE_CHECKING:
@@ -40,6 +41,8 @@ def pre_configure(srcdir: Path, opts: 'Values') -> dict:
     if not rose_config_exists(srcdir):
         # nothing to do here
         return {}
+
+    opts = sanitize_opts(opts)
 
     # If we are validating against source, load saved CLI options
     # from previous install, as saved in the rose-suite-cylc-install.conf

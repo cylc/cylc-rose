@@ -1,3 +1,4 @@
+
 # THIS FILE IS PART OF THE ROSE-CYLC PLUGIN FOR THE CYLC WORKFLOW ENGINE.
 # Copyright (C) NIWA & British Crown (Met Office) & Contributors.
 #
@@ -18,6 +19,7 @@ WRT to deletion of Rose Options at the end of the post install plugin.
 https://github.com/cylc/cylc-rose/pull/312
 """
 
+
 from pathlib import Path
 from textwrap import dedent
 
@@ -29,7 +31,7 @@ async def test_reinstall_overrides(
     file_poll,
     tmp_path,
     purge_workflow,
-    run_ok,
+    run_ok
 ):
     """When reinstalling and reloading the new installation are picked up.
     > cylc install this -S 'var=CLIinstall'
@@ -38,43 +40,37 @@ async def test_reinstall_overrides(
     > cylc play this --pause
     See https://github.com/cylc/cylc-flow/issues/5968
     """
-    (tmp_path / 'flow.cylc').write_text(
-        dedent("""        #!jinja2
+    (tmp_path / 'flow.cylc').write_text(dedent("""        #!jinja2
         [scheduling]
             [[graph]]
                R1 = foo
         [runtime]
             [[foo]]
                 script = cylc message -- {{var}}
-        """)
-    )
+        """))
     (tmp_path / 'rose-suite.conf').write_text(
-        '[template variables]\nvar="rose-suite.conf"'
-    )
+        '[template variables]\nvar="rose-suite.conf"')
 
     # Install workflow.
     wid, _ = await cylc_install_cli(
         tmp_path,
         workflow_name=workflow_name,
-        opts={'rose_template_vars': ['var="CLIinstall"']},
-    )
+        opts={'rose_template_vars': ['var="CLIinstall"']})
 
     # Play workflow
     run_ok(f'cylc play --pause {wid}')
-    run_dir = Path.home() / 'cylc-run' / wid
-    config_log = run_dir / 'log/scheduler/01-start-01.log'
-    file_poll(config_log)
 
     # Reinstall the workflow:
     await cylc_reinstall_cli(
-        wid, {'rose_template_vars': ['var="CLIreinstall"']}
-    )
+        wid,
+        {'rose_template_vars': ['var="CLIreinstall"']})
 
     # Reload the workflow:
     run_ok(f'cylc reload {wid}')
 
     # The config being run has been modified:
-    config_log = run_dir / 'log/config/02-reload-01.cylc'
+    run_dir = Path.home() / 'cylc-run' / wid
+    config_log = (run_dir / 'log/config/02-reload-01.cylc')
     file_poll(config_log)
     assert 'cylc message -- CLIreinstall' in config_log.read_text()
 

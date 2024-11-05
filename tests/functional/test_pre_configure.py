@@ -255,9 +255,3 @@ async def test_validate_against_source(
     )
     assert clear_install_validate.ret != 0
     assert 'Jinja2 Assertion Error' in str(clear_install_validate.exc.args[0])
-
-    # Rose Orig host ignored:
-    assert all(
-        "ROSE_ORIG_HOST" not in i
-        for i in clear_install_validate.logging.split('\n')
-    )

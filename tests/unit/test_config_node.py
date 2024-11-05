@@ -295,7 +295,7 @@ def test_ROSE_ORIG_HOST_replacement_behaviour(
     if ROSE_ORIG_HOST_overridden is True:
         node = node_with_ROSE_ORIG_HOST()
         log_str = (
-            '[env]ROSE_ORIG_HOST=IMPLAUSIBLE_HOST_NAME from rose-suite.conf'
+            '[env]ROSE_ORIG_HOST=IMPLAUSIBLE_HOST_NAME'
             ' will be ignored'
         )
         assert log_str in caplog.records[0].message

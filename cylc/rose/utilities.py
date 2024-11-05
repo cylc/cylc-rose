@@ -55,6 +55,11 @@ ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING = (
 )
 MESSAGE = 'message'
 ALL_MODES = 'all modes'
+STANDARD_VARS = [
+    ('ROSE_ORIG_HOST', get_host()),
+    ('ROSE_VERSION', ROSE_VERSION),
+    ('CYLC_VERSION', SET_BY_CYLC)
+]
 
 
 class NotARoseSuiteException(Exception):
@@ -119,9 +124,6 @@ def process_config(
     if templating not in config_node.value:
         config_node.set([templating])
 
-    # Get Rose Orig host:
-    rose_orig_host = get_host()
-
     # For each section process variables and add standard variables.
     for section in ['env', templating]:
 
@@ -131,17 +133,13 @@ def process_config(
         # ROSE_ORIG_HOST - If it's the config, replace it, unless it has a
         # comment marking it as having been saved by ``cylc install``.
         # In all cases warn users if the value in their config is not used.
-        for var_name, replace_with in [
-            ('ROSE_ORIG_HOST', rose_orig_host),
-            ('ROSE_VERSION', ROSE_VERSION),
-            ('CYLC_VERSION', SET_BY_CYLC)
-        ]:
+        for var_name, replace_with in STANDARD_VARS:
             # Warn if we're we're going to override a variable:
             if override_this_variable(config_node, section, var_name):
                 user_var = config_node[section].value[var_name].value
                 LOG.warning(
-                    f'[{section}]{var_name}={user_var} from rose-suite.conf '
-                    f'will be ignored: {var_name} will be: {replace_with}'
+                    f'[{section}]{var_name}={user_var}'
+                    f' will be ignored: {var_name} will be: {replace_with}'
                 )
 
             # Handle replacement of stored variable if appropriate:
@@ -1030,10 +1028,13 @@ def retrieve_installed_cli_opts(srcdir, opts):
         srcdir, rundir, opts, modify=False
     )
 
-    # Set ROSE_ORIG_HOSTS to ignored:
-    for keys, node in cli_config.walk():
-        if keys[-1] == 'ROSE_ORIG_HOST':
-            node.state = cli_config.STATE_SYST_IGNORED
+    # # Set ROSE_ORIG_HOST to ignored, and choose not to ignore it
+    # # if this is a validation against source:
+    # if rundir:
+    #     no_ignore = False
+    #     for keys, node in cli_config.walk():
+    #         if keys[-1] == 'ROSE_ORIG_HOST':
+    #             node.state = cli_config.STATE_SYST_IGNORED
 
     # Get opt_conf_keys stored in rose-suite-cylc-install.conf
     opt_conf_keys = cli_config.value.pop('opts').value.split(' ')
@@ -1052,12 +1053,12 @@ def retrieve_installed_cli_opts(srcdir, opts):
     if any(template_variables):
         opts.rose_template_vars = [
             f'{keys[1]}={val.value}'
-            for keys, val in template_variables.walk(no_ignore=True)
+            for keys, val in template_variables.walk()
         ]
 
     # Get all other keys (-D):
     new_defines = []
-    for keys, value in cli_config.walk(no_ignore=True):
+    for keys, value in cli_config.walk():
         # Filter out section headings:
         if not isinstance(value.value, dict):
             section, key = keys
@@ -1066,4 +1067,29 @@ def retrieve_installed_cli_opts(srcdir, opts):
             new_defines.append(f'{section}{key}={value.value}')
 
     opts.defines = new_defines
+    return opts
+
+
+def sanitize_opts(opts):
+    """Warn if standard variables which will be overridden
+    have been added to CLI opts, and remove them.
+
+    n.b. This doesn't remove the need to check the input rose-suite.conf
+    for these variables.
+    """
+    options = []
+    for section in ['rose_template_vars', 'defines']:
+        if section in opts.__dict__ and opts.__dict__[section]:
+            for item in opts.__dict__[section]:
+                options.append((section, item))
+
+    for (section, item), (var_name, replace) in itertools.product(
+        options, STANDARD_VARS
+    ):
+        if re.match(rf'{var_name}=', item):
+            LOG.warning(
+                f'{section}:{item} from command line args'
+                f' will be ignored: {var_name} will be: {replace}'
+            )
+            opts.__dict__[section].remove(item)
     return opts
