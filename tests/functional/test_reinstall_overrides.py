@@ -58,7 +58,7 @@ async def test_reinstall_overrides(
         opts={'rose_template_vars': ['var="CLIinstall"']})
 
     # Play workflow
-    run_ok(f'cylc play --pause {wid}')
+    run_ok(f'cylc play --pause {wid} --host localhost')
 
     # Reinstall the workflow:
     await cylc_reinstall_cli(
