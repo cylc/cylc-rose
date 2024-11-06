@@ -16,6 +16,7 @@
 
 """Cylc support for reading and interpreting ``rose-suite.conf`` files."""
 
+from contextlib import suppress
 import itertools
 import os
 from pathlib import Path
@@ -1038,7 +1039,7 @@ def retrieve_installed_cli_opts(srcdir, opts):
                 node.state = cli_config.STATE_SYST_IGNORED
 
     # Get opt_conf_keys stored in rose-suite-cylc-install.conf
-    opt_conf_keys = cli_config.value.pop('opts').value.split(' ')
+    opt_conf_keys = cli_config.value.pop('opts').value.split()
     if any(opt_conf_keys):
         opts.opt_conf_keys = opt_conf_keys
 
@@ -1080,17 +1081,17 @@ def sanitize_opts(opts):
     """
     options = []
     for section in ['rose_template_vars', 'defines']:
-        if section in opts.__dict__ and opts.__dict__[section]:
-            for item in opts.__dict__[section]:
-                options.append((section, item))
+        for item in getattr(opts, section, []):
+            options.append((section, item))
 
     for (section, item), (var_name, replace) in itertools.product(
         options, STANDARD_VARS
     ):
-        if re.match(rf'.*{var_name}=', item):
+        if re.match(rf'.*\b{var_name}=', item):
             LOG.warning(
                 f'{section}:{item} from command line args'
                 f' will be ignored: {var_name} will be: {replace}'
             )
-            opts.__dict__[section].remove(item)
+            with suppress(ValueError):
+                getattr(opts, section).remove(item)
     return opts
