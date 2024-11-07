@@ -553,8 +553,7 @@ def setup_workflow_source_dir(tmp_path):
             copytree(datapath, testpath, dirs_exist_ok=True)
         else:
             # Python 3.7 bodge:
-            import distutils
-            distutils.dir_util.copy_tree(str(datapath), str(testpath))
+            run(f'cp -r {datapath}/* {testpath}', shell=True)
 
         return datapath, testpath
 
