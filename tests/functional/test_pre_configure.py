@@ -231,7 +231,7 @@ async def test_validate_against_source(
     """Ensure that validation against source picks up
     on existing configs saved in rose-suite-cylc-install.conf
     """
-    src, _ = setup_workflow_source_dir(
+    _, src = setup_workflow_source_dir(
         'functional/15_reinstall_using_old_clivars'
     )
 

@@ -22,6 +22,7 @@ from pathlib import Path
 from shlex import split
 from shutil import rmtree, copytree
 from subprocess import run
+import sys
 from time import sleep
 from types import SimpleNamespace
 from uuid import uuid4
@@ -536,21 +537,25 @@ def timeout_func(func, message, timeout=5):
 @pytest.fixture
 def setup_workflow_source_dir(tmp_path):
     """Copy a workflow from the codebase to a temp-file-path
-    and provide that path for use in tests
+    and provide that path for use in tests.
     """
 
     def _inner(code_src):
         nonlocal tmp_path
         # Set up paths for test:
-        srcpath = tmp_path / 'src'
-        srcpath.mkdir()
+        testpath = tmp_path / 'src'
+        testpath.mkdir()
 
         # the files to install are stored in a directory alongside this
         # test file:
         datapath = Path(__file__).parent / code_src
-        copytree(datapath, srcpath, dirs_exist_ok=True)
+        if sys.version_info.minor > 7:
+            copytree(datapath, testpath, dirs_exist_ok=True)
+        else:
+            # Python 3.7 bodge:
+            import distutils
+            distutils.dir_util.copy_tree(str(datapath), str(testpath))
 
-        # Create source workflow:
-        return srcpath, datapath
+        return datapath, testpath
 
     yield _inner
