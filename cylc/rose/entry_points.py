@@ -27,7 +27,9 @@ from cylc.rose.utilities import (
     load_rose_config,
     process_config,
     record_cylc_install_options,
+    retrieve_installed_cli_opts,
     rose_config_exists,
+    sanitize_opts,
 )
 
 if TYPE_CHECKING:
@@ -40,7 +42,17 @@ def pre_configure(srcdir: Path, opts: 'Values') -> dict:
         # nothing to do here
         return {}
 
-    # load the Rose config
+    opts = sanitize_opts(opts)
+
+    # If we are validating against source, load saved CLI options
+    # from previous install, as saved in the rose-suite-cylc-install.conf
+    if (
+        getattr(opts, 'against_source', False)
+        and isinstance(opts.against_source, Path)
+    ):
+        opts = retrieve_installed_cli_opts(srcdir, opts)
+
+    # load the source Rose config
     config_tree = load_rose_config(Path(srcdir), opts=opts)
 
     # extract plugin return information from the Rose config

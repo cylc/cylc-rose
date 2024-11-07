@@ -575,7 +575,7 @@ def get_rose_stem_opts():
             " the groups into a series of tasks to run."
         ),
         action="append",
-        metavar="PATH/TO/FLOW",
+        metavar="STRING",
         default=[],
         dest="stem_groups")
     rose_stem_options.add_option(

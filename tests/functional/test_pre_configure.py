@@ -27,6 +27,7 @@ from types import SimpleNamespace
 import pytest
 from pytest import param
 
+from cylc.rose.entry_points import pre_configure
 from cylc.rose.utilities import NotARoseSuiteException, load_rose_config
 
 
@@ -219,3 +220,62 @@ def test_cylc_script(monkeypatch, option, envvars, cmd, expect):
         '05_opts_set_from_rose_suite_conf')
     output = run(split(f'{cmd} {srcpath} {option}'), capture_output=True)
     assert expect in output.stdout
+
+
+async def test_validate_against_source(
+    setup_workflow_source_dir,
+    cylc_validate_cli,
+    cylc_install_cli,
+    cylc_inspect_scripts,
+):
+    """Ensure that validation against source picks up
+    on existing configs saved in rose-suite-cylc-install.conf
+    """
+    _, src = setup_workflow_source_dir(
+        'functional/15_reinstall_using_old_clivars'
+    )
+
+    opts = {
+        "rose_template_vars": ["SUITE=1"],
+        "defines": ["[template variables]DEFINE=2"],
+        "opt_conf_keys": ['choc'],
+    }
+
+    # Check that we can validate the source dir with options:
+    await cylc_inspect_scripts(src, opts)
+
+    # Install our workflow with options.
+    wid, _ = await cylc_install_cli(src, opts=opts)
+
+    # Check all scripts:
+    await cylc_inspect_scripts(wid, {"against_source": True})
+
+    # Reinstall fails if we clear rose install opts:
+    clear_install_validate = await cylc_validate_cli(
+        wid, {"against_source": True, 'clear_rose_install_opts': True}
+    )
+    assert clear_install_validate.ret != 0
+    assert 'Jinja2 Assertion Error' in str(clear_install_validate.exc.args[0])
+
+
+def test_invalid_cli_opts(tmp_path, caplog):
+    """Ensure that CLI options which won't be used because
+    they are variables set by Rose raise a warning."""
+    (tmp_path / 'flow.cylc').touch()
+    (tmp_path / 'rose-suite.conf').touch()
+
+    opts = SimpleNamespace(
+        rose_template_vars=['ROSE_ORIG_HOST=42'],
+        opt_conf_keys=[],
+        defines=[],
+        against_source=tmp_path,
+    )
+
+    pre_configure(tmp_path, opts)
+    # Assert we have the warning that we need:
+    assert (
+        "ROSE_ORIG_HOST=42 from command line args will be ignored"
+        in caplog.messages[0]
+    )
+    # Assert we haven't got any unwanted dupicate warnings:
+    assert len(caplog.messages) == 1
