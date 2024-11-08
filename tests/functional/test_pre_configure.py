@@ -257,7 +257,7 @@ async def test_validate_against_source(
         wid, {"against_source": True, 'clear_rose_install_opts': True}
     )
     assert clear_install_validate.ret != 0
-    assert 'Jinja2 Assertion Error' in str(clear_install_validate.exc.args[0])
+    assert 'Test --rose-template-variable' in str(clear_install_validate.exc)
 
 
 def test_invalid_cli_opts(tmp_path, caplog):
