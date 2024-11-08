@@ -16,6 +16,7 @@
 
 """Cylc support for reading and interpreting ``rose-suite.conf`` files."""
 
+from contextlib import suppress
 import itertools
 import os
 from pathlib import Path
@@ -55,6 +56,11 @@ ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING = (
 )
 MESSAGE = 'message'
 ALL_MODES = 'all modes'
+STANDARD_VARS = [
+    ('ROSE_ORIG_HOST', get_host()),
+    ('ROSE_VERSION', ROSE_VERSION),
+    ('CYLC_VERSION', SET_BY_CYLC)
+]
 
 
 class NotARoseSuiteException(Exception):
@@ -119,9 +125,6 @@ def process_config(
     if templating not in config_node.value:
         config_node.set([templating])
 
-    # Get Rose Orig host:
-    rose_orig_host = get_host()
-
     # For each section process variables and add standard variables.
     for section in ['env', templating]:
 
@@ -131,17 +134,13 @@ def process_config(
         # ROSE_ORIG_HOST - If it's the config, replace it, unless it has a
         # comment marking it as having been saved by ``cylc install``.
         # In all cases warn users if the value in their config is not used.
-        for var_name, replace_with in [
-            ('ROSE_ORIG_HOST', rose_orig_host),
-            ('ROSE_VERSION', ROSE_VERSION),
-            ('CYLC_VERSION', SET_BY_CYLC)
-        ]:
+        for var_name, replace_with in STANDARD_VARS:
             # Warn if we're we're going to override a variable:
             if override_this_variable(config_node, section, var_name):
                 user_var = config_node[section].value[var_name].value
                 LOG.warning(
-                    f'[{section}]{var_name}={user_var} from rose-suite.conf '
-                    f'will be ignored: {var_name} will be: {replace_with}'
+                    f'[{section}]{var_name}={user_var}'
+                    f' will be ignored. {var_name} will be: {replace_with}'
                 )
 
             # Handle replacement of stored variable if appropriate:
@@ -883,6 +882,7 @@ def record_cylc_install_options(
     srcdir: Path,
     rundir: Path,
     opts: 'Values',
+    modify: bool = True,
 ) -> Tuple[ConfigNode, ConfigNode]:
     """Create/modify files recording Cylc install config options.
 
@@ -909,6 +909,9 @@ def record_cylc_install_options(
                 Equivalent of ``rose suite-run --define KEY=VAL``
             - rose_template_vars (list of str):
                 Equivalent of ``rose suite-run --define-suite KEY=VAL``
+        modify:
+            If ``True``, the modified rose-suite-cylc-install.conf will be
+            written. If ``False``, this will only read files.
 
     Returns:
         Tuple - (cli_config, rose_suite_conf)
@@ -957,8 +960,9 @@ def record_cylc_install_options(
                 ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
             ]
 
-    cli_config.comments = [' This file records CLI Options.']
-    dumper.dump(cli_config, str(conf_filepath))
+    if modify:
+        cli_config.comments = [' This file records CLI Options.']
+        dumper.dump(cli_config, str(conf_filepath))
 
     # Merge the opts section of the rose-suite.conf with those set by CLI:
     rose_conf_filepath.touch()
@@ -968,7 +972,8 @@ def record_cylc_install_options(
     )
     identify_templating_section(rose_suite_conf)
 
-    dumper(rose_suite_conf, rose_conf_filepath)
+    if modify:
+        dumper(rose_suite_conf, rose_conf_filepath)
 
     return cli_config, rose_suite_conf
 
@@ -999,3 +1004,94 @@ def copy_config_file(
     shutil.copy2(srcdir_rose_conf, rundir_rose_conf)
 
     return True
+
+
+def retrieve_installed_cli_opts(srcdir, opts):
+    """Merge options from previous install, this install and the CLI.
+
+    Allows validation of merged config for pre-configure where the
+    --against-source argument is used in a Cylc script.
+    """
+    # if opts.against_source is a path then we are validating a source
+    # directory against installed options
+    rundir = opts.against_source
+
+    # If the calling script doesn't have this option (Everything except
+    # Cylc VR) then this defaults to false. If it's true we skip all
+    # following logic:
+    if not getattr(opts, 'clear_rose_install_opts', False):
+        opts.clear_rose_install_opts = False
+    else:
+        return opts
+
+    # NOTE: we only need to load the rose-suite-cylc-install for this
+    cli_config, _ = record_cylc_install_options(
+        srcdir, rundir, opts, modify=False
+    )
+
+    # Set ROSE_ORIG_HOST to ignored, and choose not to ignore it
+    # if this is a validation against source:
+    no_ignore = False
+    if rundir:
+        no_ignore = True
+        for keys, node in cli_config.walk():
+            if keys[-1] == 'ROSE_ORIG_HOST':
+                node.state = cli_config.STATE_SYST_IGNORED
+
+    # Get opt_conf_keys stored in rose-suite-cylc-install.conf
+    opt_conf_keys = cli_config.value.pop('opts').value.split()
+    if any(opt_conf_keys):
+        opts.opt_conf_keys = opt_conf_keys
+
+    # Get --suite-defines/-S
+    # Work out whether user has used "template variables", "jinja2:suite.rc"
+    # or "empy:suite.rc" (There is an assumption that they aren't mixing
+    # them that is not guarded against):
+    for section in SECTIONS:
+        if cli_config.value.get(section, False):
+            template_variables = cli_config.value.pop(section)
+            break
+    # Create new -S list.
+    if any(template_variables):
+        opts.rose_template_vars = [
+            f'{keys[1]}={val.value}'
+            for keys, val in template_variables.walk(no_ignore=no_ignore)
+        ]
+
+    # Get all other keys (-D):
+    new_defines = []
+    for keys, value in cli_config.walk(no_ignore=no_ignore):
+        # Filter out section headings:
+        if not isinstance(value.value, dict):
+            section, key = keys
+            # Don't include section for top level items:
+            section = f"[{section}]" if section else ''
+            new_defines.append(f'{section}{key}={value.value}')
+
+    opts.defines = new_defines
+    return opts
+
+
+def sanitize_opts(opts):
+    """Warn if standard variables which will be overridden
+    have been added to CLI opts, and remove them.
+
+    n.b. This doesn't remove the need to check the input rose-suite.conf
+    for these variables.
+    """
+    options = []
+    for section in ['rose_template_vars', 'defines']:
+        for item in getattr(opts, section, []):
+            options.append((section, item))
+
+    for (section, item), (var_name, replace) in itertools.product(
+        options, STANDARD_VARS
+    ):
+        if re.match(rf'.*\b{var_name}=', item):
+            LOG.warning(
+                f'{section}:{item} from command line args'
+                f' will be ignored: {var_name} will be: {replace}'
+            )
+            with suppress(ValueError):
+                getattr(opts, section).remove(item)
+    return opts

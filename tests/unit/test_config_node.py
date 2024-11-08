@@ -16,6 +16,7 @@
 
 """Tests the plugin with Rose suite configurations via the Python API."""
 
+from textwrap import dedent
 from types import SimpleNamespace
 
 from metomi.isodatetime.datetimeoper import DateTimeOperator
@@ -34,6 +35,7 @@ from cylc.rose.utilities import (
     process_config,
     id_templating_section,
     identify_templating_section,
+    retrieve_installed_cli_opts,
 )
 
 
@@ -293,7 +295,7 @@ def test_ROSE_ORIG_HOST_replacement_behaviour(
     if ROSE_ORIG_HOST_overridden is True:
         node = node_with_ROSE_ORIG_HOST()
         log_str = (
-            '[env]ROSE_ORIG_HOST=IMPLAUSIBLE_HOST_NAME from rose-suite.conf'
+            '[env]ROSE_ORIG_HOST=IMPLAUSIBLE_HOST_NAME'
             ' will be ignored'
         )
         assert log_str in caplog.records[0].message
@@ -345,3 +347,76 @@ def test_deprecation_warnings(
         assert must_include in records
     else:
         assert must_exclude not in records
+
+
+@pytest.mark.parametrize(
+    'tv_string',
+    (('template variables'), ('jinja2:suite.rc'), ('empy:suite.rc')),
+)
+def test_retrieve_installed_cli_opts(tmp_path, tv_string):
+    """It merges src, dest and cli.
+    """
+    # Create a source conifg
+    rose_suite_conf = tmp_path / 'src/rose-suite.conf'
+    src = rose_suite_conf.parent
+    src.mkdir(parents=True)
+    rose_suite_conf.touch()
+    (src / 'opt').mkdir()
+    (src / 'opt/rose-suite-option1.conf').touch()
+    (src / 'opt/rose-suite-option2.conf').touch()
+
+    # Create saved CLI from earlier CLI:
+    install_conf = tmp_path / 'run/opt/rose-suite-cylc-install.conf'
+    install_conf.parent.mkdir(parents=True)
+    install_conf.write_text(
+        dedent(f'''
+        opts = option2
+        TOP_LEVEL=false
+        [env]
+        ENV_LEAVE=true
+        ENV_OVERRIDE=false
+        [{tv_string}]
+        TV_LEAVE=true
+        TV_OVERRIDE_D=false
+        TV_OVERRIDE_S=false
+    ''')
+    )
+
+    opts = SimpleNamespace()
+    opts.against_source = install_conf.parent.parent
+    opts.defines = [
+        f'[{tv_string}]TV_OVERRIDE_D=True',
+        '[env]ENV_OVERRIDE=true',
+        'TOP_LEVEL=true'
+    ]
+    opts.rose_template_vars = ['TV_OVERRIDE_S=True']
+    opts.opt_conf_keys = ['option1']
+
+    opts = retrieve_installed_cli_opts(
+        srcdir=src,
+        opts=opts,
+    )
+
+    assert opts.opt_conf_keys == ['option2', 'option1']
+
+    rose_template_vars = [
+        o for o in opts.rose_template_vars if 'ROSE_ORIG_HOST' not in o
+    ]
+    assert rose_template_vars == [
+        'TV_OVERRIDE_S=True',
+        'TV_OVERRIDE_D=True',
+        'TV_LEAVE=true',
+    ]
+
+    defines = [d for d in opts.defines if 'ROSE_ORIG_HOST' not in d]
+    assert defines == [
+        '[env]ENV_OVERRIDE=true',
+        '[env]ENV_LEAVE=true',
+        'TOP_LEVEL=true',
+    ]
+
+
+def test_retrieve_installed_cli_opts_returns_unchanged():
+    """...if clear_rose_install_opts is true."""
+    opts = SimpleNamespace(clear_rose_install_opts=True, against_source=True)
+    assert retrieve_installed_cli_opts('Irrelevant', opts) == opts
