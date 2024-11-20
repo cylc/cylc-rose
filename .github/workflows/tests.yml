@@ -38,7 +38,7 @@ jobs:
         uses: cylc/release-actions/install-cylc-components@v1
         with:
           cylc_flow: true
-          cylc_flow_opts: 'empy'
+          cylc_flow_opts: ''
           metomi_rose: true
           metomi_rose_opts: ''
 

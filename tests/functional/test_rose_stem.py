@@ -188,7 +188,7 @@ async def test_manual_project_override(rose_stem, rose_stem_project):
     check_template_variables(
         {
             "RUN_NAMES":
-                "['earl_grey', 'milk', 'sugar', " "'spoon', 'cup', 'milk']",
+                "['earl_grey', 'milk', 'sugar', 'spoon', 'cup', 'milk']",
             "SOURCE_FOO": '"fcm:foo.x_tr@head"',
             "HOST_SOURCE_FOO": '"fcm:foo.x_tr@head"',
             "SOURCE_BAR": f'"{rose_stem_project}"',

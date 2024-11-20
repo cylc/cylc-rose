@@ -45,7 +45,7 @@ environment for Rose integration.
 
 This plugin provides support for the `rose-suite.conf` file, namely:
 
-* Jinja2/EmPy template variables.
+* Jinja2 template variables.
 * Scheduler environment variables.
 * File installation.
 * Optional configurations.

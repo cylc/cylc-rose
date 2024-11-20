@@ -38,7 +38,6 @@ from cylc.rose.entry_points import (
 from cylc.rose.fileinstall import rose_fileinstall
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
-    MultipleTemplatingEnginesError,
 )
 
 HOST = get_host()
@@ -277,47 +276,6 @@ def test_functional_rose_database_dumped_correctly(tmp_path):
     rose_fileinstall(rundir, SimpleNamespace())
 
     assert (rundir / '.rose-config_processors-file.db').is_file()
-
-
-@pytest.mark.parametrize(
-    (
-        'opts, files, expect'
-    ),
-    [
-        pytest.param(
-            # opts:
-            SimpleNamespace(
-                opt_conf_keys='', defines=['[jinja2:suite.rc]FOO=1'],
-                define_suites=[], clear_rose_install_opts=False
-            ),
-            # {file: content}
-            {
-                'test/rose-suite.conf':
-                    f'\n[empy:suite.rc]\nFOO=7\nROSE_ORIG_HOST={HOST}\n'
-            },
-            (
-                r"((jinja2:suite\.rc)|(empy:suite.rc)); "
-                r"((jinja2:suite\.rc)|(empy:suite.rc))"
-            ),
-            id='CLI contains different templating'
-        ),
-    ]
-)
-def test_template_section_conflict(
-    monkeypatch, tmp_path, opts, files, expect
-):
-    """Cylc install fails if multiple template sections set:"""
-    testdir = tmp_path / 'test'
-    # Set up existing files, should these exist:
-    for fname, content in files.items():
-        path = tmp_path / fname
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content)
-
-    with pytest.raises(MultipleTemplatingEnginesError) as exc_info:
-        # Run the entry point top-level function:
-        record_cylc_install_options(testdir, testdir, opts)
-    assert exc_info.match(expect)
 
 
 def test_rose_fileinstall_exception(tmp_path, monkeypatch):

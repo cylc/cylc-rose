@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 
 
 ROSE_SUITE_OPT_CONF_KEYS = 'ROSE_SUITE_OPT_CONF_KEYS'
-SECTIONS = {'jinja2:suite.rc', 'empy:suite.rc', 'template variables'}
+SECTIONS = {'jinja2:suite.rc', 'template variables'}
 SET_BY_CYLC = 'set by Cylc'
 ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING = (
     ' ROSE_ORIG_HOST set by cylc install.'
@@ -234,8 +234,6 @@ def id_templating_section(
     templating = None
     if section and 'jinja2' in section:
         templating = 'jinja2:suite.rc'
-    elif section and 'empy' in section:
-        templating = 'empy:suite.rc'
 
     if not templating:
         templating = 'template variables'
@@ -340,7 +338,7 @@ def merge_rose_cylc_suite_install_conf(old, new):
         >>> merge_rose_cylc_suite_install_conf(old, new)['opts']
         {'value': 'a b c d e', 'state': '', 'comments': []}
     """
-    # remove jinja2/empy:suite.rc from old if template variables in new
+    # remove jinja2:suite.rc from old if template variables in new
     for before, after in itertools.permutations(SECTIONS, 2):
         if new.value.get(after, '') and old.value.get(before, ''):
             # Choosing not to warn if user downgrades here because
@@ -766,7 +764,6 @@ def deprecation_warnings(config_tree):
     Logs a warning for deprecated items:
         - "root-dir"
         - "jinja2:suite.rc"
-        - "empy:suite.rc"
         - root-dir
 
     If ALL_MODES is True this deprecation will ignore whether there is a
@@ -774,21 +771,9 @@ def deprecation_warnings(config_tree):
     """
 
     deprecations = {
-        'empy:suite.rc': {
-            MESSAGE: (
-                "'rose-suite.conf[empy:suite.rc]' is deprecated."
-                " Use [template variables] instead."),
-            ALL_MODES: False,
-        },
         'jinja2:suite.rc': {
             MESSAGE: (
                 "'rose-suite.conf[jinja2:suite.rc]' is deprecated."
-                " Use [template variables] instead."),
-            ALL_MODES: False,
-        },
-        'empy:flow.cylc': {
-            MESSAGE: (
-                "'rose-suite.conf[empy:flow.cylc]' is not used by Cylc."
                 " Use [template variables] instead."),
             ALL_MODES: False,
         },
@@ -951,9 +936,7 @@ def record_cylc_install_options(
 
     # Get Values for standard ROSE variable ROSE_ORIG_HOST.
     rose_orig_host = get_host()
-    for section in [
-        'env', 'jinja2:suite.rc', 'empy:suite.rc', 'template variables'
-    ]:
+    for section in list(SECTIONS) + ['env']:
         if section in cli_config:
             cli_config[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
             cli_config[section]['ROSE_ORIG_HOST'].comments = [
@@ -1045,7 +1028,7 @@ def retrieve_installed_cli_opts(srcdir, opts):
 
     # Get --suite-defines/-S
     # Work out whether user has used "template variables", "jinja2:suite.rc"
-    # or "empy:suite.rc" (There is an assumption that they aren't mixing
+    # (There is an assumption that they aren't mixing
     # them that is not guarded against):
     for section in SECTIONS:
         if cli_config.value.get(section, False):

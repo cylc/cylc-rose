@@ -28,7 +28,6 @@ import pytest
 
 from cylc.rose.utilities import (
     ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING,
-    MultipleTemplatingEnginesError,
     add_cylc_install_to_rose_conf_node_opts,
     deprecation_warnings,
     dump_rose_log,
@@ -202,37 +201,11 @@ def test_dump_rose_log(monkeypatch, tmp_path):
         ),
         pytest.param(
             (
-                (['empy:suite.rc', 'foo'], 'Hello World'),
-            ),
-            'empy:suite.rc',
-            None,
-            id="OK - empy:suite.rc",
-        ),
-        pytest.param(
-            (
                 ('opt', 'a b'),
             ),
             'template variables',
             None,
             id="OK - no template variables section set",
-        ),
-        pytest.param(
-            (
-                (['empy:suite.rc', 'foo'], 'Hello World'),
-                (['jinja2:suite.rc', 'foo'], 'Hello World'),
-            ),
-            None,
-            MultipleTemplatingEnginesError,
-            id="FAILS - empy and jinja2 sections set",
-        ),
-        pytest.param(
-            (
-                (['empy:suite.rc', 'foo'], 'Hello World'),
-                (['template variables', 'foo'], 'Hello World'),
-            ),
-            None,
-            MultipleTemplatingEnginesError,
-            id="FAILS - empy and template variables sections set",
         ),
         pytest.param(
             (
@@ -351,7 +324,7 @@ def test_deprecation_warnings(
 
 @pytest.mark.parametrize(
     'tv_string',
-    (('template variables'), ('jinja2:suite.rc'), ('empy:suite.rc')),
+    (('template variables'), ('jinja2:suite.rc')),
 )
 def test_retrieve_installed_cli_opts(tmp_path, tv_string):
     """It merges src, dest and cli.

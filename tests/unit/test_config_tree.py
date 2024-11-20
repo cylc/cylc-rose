@@ -30,7 +30,6 @@ from cylc.rose.entry_points import (
     load_rose_config,
 )
 from cylc.rose.utilities import (
-    MultipleTemplatingEnginesError,
     get_cli_opts_node,
     merge_opts,
     merge_rose_cylc_suite_install_conf,
@@ -85,7 +84,7 @@ def rose_config_template(tmp_path, scope='module'):
     def wrapped_function(section):
         """Fixture which returns a tmp_path containing a rose config tree.
 
-        uses ``wrapped_function`` to allow passing either "empy" or "jinja2"
+        uses ``wrapped_function`` to allow passing "jinja2"
         section types.
 
         Creates:
@@ -127,31 +126,26 @@ def rose_config_template(tmp_path, scope='module'):
 
 
 @pytest.mark.parametrize(
-    'override, section, exp_ANOTHER_JINJA2_ENV, exp_JINJA2_VAR',
+    'override, exp_ANOTHER_JINJA2_ENV, exp_JINJA2_VAR',
     [
-        (None, 'jinja2', 'Defined in config', 64),
-        (None, 'empy', 'Defined in config', 64),
-        ('environment', 'jinja2', 'Optional config picked from env var', 42),
-        ('CLI', 'jinja2', 'Optional config picked from CLI', 99),
-        ('environment', 'empy', 'Optional config picked from env var', 42),
-        ('CLI', 'empy', 'Optional config picked from CLI', 99),
-        ('override', 'jinja2', 'Variable overridden', 99),
-        ('override', 'empy', 'Variable overridden', 99)
+        (None, 'Defined in config', 64),
+        ('environment', 'Optional config picked from env var', 42),
+        ('CLI', 'Optional config picked from CLI', 99),
+        ('override', 'Variable overridden', 99),
     ]
 )
 def test_get_rose_vars(
     monkeypatch,
     rose_config_template,
     override,
-    section,
     exp_ANOTHER_JINJA2_ENV,
     exp_JINJA2_VAR
 ):
-    """Test reading of empy or jinja2 vars
+    """Test reading of jinja2 vars
 
     Scenarios tested:
         - Read in a basic rose-suite.conf file. Ensure we don't return env,
-          just jinja2/empy.
+          just jinja2.
         - Get optional config name from an environment variable.
         - Get optional config name from command line option.
         - Get optional config name from an explicit over-ride string.
@@ -169,9 +163,9 @@ def test_get_rose_vars(
     elif override == 'override':
         options.opt_conf_keys = ["chips"]
         options.defines = [
-            f"[{section}:suite.rc]Another_Jinja2_var='Variable overridden'"
+            "[jinja2:suite.rc]Another_Jinja2_var='Variable overridden'"
         ]
-    suite_path = rose_config_template(section)
+    suite_path = rose_config_template('jinja2')
     config_tree = load_rose_config(
         suite_path, options
     )
@@ -251,64 +245,38 @@ def test_get_rose_vars_jinja2_ROSE_VARS(tmp_path):
     ])
 
 
-def test_get_rose_vars_fail_if_empy_AND_jinja2(tmp_path):
-    """It should raise an error if both empy and jinja2 sections defined."""
-    (tmp_path / 'rose-suite.conf').write_text(
-        "[jinja2:suite.rc]\n"
-        "[empy:suite.rc]\n"
-    )
-    config_tree = load_rose_config(tmp_path)
-    with pytest.raises(MultipleTemplatingEnginesError):
-        process_config(config_tree)
-
-
 @pytest.mark.parametrize(
-    'override, section, exp_ANOTHER_JINJA2_ENV, exp_JINJA2_VAR, opts_format',
+    'override, exp_ANOTHER_JINJA2_ENV, exp_JINJA2_VAR, opts_format',
     [
-        (None, 'jinja2', '"Defined in config"', 64, 'list'),
-        (None, 'empy', '"Defined in config"', 64, 'list'),
+        (None, '"Defined in config"', 64, 'list'),
         (
-            'environment', 'jinja2', "'Optional config picked from env var'",
+            'environment', "'Optional config picked from env var'",
             42, 'list'
         ),
-        ('CLI', 'jinja2', "'Optional config picked from CLI'", 99, 'list'),
+        ('CLI', "'Optional config picked from CLI'", 99, 'list'),
+        ('override', 'Variable overridden', 99, 'list'),
+        (None, '"Defined in config"', 64, 'str'),
         (
-            'environment', 'empy',
-            "'Optional config picked from env var'", 42, 'list'
-        ),
-        ('CLI', 'empy', "'Optional config picked from CLI'", 99, 'list'),
-        ('override', 'jinja2', 'Variable overridden', 99, 'list'),
-        ('override', 'empy', 'Variable overridden', 99, 'list'),
-        (None, 'jinja2', '"Defined in config"', 64, 'str'),
-        (None, 'empy', '"Defined in config"', 64, 'str'),
-        (
-            'environment', 'jinja2', "'Optional config picked from env var'",
+            'environment', "'Optional config picked from env var'",
             42, 'str'
         ),
-        ('CLI', 'jinja2', "'Optional config picked from CLI'", 99, 'str'),
-        (
-            'environment', 'empy', "'Optional config picked from env var'",
-            42, 'str'
-        ),
-        ('CLI', 'empy', "'Optional config picked from CLI'", 99, 'str'),
-        ('override', 'jinja2', 'Variable overridden', 99, 'str'),
-        ('override', 'empy', 'Variable overridden', 99, 'str')
+        ('CLI', "'Optional config picked from CLI'", 99, 'str'),
+        ('override', 'Variable overridden', 99, 'str'),
     ]
 )
 def test_rose_config_tree_loader(
     monkeypatch,
     rose_config_template,
     override,
-    section,
     exp_ANOTHER_JINJA2_ENV,
     exp_JINJA2_VAR,
     opts_format
 ):
-    """Test reading of empy or jinja2 vars
+    """Test reading of jinja2 vars
 
     Scenarios tested:
         - Read in a basic rose-suite.conf file. Ensure we don't return env,
-          just jinja2/empy.
+          just jinja2.
         - Get optional config name from an environment variable.
         - Get optional config name from command line option.
         - Get optional config name from an explicit over-ride string.
@@ -330,12 +298,12 @@ def test_rose_config_tree_loader(
         options = SimpleNamespace()
         options.opt_conf_keys = conf_keys
         options.defines = [
-            f"[{section}:suite.rc]Another_Jinja2_var=Variable overridden"
+            "[jinja2:suite.rc]Another_Jinja2_var=Variable overridden"
         ]
 
     result = rose_config_tree_loader(
-        rose_config_template(section), options
-    ).node.value[section + ':suite.rc'].value
+        rose_config_template('jinja2'), options
+    ).node.value['jinja2:suite.rc'].value
     results = {
         'Another_Jinja2_var': result['Another_Jinja2_var'].value,
         'JINJA2_VAR': result['JINJA2_VAR'].value
@@ -369,12 +337,6 @@ def test_rose_config_tree_loader(
             id="rose_template_vars-set-by--S-(jinja2 already set in file)"
         ),
         param(
-            {'empy:suite.rc': {'FOO': '"Bar"'}},
-            '[empy:suite.rc]\n',
-            {'rose_template_vars': ['FOO="Bar"']},
-            id="rose_template_vars-set-by--S-(empy already set in file)"
-        ),
-        param(
             {'Any Old Section': {'FOO': '"Bar"'}},
             '',
             {'defines': ['[Any Old Section]FOO="Bar"']},
@@ -397,7 +359,7 @@ def rose_fileinstall_config_template(tmp_path, scope='module'):
     def wrapped_function(section):
         """Fixture which returns a tmp_path containing a rose config tree.
 
-        uses ``wrapped_function`` to allow passing either "empy" or "jinja2"
+        uses ``wrapped_function`` to allow passing "jinja2"
         section types.
 
         Creates:
