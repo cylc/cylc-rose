@@ -18,13 +18,11 @@
 
 from io import StringIO
 from pathlib import Path
+import pytest
+from pytest import param
 from types import SimpleNamespace
 
 from cylc.flow.hostuserutil import get_host
-from metomi.rose.config import ConfigLoader
-import pytest
-from pytest import param
-
 from cylc.rose.entry_points import (
     process_config,
     load_rose_config,
@@ -36,6 +34,7 @@ from cylc.rose.utilities import (
     rose_config_exists,
     rose_config_tree_loader,
 )
+from metomi.rose.config import ConfigLoader
 
 HOST = get_host()
 

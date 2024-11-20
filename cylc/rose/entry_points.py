@@ -46,9 +46,8 @@ def pre_configure(srcdir: Path, opts: 'Values') -> dict:
 
     # If we are validating against source, load saved CLI options
     # from previous install, as saved in the rose-suite-cylc-install.conf
-    if (
-        getattr(opts, 'against_source', False)
-        and isinstance(opts.against_source, Path)
+    if getattr(opts, 'against_source', False) and isinstance(
+        opts.against_source, Path
     ):
         opts = retrieve_installed_cli_opts(srcdir, opts)
 
@@ -102,6 +101,4 @@ def rose_stem():
     from cylc.rose.stem import get_rose_stem_opts, rose_stem
 
     parser, opts = get_rose_stem_opts()
-    asyncio.run(
-        rose_stem(parser, opts)
-    )
+    asyncio.run(rose_stem(parser, opts))

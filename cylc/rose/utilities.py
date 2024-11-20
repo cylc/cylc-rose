@@ -59,7 +59,7 @@ ALL_MODES = 'all modes'
 STANDARD_VARS = [
     ('ROSE_ORIG_HOST', get_host()),
     ('ROSE_VERSION', ROSE_VERSION),
-    ('CYLC_VERSION', SET_BY_CYLC)
+    ('CYLC_VERSION', SET_BY_CYLC),
 ]
 
 
@@ -104,7 +104,7 @@ def process_config(
         # default return value
         'env': {},
         'template_variables': {},
-        'templating_detected': None
+        'templating_detected': None,
     }
     config_node = config_tree.node
 
@@ -127,7 +127,6 @@ def process_config(
 
     # For each section process variables and add standard variables.
     for section in ['env', templating]:
-
         # This loop handles standard variables.
         # CYLC_VERSION - If it's in the config, remove it.
         # ROSE_VERSION - If it's in the config, replace it.
@@ -154,11 +153,8 @@ def process_config(
         # Use env_var_process to process variables which may need expanding.
         for key, node in config_node.value[section].value.items():
             try:
-                config_node.value[
-                    section
-                ].value[key].value = env_var_process(
-                    node.value,
-                    environ=environ
+                config_node.value[section].value[key].value = env_var_process(
+                    node.value, environ=environ
                 )
                 if section == 'env':
                     environ[key] = node.value
@@ -168,13 +164,13 @@ def process_config(
     # For each of the template language sections extract items to a simple
     # dict to be returned.
     plugin_result['env'] = {
-        item[0][1]: item[1].value for item in
-        config_node.value['env'].walk()
+        item[0][1]: item[1].value
+        for item in config_node.value['env'].walk()
         if item[1].state == ConfigNode.STATE_NORMAL
     }
     plugin_result['template_variables'] = {
-        item[0][1]: item[1].value for item in
-        config_node.value[templating].walk()
+        item[0][1]: item[1].value
+        for item in config_node.value[templating].walk()
         if item[1].state == ConfigNode.STATE_NORMAL
     }
 
@@ -198,12 +194,13 @@ def process_config(
                         value,
                         f'Invalid template variable: {value}'
                         '\nMust be a valid Python or Jinja2 literal'
-                        ' (note strings "must be quoted").'
+                        ' (note strings "must be quoted").',
                     ) from None
 
     # Add ROSE_SUITE_VARIABLES to plugin_result of templating engines in use.
-    plugin_result['template_variables'][
-        'ROSE_SUITE_VARIABLES'] = plugin_result['template_variables']
+    plugin_result['template_variables']['ROSE_SUITE_VARIABLES'] = (
+        plugin_result['template_variables']
+    )
 
     return plugin_result
 
@@ -227,8 +224,7 @@ def identify_templating_section(config_node):
 
 
 def id_templating_section(
-    section: Optional[str] = None,
-    with_brackets: bool = False
+    section: Optional[str] = None, with_brackets: bool = False
 ) -> str:
     """Return a full template section string."""
     templating = None
@@ -291,6 +287,7 @@ def rose_config_tree_loader(
 
     # Load the config tree
     from metomi.rose.config_tree import ConfigTreeLoader
+
     config_tree = ConfigTreeLoader().load(
         str(srcdir),
         'rose-suite.conf',
@@ -393,12 +390,16 @@ def invalid_defines_check(defines: List) -> None:
         raise InvalidDefineError(msg)
 
 
-def parse_cli_defines(define: str) -> Union[
-    bool, str, Tuple[
+def parse_cli_defines(
+    define: str,
+) -> Union[
+    bool,
+    str,
+    Tuple[
         List[Union[str, Any]],
         Union[str, Any],
         Union[str, Any],
-    ]
+    ],
 ]:
     """Parse a define string.
 
@@ -433,7 +434,7 @@ def parse_cli_defines(define: str) -> Union[
             r'^\[(?P<section>.*)\](?P<state>!{0,2})'
             r'(?P<key>.*)\s*=\s*(?P<value>.*)'
         ),
-        define
+        define,
     )
     if match:
         groupdict = match.groupdict()
@@ -441,7 +442,8 @@ def parse_cli_defines(define: str) -> Union[
     else:
         # Doesn't have a section:
         match = re.match(
-            r'^(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)', define)
+            r'^(?P<state>!{0,2})(?P<key>.*)\s*=\s*(?P<value>.*)', define
+        )
         if match and not match['state']:
             groupdict = match.groupdict()
             keys = [groupdict['key'].strip()]
@@ -525,7 +527,7 @@ def get_cli_opts_node(srcdir: Path, opts: 'Values'):
         newconfig.set(
             keys=[templating, _match_groups['key']],
             value=_match_groups['value'],
-            state=_match_groups['state']
+            state=_match_groups['state'],
         )
 
     # Specialised treatement of optional configs.
@@ -716,12 +718,9 @@ def override_this_variable(node, section, variable):
     """
     if variable not in node[section]:
         return False
-    elif (
-        variable != 'ROSE_ORIG_HOST'
-        or (
-            ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING not in
-            node[section][variable].comments
-        )
+    elif variable != 'ROSE_ORIG_HOST' or (
+        ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
+        not in node[section][variable].comments
     ):
         return True
     return False
@@ -752,8 +751,8 @@ def rose_orig_host_set_by_cylc_install(node, section, var):
     """
     if (
         var in node[section]
-        and ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING in
-        node[section][var].comments
+        and ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
+        in node[section][var].comments
     ):
         return True
     return False
@@ -774,13 +773,15 @@ def deprecation_warnings(config_tree):
         'jinja2:suite.rc': {
             MESSAGE: (
                 "'rose-suite.conf[jinja2:suite.rc]' is deprecated."
-                " Use [template variables] instead."),
+                " Use [template variables] instead."
+            ),
             ALL_MODES: False,
         },
         'jinja2:flow.cylc': {
             MESSAGE: (
                 "'rose-suite.conf[jinja2:flow.cylc]' is not used by Cylc."
-                " Use [template variables] instead."),
+                " Use [template variables] instead."
+            ),
             ALL_MODES: False,
         },
         'root-dir': {
@@ -788,16 +789,16 @@ def deprecation_warnings(config_tree):
                 'You have set "rose-suite.conf[root-dir]", '
                 'which is not supported at '
                 'Cylc 8. Use `[install] symlink dirs` in global.cylc '
-                'instead.'),
+                'instead.'
+            ),
             ALL_MODES: True,
         },
     }
     for string in list(config_tree.node):
         for name, info in deprecations.items():
             if (
-                (info[ALL_MODES] or not cylc7_back_compat)
-                and name in string.lower()
-            ):
+                info[ALL_MODES] or not cylc7_back_compat
+            ) and name in string.lower():
                 LOG.warning(info[MESSAGE])
 
 
@@ -828,13 +829,10 @@ def load_rose_config(
     """
     # Return a blank config dict if srcdir does not exist
     if not rose_config_exists(srcdir):
-        if (
-            opts
-            and (
-                getattr(opts, "opt_conf_keys", None)
-                or getattr(opts, "defines", None)
-                or getattr(opts, "rose_template_vars", None)
-            )
+        if opts and (
+            getattr(opts, "opt_conf_keys", None)
+            or getattr(opts, "defines", None)
+            or getattr(opts, "rose_template_vars", None)
         ):
             raise NotARoseSuiteException()
         return ConfigTree()
