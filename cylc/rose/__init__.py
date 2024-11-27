@@ -59,7 +59,7 @@ The following sections are permitted in the ``rose-suite.conf`` files:
    ``opts=A B C``, A space limited list of optional configs.
    ``[env]``, "Variables which the cylc-rose plugin will export to the
    environment."
-   ``[template variables]``, "Variables which can be used by Jinja2 or
+   ``[template variables]``, "Variables which can be used by Jinja2
    in the workflow definition."
    ``[file:destination]``, A file from one or more sources to be installed.
 
