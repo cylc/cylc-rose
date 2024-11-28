@@ -417,12 +417,11 @@ def test_ascertain_project_if_name_supplied(
 @pytest.mark.parametrize(
     'language, expect',
     (
-        ('empy', '[empy:suite.rc]'),
         ('jinja2', '[jinja2:suite.rc]'),
         ('template variables', '[template variables]'),
     )
 )
-def test_process_template_engine_set_correctly(monkeypatch, language, expect):
+def test_process_template_engine_set(monkeypatch, language, expect):
     """Defines are correctly assigned a [<template language>:suite.rc]
     section.
 

@@ -37,14 +37,6 @@ from cylc.rose.utilities import NotARoseSuiteException, load_rose_config
             '07_cli_override',
             'failed 1.1\n(add --verbose for more context)',
             id='template variable not set'
-        ),
-        param(
-            '08_template_engine_conflict',
-            (
-                'A plugin set the templating engine to empy which does'
-                ' not match #!jinja2 set in flow.cylc.'
-            ),
-            id='template engine conflict'
         )
     ]
 )
@@ -60,7 +52,6 @@ async def test_validate_fail(srcdir, expect, cylc_validate_cli):
     'srcdir, envvars, args',
     [
         ('00_jinja2_basic', None, None),
-        ('01_empy', None, None),
         ('02_env', None, None),
         (
             '04_opts_set_from_env',
@@ -92,7 +83,6 @@ async def test_validate(monkeypatch, srcdir, envvars, args, cylc_validate_cli):
     'srcdir, envvars',
     [
         ('00_jinja2_basic', None),
-        ('01_empy', None),
         (
             '04_opts_set_from_env',
             {'ROSE_SUITE_OPT_CONF_KEYS': 'Gaelige'},
@@ -138,9 +128,7 @@ def test_warn_if_root_dir_set(root_dir_config, tmp_path, caplog):
 )
 @pytest.mark.parametrize(
     'rose_config', [
-        'empy:suite.rc',
         'jinja2:suite.rc',
-        'empy:flow.cylc',
         'jinja2:flow.cylc',
         'JinjA2:flOw.cylC',
     ]

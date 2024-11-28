@@ -308,7 +308,7 @@ async def cylc_inspect_scripts(capsys, caplog):
         # Handle scripts taking a parser or just the output of the parser:
         for script_name, n_args in {
             'config': 3,
-            'list': 3,
+            'list': 2,
             'graph': 3,
             'view': 2,
             'validate': 3,
