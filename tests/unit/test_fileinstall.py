@@ -96,11 +96,15 @@ def test_rose_fileinstall_rose_conf(fixture_install_flow):
     )
 
 
-def test_rose_fileinstall_rose_suite_cylc_install_conf(fixture_install_flow):
+def test_rose_fileinstall_rose_suite_cylc_install_conf(
+    fixture_install_flow,
+    version_info,
+):
     destpath = fixture_install_flow
     host = get_host()
     assert (destpath / 'opt/rose-suite-cylc-install.conf').read_text() == (
-        "# This file records CLI Options.\n\n"
+        "# This file records CLI Options."
+        f"{version_info}\n"
         "!opts=A B\n\n"
         "[env]\n"
         "FOO=42\n"

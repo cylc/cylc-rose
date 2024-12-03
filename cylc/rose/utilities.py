@@ -32,6 +32,8 @@ from cylc.flow.cfgspec.glbl_cfg import glbl_cfg
 from cylc.flow.hostuserutil import get_host
 from metomi.isodatetime.datetimeoper import DateTimeOperator
 from metomi.rose import __version__ as ROSE_VERSION
+from cylc.flow import __version__ as CYLC_VERSION
+from cylc.rose import __version__ as CYLC_ROSE_VERSION
 from metomi.rose.config import (
     ConfigDumper,
     ConfigLoader,
@@ -943,6 +945,11 @@ def record_cylc_install_options(
 
     if modify:
         cli_config.comments = [' This file records CLI Options.']
+        cli_config.comments += [
+            ' Installed with:',
+            f'     * Cylc Rose: {CYLC_ROSE_VERSION}',
+            f'     * Rose     : {ROSE_VERSION}',
+            f'     * Cylc     : {CYLC_VERSION}']
         dumper.dump(cli_config, str(conf_filepath))
 
     # Merge the opts section of the rose-suite.conf with those set by CLI:
