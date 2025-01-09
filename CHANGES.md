@@ -6,7 +6,7 @@ creating a new release entry be sure to copy & paste the span tag with the
 updated. Only the first match gets replaced, so it's fine to leave the old
 ones in. -->
 
-## __cylc-rose-1.5.0 (<span actions:bind='release-date'>Upcoming</span>)__
+## __cylc-rose-1.5.0 (<span actions:bind='release-date'>Released 2025-01-09</span>)__
 
 [#353](https://github.com/cylc/cylc-rose/pull/353) - Remove Empy support.
 Cylc has dropped empy support at Cylc 8.4.0.
