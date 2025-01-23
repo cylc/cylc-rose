@@ -28,9 +28,9 @@ import subprocess
 from uuid import uuid4
 from typing import Dict
 
-from metomi.rose.host_select import HostSelector
-
 import pytest
+
+from cylc.flow.hostuserutil import get_host
 
 from cylc.rose.stem import RoseStemVersionException
 
@@ -38,7 +38,7 @@ from cylc.rose.stem import RoseStemVersionException
 # not Rose's method of getting the hostname, so it doesn't
 # Matter that we are using the same host selector here as
 # in the module under test:
-HOST = HostSelector().get_local_host()
+HOST = get_host()
 
 
 # Check that FCM is present on system, skipping checks elsewise:
