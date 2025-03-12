@@ -6,6 +6,12 @@ creating a new release entry be sure to copy & paste the span tag with the
 updated. Only the first match gets replaced, so it's fine to leave the old
 ones in. -->
 
+## __cylc-rose-1.5.1 (<span actions:bind='release-date'>Awaiting release</span>)__
+
+[#361](https://github.com/cylc/cylc-rose/pull/361) -
+Rose stem now uses long hostnames for the `HOST_SOURCE...` variables to match
+`ROSE_ORIG_HOST`.
+
 ## __cylc-rose-1.5.0 (<span actions:bind='release-date'>Released 2025-01-09</span>)__
 
 [#353](https://github.com/cylc/cylc-rose/pull/353) - Remove Empy support.

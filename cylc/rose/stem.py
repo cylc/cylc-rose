@@ -68,12 +68,14 @@ import re
 import sys
 
 from ansimarkup import parse as cparse
+
 from cylc.flow.exceptions import CylcError
+from cylc.flow.hostuserutil import get_host
 from cylc.flow.scripts.install import get_option_parser
 from cylc.flow.scripts.install import install as cylc_install
+
 import metomi.rose.config
 from metomi.rose.fs_util import FileSystemUtil
-from metomi.rose.host_select import HostSelector
 from metomi.rose.popen import RosePopener
 from metomi.rose.reporter import Event, Reporter
 from metomi.rose.resource import ResourceLocator
@@ -239,8 +241,6 @@ class StemRunner:
         else:
             self.fs_util = fs_util
 
-        self.host_selector = HostSelector(event_handler=self.reporter,
-                                          popen=self.popen)
         self.template_section = '[template variables]'
 
     def _add_define_option(self, var, val):
@@ -429,7 +429,7 @@ class StemRunner:
         locations."""
         if ':' not in url or url.split(':', 1)[0] not in ['svn', 'fcm', 'http',
                                                           'https', 'svn+ssh']:
-            url = self.host_selector.get_local_host() + ':' + url
+            url = f'{get_host()}:{url}'
         return url
 
     def _parse_auto_opts(self):
