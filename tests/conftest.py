@@ -229,7 +229,6 @@ def _cylc_install_cli(test_dir):
                 Dictionary of arguments for cylc install.
 
         """
-        nonlocal test_dir
         if not workflow_name:
             workflow_name = str(
                 (test_dir / str(uuid4())[:4]).relative_to(CYLC_RUN_DIR)
@@ -260,7 +259,6 @@ def _cylc_reinstall_cli(test_dir):
                 Dictionary of arguments for cylc reinstall.
 
         """
-        nonlocal test_dir
         if not workflow_id:
             workflow_id = str(test_dir.relative_to(CYLC_RUN_DIR))
         options = Options(reinstall_gop(), opts or {})()
@@ -364,7 +362,7 @@ async def cylc_inspect_scripts(capsys, caplog):
 
 
 @pytest.fixture
-def rose_stem(test_dir, monkeypatch, request):
+def rose_stem(test_dir, monkeypatch):
     """The Rose Stem command.
 
     Wraps the "rose_stem" async function for use in tests.
@@ -374,8 +372,6 @@ def rose_stem(test_dir, monkeypatch, request):
     run_dir = test_dir / str(uuid4())[:4]
 
     async def _inner(source_dir, cwd=None, **rose_stem_opts):
-        nonlocal monkeypatch, request, run_dir
-
         # point rose-stem at the desired run directory
         rose_stem_opts['no_run_name'] = True
         rose_stem_opts['workflow_name'] = str(
@@ -554,7 +550,6 @@ def setup_workflow_source_dir(tmp_path):
     """
 
     def _inner(code_src):
-        nonlocal tmp_path
         # Set up paths for test:
         testpath = tmp_path / 'src'
         testpath.mkdir()
