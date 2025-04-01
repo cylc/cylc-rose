@@ -60,11 +60,10 @@ def _lexer_wrap(fcn):
 
     Patches the jinja2.lexer.Lexer.wrap method.
     """
-    instances = set()
+    instances = set()  # record of uses of deprecated syntax
 
     def _stream(stream):
         """Patch the token stream to strip the leading zero where necessary."""
-        nonlocal instances  # record of uses of deprecated syntax
         for lineno, token, value_str in stream:
             if (
                 token == jinja2.lexer.TOKEN_INTEGER
@@ -80,7 +79,6 @@ def _lexer_wrap(fcn):
         name,  # : t.Optional[str] = None,
         filename,  # : t.Optional[str] = None,
     ):  # -> t.Iterator[Token]:
-        nonlocal fcn
         return fcn(self, _stream(stream), name, filename)
 
     _inner.__wrapped__ = fcn  # save the un-patched function
