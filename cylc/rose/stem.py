@@ -379,7 +379,6 @@ class StemRunner:
 
         # Remove anything after a point
         project = re.sub(r'\..*', r'', project)
-
         return project, item, base, revision, mirror
 
     def _ascertain_git_project(self, root_hash_branch: str, path: str):
