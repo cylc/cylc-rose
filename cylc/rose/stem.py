@@ -341,6 +341,17 @@ class StemRunner:
             print(f"[WARN] Forcing project for '{item}' to be '{project}'")
             return project, item, item, '', ''
 
+        # See if we have a git repository. We need three bits of information
+        # if it is:
+        # root dir, hash, branch name
+        # so query them all at once and pass them into the git-specific
+        # _ascertain_project function
+        ret_code, output, _ = self.popen.run(
+            'git', 'rev-parse',  '--show-toplevel',
+            'HEAD', '--abbrev-ref', 'HEAD', cwd=item)
+        if ret_code == 0:
+            return self._ascertain_git_project(root_hash_branch=output,
+                                               path=item)
         source_dict = self._get_fcm_loc_layout_info(item)
         project = self._get_project_from_url(source_dict)
         if not project:
@@ -368,7 +379,49 @@ class StemRunner:
 
         # Remove anything after a point
         project = re.sub(r'\..*', r'', project)
+
         return project, item, base, revision, mirror
+
+    def _ascertain_git_project(self, root_hash_branch: str, path: str):
+        """Set the project name and top-level from git information.
+
+        :param root_hash_branch: git output with three lines containing root,
+            hash, and branch
+        :param path: the path
+
+        Returns:
+        - project name
+        - top-level location of the source tree with revision number
+        - top-level location of the source tree without revision number
+        - revision number
+        - 'mirror', which for now is f"{url}${hash}"
+        """
+        root_dir, hash, branch = root_hash_branch.split()
+
+        # `git remote` must run inside the git repo
+        ret_code, output, stderr = self.popen.run(
+            'git', 'remote', '-v', cwd=path)
+        if ret_code != 0:
+            raise ProjectNotFoundException(path, stderr)
+
+        project = ""
+        url = ""
+        # Search for a MetOffice github URL, and take the project
+        # name and URL from that:
+        this_dir = str(Path(".").resolve())
+        for line in output.splitlines():
+            if "github.com:MetOffice/" in line:
+                kpresult = re.search(r'github.com:MetOffice/(.*).git', line)
+                if kpresult:
+                    url = line.split()[1]
+                    project = kpresult.group(1)
+                    break
+        else:
+            # We can't find the expected information. For now just
+            # raise an exception
+            raise ProjectNotFoundException(path, stderr)
+
+        return project, root_dir, this_dir, branch, f"{url}@{hash}"
 
     def _generate_name(self):
         """Generate a suite name from the name of the first source tree."""
