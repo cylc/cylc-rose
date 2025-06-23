@@ -405,22 +405,19 @@ class StemRunner:
 
         project = ""
         url = ""
-        # Search for a MetOffice github URL, and take the project
-        # name and URL from that:
-        this_dir = str(Path(".").resolve())
+        # Search for an URL, and take the project name and URL from that:
         for line in output.splitlines():
-            if "github.com:MetOffice/" in line:
-                kpresult = re.search(r'github.com:MetOffice/(.*).git', line)
-                if kpresult:
-                    url = line.split()[1]
-                    project = kpresult.group(1)
-                    break
+            kpresult = re.search(r'/(.*).git', line)
+            if kpresult:
+                url = line.split()[1]
+                project = kpresult.group(1)
+                break
         else:
             # We can't find the expected information. For now just
             # raise an exception
             raise ProjectNotFoundException(path, stderr)
 
-        return project, root_dir, this_dir, branch, f"{url}@{hash}"
+        return project, root_dir, root_dir, branch, f"{url}@{hash}"
 
     def _generate_name(self):
         """Generate a suite name from the name of the first source tree."""
