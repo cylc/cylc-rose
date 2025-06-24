@@ -80,7 +80,6 @@ from metomi.rose.popen import RosePopener, RosePopenError
 from metomi.rose.reporter import Event, Reporter
 from metomi.rose.resource import ResourceLocator
 
-
 from cylc.rose.entry_points import (
     export_environment,
     load_rose_config,
