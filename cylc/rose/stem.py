@@ -76,9 +76,10 @@ from cylc.flow.scripts.install import install as cylc_install
 
 import metomi.rose.config
 from metomi.rose.fs_util import FileSystemUtil
-from metomi.rose.popen import RosePopener
+from metomi.rose.popen import RosePopener, RosePopenError
 from metomi.rose.reporter import Event, Reporter
 from metomi.rose.resource import ResourceLocator
+
 
 from cylc.rose.entry_points import (
     export_environment,
@@ -346,9 +347,16 @@ class StemRunner:
         # root dir, hash, branch name
         # so query them all at once and pass them into the git-specific
         # _ascertain_project function
-        ret_code, output, _ = self.popen.run(
-            'git', 'rev-parse',  '--show-toplevel',
-            'HEAD', '--abbrev-ref', 'HEAD', cwd=item)
+        try:
+            ret_code, output, _ = self.popen.run(
+                'git', 'rev-parse',  '--show-toplevel',
+                'HEAD', '--abbrev-ref', 'HEAD', cwd=item)
+        except RosePopenError:
+            # This happens when `item` is not a valid directory (e.g. a URL)
+            # We ignore this here for backwards compatibility by setting
+            # the return code to a non-zero value:
+            ret_code = 1
+
         if ret_code == 0:
             return self._ascertain_git_project(root_hash_branch=output,
                                                path=item)
