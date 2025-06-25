@@ -341,25 +341,17 @@ class StemRunner:
             print(f"[WARN] Forcing project for '{item}' to be '{project}'")
             return project, item, item, '', ''
 
-        # See if we have a git repository. We need three bits of information
-        # if it is:
-        # root dir, hash, branch name
-        # so query them all at once and pass them into the git-specific
-        # _ascertain_project function
         try:
-            ret_code, output, _ = self.popen.run(
-                'git', 'rev-parse',  '--show-toplevel',
-                'HEAD', '--abbrev-ref', 'HEAD', cwd=item)
-        except RosePopenError:
-            # This happens when `item` is not a valid directory (e.g. a URL)
-            # We ignore this here for backwards compatibility by setting
-            # the return code to a non-zero value:
-            ret_code = 1
+            source_dict = self._get_fcm_loc_layout_info(item)
+        except ProjectNotFoundException as original_error:
+            try:
+                return self._ascertain_git_project(path=item)
+            except RosePopenError as exec:
+                # This happens when `item` is not a valid path, e.g. a URL,
+                # or any other git error happened. In this case, raise the
+                # original (fcm-based) error to stay backwards compatible.
+                raise original_error from exec
 
-        if ret_code == 0:
-            return self._ascertain_git_project(root_hash_branch=output,
-                                               path=item)
-        source_dict = self._get_fcm_loc_layout_info(item)
         project = self._get_project_from_url(source_dict)
         if not project:
             raise ProjectNotFoundException(item)
@@ -388,11 +380,9 @@ class StemRunner:
         project = re.sub(r'\..*', r'', project)
         return project, item, base, revision, mirror
 
-    def _ascertain_git_project(self, root_hash_branch: str, path: str):
+    def _ascertain_git_project(self, path: str):
         """Set the project name and top-level from git information.
 
-        :param root_hash_branch: git output with three lines containing root,
-            hash, and branch
         :param path: the path
 
         Returns:
@@ -400,11 +390,21 @@ class StemRunner:
         - top-level location of the source tree with revision number
         - top-level location of the source tree without revision number
         - revision number
-        - 'mirror', which for now is f"{url}${hash}"
+        - 'mirror', which for now is f"{url}@{hash}"
         """
-        root_dir, hash, branch = root_hash_branch.split()
 
-        # `git remote` must run inside the git repo
+        # See if we have a git repository. We need three bits of
+        # information if it is:
+        #    root dir, hash, branch name
+        # so query them all at once:
+        ret_code, root_hash_branch, stderr = self.popen.run(
+            'git', 'rev-parse', '--show-toplevel',
+            'HEAD', '--abbrev-ref', 'HEAD', cwd=path)
+        if ret_code != 0:
+            raise ProjectNotFoundException(path, stderr)
+
+        root_dir, hash_code, branch = root_hash_branch.split()
+
         ret_code, output, stderr = self.popen.run(
             'git', 'remote', '-v', cwd=path)
         if ret_code != 0:
@@ -422,9 +422,9 @@ class StemRunner:
         else:
             # We can't find the expected information. For now just
             # raise an exception
-            raise ProjectNotFoundException(path, stderr)
+            raise ProjectNotFoundException(path)
 
-        return project, root_dir, root_dir, branch, f"{url}@{hash}"
+        return project, root_dir, root_dir, branch, f"{url}@{hash_code}"
 
     def _generate_name(self):
         """Generate a suite name from the name of the first source tree."""
