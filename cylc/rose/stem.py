@@ -76,7 +76,7 @@ from cylc.flow.scripts.install import install as cylc_install
 
 import metomi.rose.config
 from metomi.rose.fs_util import FileSystemUtil
-from metomi.rose.popen import RosePopener
+from metomi.rose.popen import RosePopener, RosePopenError
 from metomi.rose.reporter import Event, Reporter
 from metomi.rose.resource import ResourceLocator
 
@@ -341,7 +341,17 @@ class StemRunner:
             print(f"[WARN] Forcing project for '{item}' to be '{project}'")
             return project, item, item, '', ''
 
-        source_dict = self._get_fcm_loc_layout_info(item)
+        try:
+            source_dict = self._get_fcm_loc_layout_info(item)
+        except ProjectNotFoundException as original_error:
+            try:
+                return self._ascertain_git_project(path=item)
+            except RosePopenError as exec:
+                # This happens when `item` is not a valid path, e.g. a URL,
+                # or any other git error happened. In this case, raise the
+                # original (fcm-based) error to stay backwards compatible.
+                raise original_error from exec
+
         project = self._get_project_from_url(source_dict)
         if not project:
             raise ProjectNotFoundException(item)
@@ -369,6 +379,52 @@ class StemRunner:
         # Remove anything after a point
         project = re.sub(r'\..*', r'', project)
         return project, item, base, revision, mirror
+
+    def _ascertain_git_project(self, path: str):
+        """Set the project name and top-level from git information.
+
+        :param path: the path
+
+        Returns:
+        - project name
+        - top-level location of the source tree with revision number
+        - top-level location of the source tree without revision number
+        - revision number
+        - 'mirror', which for now is f"{url}@{hash}"
+        """
+
+        # See if we have a git repository. We need three bits of
+        # information if it is:
+        #    root dir, hash, branch name
+        # so query them all at once:
+        ret_code, root_hash_branch, stderr = self.popen.run(
+            'git', 'rev-parse', '--show-toplevel',
+            'HEAD', '--abbrev-ref', 'HEAD', cwd=path)
+        if ret_code != 0:
+            raise ProjectNotFoundException(path, stderr)
+
+        root_dir, hash_code, branch = root_hash_branch.split()
+
+        ret_code, output, stderr = self.popen.run(
+            'git', 'remote', '-v', cwd=path)
+        if ret_code != 0:
+            raise ProjectNotFoundException(path, stderr)
+
+        project = ""
+        url = ""
+        # Search for an URL, and take the project name and URL from that:
+        for line in output.splitlines():
+            kpresult = re.search(r'/(.*).git', line)
+            if kpresult:
+                url = line.split()[1]
+                project = kpresult.group(1)
+                break
+        else:
+            # We can't find the expected information. For now just
+            # raise an exception
+            raise ProjectNotFoundException(path)
+
+        return project, root_dir, root_dir, branch, f"{url}@{hash_code}"
 
     def _generate_name(self):
         """Generate a suite name from the name of the first source tree."""

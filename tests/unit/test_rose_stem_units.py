@@ -340,6 +340,86 @@ def test__ascertain_project(get_StemRunner, monkeypatch):
     assert result == ('foo', '', '', '', 'foo')
 
 
+def test__ascertain_git_project(get_StemRunner, monkeypatch):
+    """Test that a git repository is supported."""
+    stemrunner = get_StemRunner({})
+
+    def test_popen_run_git(*args, **kargs):
+        # A simple implementation of the StemRunner's popen
+        # It will return the expected values for the three system
+        # calls that will be executed: `fcm loc-layout`,
+        # `git rev-parse` and `git remote`
+        if args[0:2] == ('fcm', 'loc-layout'):
+            # Indicate an error (1) for fcm
+            return (1, "stdout", "stderr")
+
+        if args[0:2] == ("git", "rev-parse"):
+            return (0, "local_path\nhash\nbranch\n", "stderr")
+        if args[0:2] == ("git", "remote"):
+            return (0,
+                    "origin git@github.com:MetOffice/PROJECT.git\n",
+                    "stderr")
+        return None
+
+    monkeypatch.setattr(stemrunner.popen, "run", test_popen_run_git)
+    result = stemrunner._ascertain_project('')
+    assert result == ("PROJECT", "local_path", "local_path", "branch",
+                      "git@github.com:MetOffice/PROJECT.git@hash")
+
+
+def test__ascertain_git_project_error_remote(get_StemRunner, monkeypatch):
+    """Test handling if `git remote` returns an error. """
+    stemrunner = get_StemRunner({})
+
+    def test_popen_run_git(*args, **kargs):
+        # A simple implementation of the StemRunner's popen
+        # It will return the expected values for the three system
+        # calls that will be executed: `fcm loc-layout`,
+        # `git rev-parse` and `git remote`
+        if args[0:2] == ('fcm', 'loc-layout'):
+            # Indicate an error (1) for fcm
+            return (1, "stdout", "stderr")
+
+        if args[0:2] == ("git", "rev-parse"):
+            return (0, "local_path\nhash\nbranch\n", "stderr")
+        if args[0:2] == ("git", "remote"):
+            # Return an error status:
+            return (1, "stdout", "git remote failed")
+        return None
+
+    monkeypatch.setattr(stemrunner.popen, "run", test_popen_run_git)
+    with pytest.raises(ProjectNotFoundException) as err:
+        _ = stemrunner._ascertain_project('')
+
+    assert "git remote failed" in str(err)
+
+
+def test__ascertain_git_project_no_remote(get_StemRunner, monkeypatch):
+    """Test handing if git remote returns no useful output."""
+    stemrunner = get_StemRunner({})
+
+    def test_popen_run_git(*args):
+        # A simple implementation of the StemRunner's popen
+        # It will return the expected values for the three system
+        # calls that will be executed: `fcm loc-layout`,
+        # `git rev-parse` and `git remote`
+        if args[0:2] == ('fcm', 'loc-layout'):
+            # Indicate an error (1) for fcm
+            return (1, "stdout", "stderr")
+
+        if args[0:2] == ("git", "rev-parse"):
+            return (0, "local_path\nhash\nbranch\n", "stderr")
+        if args[0:2] == ("git", "remote"):
+            return (0, "nothing_useful\n", "stderr")
+        return None
+
+    monkeypatch.setattr(stemrunner.popen, "run", test_popen_run_git)
+    with pytest.raises(ProjectNotFoundException) as err:
+        _ = stemrunner._ascertain_project('')
+
+    assert "Cannot ascertain project for source tree" in str(err)
+
+
 def test_process_multiple_auto_opts(
     monkeypatch: Fixture, get_StemRunner: Fixture
 ) -> None:
