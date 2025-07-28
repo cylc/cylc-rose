@@ -6,6 +6,8 @@ on:
     paths:
       - 'CONTRIBUTING.md'
       - '.mailmap'
+  schedule:
+    - cron: '37 06 * * 1' # 06:37, Monday
 
 jobs:
   test:
