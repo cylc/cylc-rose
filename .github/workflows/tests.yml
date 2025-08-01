@@ -14,6 +14,7 @@ concurrency:
 
 env:
   FORCE_COLOR: 2
+  PIP_PROGRESS_BAR: off
 
 defaults:
   run:
@@ -144,6 +145,9 @@ jobs:
 
       - name: Mypy
         run: mypy
+
+      - name: Towncrier - draft changelog
+        uses: cylc/release-actions/towncrier-draft@v1
 
   codecov:
     needs: test
