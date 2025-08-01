@@ -52,6 +52,7 @@ below.
  - Hilary Oliver
  - Jonny Williams
  - Mark Dawson
+ - Christopher Bennett
 <!-- end-shortlog -->
 
 (All contributors are identifiable with email addresses in the git version
