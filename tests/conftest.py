@@ -22,7 +22,6 @@ from pathlib import Path
 from shlex import split
 from shutil import rmtree, copytree
 from subprocess import run
-import sys
 from time import sleep
 from types import SimpleNamespace
 from uuid import uuid4
@@ -557,11 +556,7 @@ def setup_workflow_source_dir(tmp_path):
         # the files to install are stored in a directory alongside this
         # test file:
         datapath = Path(__file__).parent / code_src
-        if sys.version_info.minor > 7:
-            copytree(datapath, testpath, dirs_exist_ok=True)
-        else:
-            # Python 3.7 bodge:
-            run(f'cp -r {datapath}/* {testpath}', shell=True)
+        copytree(datapath, testpath, dirs_exist_ok=True)
 
         return datapath, testpath
 
