@@ -18,6 +18,7 @@ concurrency:
 
 env:
   FORCE_COLOR: 2
+  PIP_PROGRESS_BAR: off
 
 jobs:
   build-test:
@@ -33,9 +34,13 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: mamba-org/setup-micromamba@v2
         with:
-          python-version: ${{ matrix.python }}
+          cache-environment: true
+          post-cleanup: 'all'
+          environment-name: cylc-build
+          create-args: >-
+            python=${{ matrix.python }}
 
       - name: Build
         uses: cylc/release-actions/build-python-package@v1
