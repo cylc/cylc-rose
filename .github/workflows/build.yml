@@ -1,0 +1,56 @@
+name: Test build
+
+# build the project whenever the configuration is changed
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/build.yml'
+      - 'setup.cfg'
+      - 'pyproject.toml'
+      - 'README.md'       # check markdown is valid
+      - 'MANIFEST.in'     # check packaging
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 2
+  PIP_PROGRESS_BAR: off
+
+jobs:
+  build-test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest']
+        python: ['3.12', '3']
+    name: ${{ matrix.os }} py-${{ matrix.python }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          cache-environment: true
+          post-cleanup: 'all'
+          environment-name: cylc-build
+          create-args: >-
+            python=${{ matrix.python }}
+
+      - name: Build
+        uses: cylc/release-actions/build-python-package@v1
+        with:
+          check-dependencies: false
+
+      - name: Inspect
+        run: |
+          unzip -l dist/*.whl | tee files
+          set -x
+          grep 'cylc/rose/__init__.py' files
+          grep 'cylc_rose.*.dist-info/licenses/COPYING' files
+          # grep 'cylc/rose/py.typed' files
