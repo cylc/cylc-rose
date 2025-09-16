@@ -150,14 +150,18 @@ def fake_flow():
     db_file = get_workflow_run_pub_db_path(flow_name)
     with CylcWorkflowDAO(db_file, create_tables=True) as dao:
         conn = dao.connect()
-        conn.execute(
-            r"INSERT INTO task_jobs (cycle, name, submit_num, platform_name)"
-            r"    VALUES"
-            r"        ('1', 'bar', 1, 'localhost'),"
-            r"        ('1', 'baz', 1, 'dairy'),"
-            r"        ('1', 'bar', 2, 'dairy'),"
-            r"        ('2', 'baz', 1, 'milk')"
-        )
+        conn.execute(r"""
+            INSERT INTO task_jobs (cycle, name, submit_num, platform_name)
+                VALUES
+                    ('1', 'bar', 1, 'localhost'),
+                    ('1', 'bar', 2, 'dairy'),
+                    ('1', 'bar', 3, 'dairy'),
+                    ('1', 'bar', 4, 'rancid'),
+                    ('1', 'baz', 1, 'dairy'),
+                    ('2', 'baz', 1, 'milk'),
+                    ('3', 'bar', 1, 'rancid'),
+                    ('3', 'baz', 1, 'rancid')
+        """)
         conn.execute(
             r"INSERT INTO workflow_params"
             f"    VALUES ('cylc_version', {cylc_version!r});",
@@ -246,6 +250,15 @@ def test_get_platforms_from_task_jobs(
     flow_name, flow_path = fake_flow
     task_platforms_map = get_platforms_from_task_jobs(flow_name, cycle)
     assert task_platforms_map[task]['name'] == expect
+
+
+def test_get_platforms_from_task_jobs__lookup_error(
+    mock_glbl_cfg, fake_flow
+):
+    """It should skip platforms that cannot be found."""
+    mock_glbl_cfg(*MOCK_GLBL_CFG)
+    flow_name, flow_path = fake_flow
+    assert not get_platforms_from_task_jobs(flow_name, '3')
 
 
 def test_get_platforms_db_retry(

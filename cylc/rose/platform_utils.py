@@ -26,6 +26,7 @@ from time import sleep
 from typing import Any, Dict, Union
 
 from cylc.flow.config import WorkflowConfig
+from cylc.flow.exceptions import PlatformLookupError
 from cylc.flow.id_cli import parse_id
 from cylc.flow.pathutil import (
     get_workflow_run_config_log_dir,
@@ -139,9 +140,14 @@ def get_platforms_from_task_jobs(
     try:
         for _try in range(10):  # connect/execute retries
             try:
-                for row in dao.connect().execute(stmt, [cyclepoint]):
-                    task, platform_n, submit_num = row
-                    platform = get_platform(platform_n)
+                for task, platform_n, submit_num in dao.connect().execute(
+                    stmt, [cyclepoint]
+                ):
+                    try:
+                        platform = get_platform(platform_n)
+                    except PlatformLookupError:
+                        # Skip platforms that cannot be found
+                        continue
                     if (
                         (
                             task in task_platform_map
