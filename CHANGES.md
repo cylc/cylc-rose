@@ -7,6 +7,12 @@ $ towncrier create <PR-number>.<break|feat|fix>.md --content "Short description"
 
 <!-- towncrier release notes start -->
 
+## 1.6.1 (Released 2025-09-19)
+
+### 🔧 Fixes
+
+[#386](https://github.com/cylc/cylc-rose/pull/386) - Ensure `rose_prune` skips platforms that cannot be found.
+
 ## 1.6.0 (Released 2025-07-24)
 
 Updated for cylc-flow 8.5.0 and metomi-rose 2.5.0.
