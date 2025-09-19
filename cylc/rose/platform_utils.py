@@ -22,23 +22,30 @@ from optparse import Values
 from pathlib import Path
 import sqlite3
 import subprocess
+import sys
 from time import sleep
-from typing import Any, Dict, Union
+from typing import (
+    Any,
+    Dict,
+    Tuple,
+    Union,
+)
 
 from cylc.flow.config import WorkflowConfig
+from cylc.flow.exceptions import PlatformLookupError
 from cylc.flow.id_cli import parse_id
 from cylc.flow.pathutil import (
     get_workflow_run_config_log_dir,
     get_workflow_run_dir,
     get_workflow_run_pub_db_path,
 )
-from cylc.flow.workflow_files import WorkflowFiles
 from cylc.flow.platforms import (
     HOST_REC_COMMAND,
     get_platform,
     is_platform_definition_subshell,
 )
 from cylc.flow.rundb import CylcWorkflowDAO
+from cylc.flow.workflow_files import WorkflowFiles
 
 
 def get_platform_from_task_def(flow: str, task: str) -> Dict[str, Any]:
@@ -104,29 +111,29 @@ def eval_subshell(platform):
 
 
 def get_platforms_from_task_jobs(
-    flow: str, cyclepoint: str
-) -> Dict[str, Any]:
-    """Access flow database. Return platform for task at fixed cycle point
+    workflow: str, cyclepoint: str
+) -> Dict[str, dict]:
+    """Get a mapping of task name to platform dict for tasks at the given
+    cycle point.
 
     Uses the workflow database - designed to be used with tasks where jobs
-    have been submitted. We assume that we want the most recent submission.
+    have been submitted.
+
+    We assume that we want the most recent submission - TODO: why?
+    https://github.com/metomi/rose/issues/2924#issuecomment-3292508454
 
     Args:
-        flow: The name of the Cylc flow to be queried.
+        workflow: The name of the Cylc workflow to be queried.
         cyclepoint: The CyclePoint at which to query the job.
-        task: The name of the task to be queried.
-
-    Returns:
-        Platform Dictionary.
     """
-    parse_id(flow, constraint='workflows', src=True)
+    parse_id(workflow, constraint='workflows', src=True)
     dao = CylcWorkflowDAO(
         # NOTE: use the public database (only the scheduler thread/process
         # should access the private database)
-        get_workflow_run_pub_db_path(flow),
+        get_workflow_run_pub_db_path(workflow),
         is_public=True,
     )
-    task_platform_map: Dict = {}
+    task_platform_map: Dict[str, Tuple[int, dict]] = {}
     stmt = '''
         SELECT
             name, platform_name, submit_num
@@ -139,9 +146,15 @@ def get_platforms_from_task_jobs(
     try:
         for _try in range(10):  # connect/execute retries
             try:
-                for row in dao.connect().execute(stmt, [cyclepoint]):
-                    task, platform_n, submit_num = row
-                    platform = get_platform(platform_n)
+                for task, platform_n, submit_num in dao.connect().execute(
+                    stmt, [cyclepoint]
+                ):
+                    try:
+                        platform = get_platform(platform_n)
+                    except PlatformLookupError as exc:
+                        # Skip platforms that cannot be found
+                        print(exc, file=sys.stderr)
+                        continue
                     if (
                         (
                             task in task_platform_map
@@ -149,7 +162,7 @@ def get_platforms_from_task_jobs(
                         )
                         or task not in task_platform_map
                     ):
-                        task_platform_map[task] = [submit_num, platform]
+                        task_platform_map[task] = (submit_num, platform)
                 break
             except sqlite3.OperationalError as exc:
                 db_exc = exc
@@ -157,7 +170,7 @@ def get_platforms_from_task_jobs(
                 # for the scheduler to copy the private DB over the public one
                 # (done in the event of DB locking)
                 sleep(0.1)
-        else:
+        else:  # no break
             # we've run out of retries, raise the error from the last retry
             raise db_exc
     finally:
@@ -166,8 +179,6 @@ def get_platforms_from_task_jobs(
         dao.close()
 
     # get rid of the submit number, we don't want it
-    task_platform_map = {
+    return {
         key: value[1] for key, value in task_platform_map.items()
     }
-
-    return task_platform_map
