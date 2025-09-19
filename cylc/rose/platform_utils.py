@@ -123,7 +123,7 @@ def get_platforms_from_task_jobs(
     https://github.com/metomi/rose/issues/2924#issuecomment-3292508454
 
     Args:
-        workflow: The name of the Cylc flow to be queried.
+        workflow: The name of the Cylc workflow to be queried.
         cyclepoint: The CyclePoint at which to query the job.
     """
     parse_id(workflow, constraint='workflows', src=True)
