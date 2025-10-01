@@ -7,6 +7,12 @@ $ towncrier create <PR-number>.<break|feat|fix>.md --content "Short description"
 
 <!-- towncrier release notes start -->
 
+## 1.7.0 (Released 2025-10-01)
+
+### ⚠️ Breaking changes
+
+[#384](https://github.com/cylc/cylc-rose/pull/384) - Minimum supported Python version is now 3.12.
+
 ## 1.6.1 (Released 2025-09-19)
 
 ### 🔧 Fixes
