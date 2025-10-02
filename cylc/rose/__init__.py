@@ -232,4 +232,4 @@ configuration file ``~/cylc-run/my_workflow/opt/rose-suite-cylc-install.conf``.
 
 """
 
-__version__ = '1.7.1.dev'
+__version__ = '1.8.0.dev'
