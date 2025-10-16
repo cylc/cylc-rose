@@ -319,7 +319,7 @@ async def cylc_inspect_scripts(capsys, caplog):
         for script_name, n_args in {
             'config': 3,
             'list': 2,
-            'graph': 3,
+            'graph': 2,
             'view': 2,
             'validate': 3,
         }.items():
