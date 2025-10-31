@@ -197,8 +197,6 @@ def _cylc_inspection_cli(capsys, caplog, script, gop):
         if n_args == 2:
             # Don't include the parser:
             await script(options, str(srcpath))
-        output.ret = 0
-        output.exc = ''
 
         output.logging = '\n'.join([i.message for i in caplog.records])
         output.out, output.err = capsys.readouterr()
@@ -346,9 +344,6 @@ async def cylc_inspect_scripts(capsys, caplog):
                 script,
                 script_module.get_option_parser,
             )(wid, args, n_args=n_args)
-
-        # Check outputs
-        assert all(output.ret == 0 for output in results.values())
 
         # Return results for more checking if required:
         return results

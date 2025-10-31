@@ -66,8 +66,8 @@ async def test_validate(monkeypatch, srcdir, envvars, args, cylc_validate_cli):
     for key, value in (envvars or {}).items():
         monkeypatch.setenv(key, value)
     srcdir = Path(__file__).parent / srcdir
-    validate = await cylc_validate_cli(str(srcdir), args)
-    assert validate.ret == 0
+    # this is the test, we just asserting that this doesn't fail:
+    await cylc_validate_cli(str(srcdir), args)
 
 
 @pytest.mark.parametrize(
