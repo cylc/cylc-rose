@@ -115,7 +115,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                     f'ROSE_ORIG_HOST="{HOST}"\n'
                     f'\n[env]\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
-                    f'ROSE_ORIG_HOST="{HOST}"\n'
+                    f'ROSE_ORIG_HOST={HOST}\n'
                 ),
                 'ref/rose-suite.conf': '!opts=foo (cylc-install)',
                 'ref/opt/rose-suite-foo.conf': '',
@@ -145,7 +145,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                 'ref/opt/rose-suite-cylc-install.conf':
                     f'!opts=bar baz\n[env]\nBAR=2\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
-                    f'ROSE_ORIG_HOST="{HOST}"\n'
+                    f'ROSE_ORIG_HOST={HOST}\n'
                     f'\n[template variables]\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
                     f'ROSE_ORIG_HOST="{HOST}"\n',
@@ -174,7 +174,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                 'ref/opt/rose-suite-cylc-install.conf': (
                     f'!opts=b c\n\n[env]\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
-                    f'ROSE_ORIG_HOST="{HOST}"\n'
+                    f'ROSE_ORIG_HOST={HOST}\n'
                     f'\n[template variables]\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
                     f'ROSE_ORIG_HOST="{HOST}"\n'
@@ -204,7 +204,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                 'ref/opt/rose-suite-cylc-install.conf': (
                     f'!opts=foo bar\n[env]\na=b\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
-                    f'ROSE_ORIG_HOST="{HOST}"\n'
+                    f'ROSE_ORIG_HOST={HOST}\n'
                     f'[jinja2:suite.rc]\na="b"\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
                     f'ROSE_ORIG_HOST="{HOST}"\n'
