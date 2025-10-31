@@ -109,11 +109,11 @@ def test_rose_fileinstall_rose_suite_cylc_install_conf(
         "[env]\n"
         "FOO=42\n"
         f"#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n"
-        f"ROSE_ORIG_HOST={host}\n\n"
+        f'ROSE_ORIG_HOST="{host}"\n\n'
         "[jinja2:suite.rc]\n"
         "BAR=84\n"
         "CORNETTO=120\n"
         "FLAKE=99\n"
         f"#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n"
-        f"ROSE_ORIG_HOST={host}\n"
+        f'ROSE_ORIG_HOST="{host}"\n'
     )
