@@ -232,11 +232,14 @@ async def test_validate_against_source(
     await cylc_inspect_scripts(wid, {"against_source": True})
 
     # Reinstall fails if we clear rose install opts:
-    clear_install_validate = await cylc_validate_cli(
-        wid, {"against_source": True, 'clear_rose_install_opts': True}
-    )
-    assert clear_install_validate.ret != 0
-    assert 'Test --rose-template-variable' in str(clear_install_validate.exc)
+    with pytest.raises(InputError, match='Test --rose-template-variable'):
+        await cylc_validate_cli(
+            wid,
+            {
+                "against_source": True,
+                'clear_rose_install_opts': True
+            }
+        )
 
 
 def test_invalid_cli_opts(tmp_path, caplog):
