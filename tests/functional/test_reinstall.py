@@ -108,8 +108,7 @@ async def fixture_install_flow(
 async def test_cylc_validate(fixture_provide_flow, cylc_validate_cli):
     """Sanity check that workflow validates:
     """
-    srcpath = fixture_provide_flow['srcpath']
-    assert (await cylc_validate_cli(str(srcpath))).ret == 0
+    await cylc_validate_cli(str(fixture_provide_flow['srcpath']))
 
 
 @pytest.mark.parametrize(

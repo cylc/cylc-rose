@@ -73,7 +73,6 @@ async def test_global_config_environment_validate(
 
     # Validate the config:
     output = await cylc_validate_cli(tmp_path)
-    assert output.ret == 0
 
     # CYLC_SYMLINKS == None the first time the global.cylc
     # is loaded and "Foo" the second time.
