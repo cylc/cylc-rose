@@ -109,7 +109,7 @@ async def fixture_install_flow(
                 '!opts=bar\n\n'
                 '[env]\n'
                 f'FOO=1\n#{ROHIOS}\n'
-                f'ROSE_ORIG_HOST="{HOST}"\n'
+                f'ROSE_ORIG_HOST={HOST}\n'
                 f'\n[template variables]\n#{ROHIOS}'
                 f'\nROSE_ORIG_HOST="{HOST}"\n'
             )
@@ -131,7 +131,7 @@ def test_cylc_install_files(fixture_install_flow, file_, expect, version_info):
                 '!opts=baz\n\n'
                 '[env]\n'
                 f'BAR=2\n#{ROHIOS}\n'
-                f'ROSE_ORIG_HOST="{HOST}"\n'
+                f'ROSE_ORIG_HOST={HOST}\n'
                 f'\n[template variables]\n#{ROHIOS}'
                 f'\nROSE_ORIG_HOST="{HOST}"\n'
             )
