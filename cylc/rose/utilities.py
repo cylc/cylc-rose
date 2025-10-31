@@ -938,7 +938,7 @@ def record_cylc_install_options(
     rose_orig_host = get_host()
     for section in list(SECTIONS) + ['env']:
         if section in cli_config:
-            cli_config[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
+            cli_config[section].set(['ROSE_ORIG_HOST'], f'"{rose_orig_host}"')
             cli_config[section]['ROSE_ORIG_HOST'].comments = [
                 ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
             ]
