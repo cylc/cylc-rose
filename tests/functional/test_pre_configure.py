@@ -19,33 +19,24 @@
 from itertools import product
 import os
 from pathlib import Path
+import re
 from shlex import split
 from subprocess import run
 from types import SimpleNamespace
 
 import pytest
-from pytest import param
 
+from cylc.flow.exceptions import InputError
 from cylc.rose.entry_points import pre_configure
 from cylc.rose.utilities import NotARoseSuiteException, load_rose_config
 
 
-@pytest.mark.parametrize(
-    'srcdir, expect',
-    [
-        param(
-            '07_cli_override',
-            'failed 1.1\n(add --verbose for more context)',
-            id='template variable not set'
-        )
-    ]
-)
-async def test_validate_fail(srcdir, expect, cylc_validate_cli):
-    srcdir = Path(__file__).parent / srcdir
-    validate = await cylc_validate_cli(srcdir)
-    assert validate.ret == 1
-    if expect:
-        assert expect == str(validate.exc)
+async def test_validate_fail_tvar_not_set(cylc_validate_cli):
+    with pytest.raises(
+        InputError,
+        match=re.escape('failed 1.1\n(add --verbose for more context)')
+    ):
+        await cylc_validate_cli(Path(__file__).parent / '07_cli_override')
 
 
 @pytest.mark.parametrize(
@@ -75,8 +66,8 @@ async def test_validate(monkeypatch, srcdir, envvars, args, cylc_validate_cli):
     for key, value in (envvars or {}).items():
         monkeypatch.setenv(key, value)
     srcdir = Path(__file__).parent / srcdir
-    validate = await cylc_validate_cli(str(srcdir), args)
-    assert validate.ret == 0
+    # this is the test, we just asserting that this doesn't fail:
+    await cylc_validate_cli(str(srcdir), args)
 
 
 @pytest.mark.parametrize(
@@ -241,11 +232,14 @@ async def test_validate_against_source(
     await cylc_inspect_scripts(wid, {"against_source": True})
 
     # Reinstall fails if we clear rose install opts:
-    clear_install_validate = await cylc_validate_cli(
-        wid, {"against_source": True, 'clear_rose_install_opts': True}
-    )
-    assert clear_install_validate.ret != 0
-    assert 'Test --rose-template-variable' in str(clear_install_validate.exc)
+    with pytest.raises(InputError, match='Test --rose-template-variable'):
+        await cylc_validate_cli(
+            wid,
+            {
+                "against_source": True,
+                'clear_rose_install_opts': True
+            }
+        )
 
 
 def test_invalid_cli_opts(tmp_path, caplog):
