@@ -192,17 +192,11 @@ def _cylc_inspection_cli(capsys, caplog, script, gop):
         options = Options(parser, args)()
         output = SimpleNamespace()
 
-        try:
-            if n_args == 3:
-                await script(parser, options, str(srcpath))
-            if n_args == 2:
-                # Don't include the parser:
-                await script(options, str(srcpath))
-            output.ret = 0
-            output.exc = ''
-        except Exception as exc:
-            output.ret = 1
-            output.exc = exc
+        if n_args == 3:
+            await script(parser, options, str(srcpath))
+        if n_args == 2:
+            # Don't include the parser:
+            await script(options, str(srcpath))
 
         output.logging = '\n'.join([i.message for i in caplog.records])
         output.out, output.err = capsys.readouterr()
@@ -350,9 +344,6 @@ async def cylc_inspect_scripts(capsys, caplog):
                 script,
                 script_module.get_option_parser,
             )(wid, args, n_args=n_args)
-
-        # Check outputs
-        assert all(output.ret == 0 for output in results.values())
 
         # Return results for more checking if required:
         return results
