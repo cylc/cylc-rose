@@ -126,7 +126,7 @@ async def test_cylc_validate(fixture_provide_flow, cylc_validate_cli):
                 '# This file records CLI Options.{version_info}\n'
                 '!opts=b c\n'
                 f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
-                f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST="{HOST}"\n'
             )
         )
     ]
@@ -152,7 +152,7 @@ def test_cylc_install_files(fixture_install_flow, file_, expect, version_info):
                 '# This file records CLI Options.{version_info}\n'
                 '!opts=b c d\n'
                 f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
-                f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST="{HOST}"\n'
             )
         )
     ]
@@ -195,7 +195,7 @@ async def test_cylc_reinstall_files(
                 '# This file records CLI Options.{version_info}\n'
                 '!opts=b c d\n'
                 f'\n[env]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
-                f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST={HOST}\n'
+                f'\n[template variables]\n#{ROHIOS}\nROSE_ORIG_HOST="{HOST}"\n'
             )
         )
     ]

@@ -112,7 +112,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                     'opts=\n[env]\nFOO=1'
                     f'\n[template variables]\nX=Y\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
-                    f'ROSE_ORIG_HOST={HOST}\n'
+                    f'ROSE_ORIG_HOST="{HOST}"\n'
                     f'\n[env]\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
                     f'ROSE_ORIG_HOST={HOST}\n'
@@ -139,8 +139,8 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                 'test/opt/rose-suite-bar.conf': '',
                 'test/opt/rose-suite-baz.conf': '',
                 'test/opt/rose-suite-cylc-install.conf': (
-                    '!opts=bar\n[env]\nBAR=1\nROSE_ORIG_HOST=abc123\n'
-                    '\n[template variables]\nROSE_ORIG_HOST=abc123\n'
+                    '!opts=bar\n[env]\nBAR=1\nROSE_ORIG_HOST="abc123"\n'
+                    '\n[template variables]\nROSE_ORIG_HOST="abc123"\n'
                 ),
                 'ref/opt/rose-suite-cylc-install.conf':
                     f'!opts=bar baz\n[env]\nBAR=2\n'
@@ -148,7 +148,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                     f'ROSE_ORIG_HOST={HOST}\n'
                     f'\n[template variables]\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
-                    f'ROSE_ORIG_HOST={HOST}\n',
+                    f'ROSE_ORIG_HOST="{HOST}"\n',
                 'ref/rose-suite.conf': '!opts=foo bar baz (cylc-install)',
                 'ref/opt/rose-suite-foo.conf': '',
                 'ref/opt/rose-suite-bar.conf': '',
@@ -177,7 +177,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                     f'ROSE_ORIG_HOST={HOST}\n'
                     f'\n[template variables]\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
-                    f'ROSE_ORIG_HOST={HOST}\n'
+                    f'ROSE_ORIG_HOST="{HOST}"\n'
                 ),
                 'ref/rose-suite.conf': '!opts=a b c (cylc-install)',
                 'ref/opt/rose-suite-a.conf': '',
@@ -207,7 +207,7 @@ def test_rose_fileinstall_uses_rose_template_vars(tmp_path):
                     f'ROSE_ORIG_HOST={HOST}\n'
                     f'[jinja2:suite.rc]\na="b"\n'
                     f'#{ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING}\n'
-                    f'ROSE_ORIG_HOST={HOST}\n'
+                    f'ROSE_ORIG_HOST="{HOST}"\n'
                 ),
                 'ref/rose-suite.conf': (
                     '!opts=foo bar (cylc-install)\n[jinja2:suite.rc]\ny="base"'
