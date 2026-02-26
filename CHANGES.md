@@ -7,6 +7,14 @@ $ towncrier create <PR-number>.<break|feat|fix>.md --content "Short description"
 
 <!-- towncrier release notes start -->
 
+## 1.7.2 (Released 2026-02-26)
+
+### 🔧 Fixes
+
+Reverts [#398](https://github.com/cylc/cylc-rose/pull/398) introduced in 1.7.1
+which caused issues where spurious quotes could appear around the
+``ROSE_ORIG_HOST`` variable.
+
 ## 1.7.1 (Released 2026-02-25)
 
 ### 🔧 Fixes
