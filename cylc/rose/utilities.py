@@ -23,7 +23,16 @@ from pathlib import Path
 import re
 import shlex
 import shutil
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from cylc.flow import LOG
 from cylc.flow.exceptions import CylcError
@@ -395,8 +404,7 @@ def invalid_defines_check(defines: List) -> None:
 def parse_cli_defines(
     define: str,
 ) -> Union[
-    bool,
-    str,
+    Literal[False],
     Tuple[
         List[Union[str, Any]],
         Union[str, Any],
