@@ -302,10 +302,6 @@ def test_rose_fileinstall_exception(tmp_path, monkeypatch):
         'cylc.rose.utilities.rose_config_tree_loader',
         fakenode,
     )
-    monkeypatch.setattr(
-        'cylc.rose.fileinstall.rose_config_exists',
-        lambda x: True,
-    )
     with pytest.raises(FileNotFoundError):
         rose_fileinstall('/oiruhgaqhnaigujhj', SimpleNamespace())
 
