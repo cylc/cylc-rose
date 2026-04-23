@@ -17,9 +17,9 @@
 """Utilities related to performing Rose file installation."""
 
 import os
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
-from cylc.rose.utilities import rose_config_exists, rose_config_tree_loader
+from cylc.rose.utilities import rose_config_tree_loader
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -30,11 +30,8 @@ if TYPE_CHECKING:
 def rose_fileinstall(
     rundir: 'Path',
     opts: 'Values',
-) -> 'Union[ConfigNode, bool]':
+) -> 'ConfigNode':
     """Call Rose Fileinstall."""
-    if not rose_config_exists(rundir):
-        return False
-
     # Load the config tree
     config_tree = rose_config_tree_loader(rundir, opts)
 

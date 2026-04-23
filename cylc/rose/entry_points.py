@@ -81,8 +81,7 @@ def post_install(srcdir: Path, rundir: str, opts: 'Values') -> bool:
 
     # perform file installation
     config_node = rose_fileinstall(_rundir, opts)
-    if config_node:
-        dump_rose_log(rundir=_rundir, node=config_node)
+    dump_rose_log(rundir=_rundir, node=config_node)
 
     # Having dumped the config we clear rose options
     # as they do not apply after this.
