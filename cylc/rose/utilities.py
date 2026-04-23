@@ -23,7 +23,16 @@ from pathlib import Path
 import re
 import shlex
 import shutil
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from cylc.flow import LOG
 from cylc.flow.exceptions import CylcError
@@ -395,8 +404,7 @@ def invalid_defines_check(defines: List) -> None:
 def parse_cli_defines(
     define: str,
 ) -> Union[
-    bool,
-    str,
+    Literal[False],
     Tuple[
         List[Union[str, Any]],
         Union[str, Any],
@@ -938,11 +946,7 @@ def record_cylc_install_options(
     rose_orig_host = get_host()
     for section in list(SECTIONS) + ['env']:
         if section in cli_config:
-            cli_config[section].set(
-                ['ROSE_ORIG_HOST'],
-                f'"{rose_orig_host}"'
-                if section in SECTIONS else rose_orig_host
-            )
+            cli_config[section].set(['ROSE_ORIG_HOST'], rose_orig_host)
             cli_config[section]['ROSE_ORIG_HOST'].comments = [
                 ROSE_ORIG_HOST_INSTALLED_OVERRIDE_STRING
             ]
