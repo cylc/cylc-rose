@@ -16,9 +16,9 @@ coverage:
     project:
       default:
         # fail if coverage below this:
-        target: '67%'
+        target: '97%'
         # fail if coverage drops by this much:
-        threshold: '2%'
+        threshold: '0%'
     patch:
       default:
         target: '90%'
