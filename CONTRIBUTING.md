@@ -53,7 +53,6 @@ below.
  - Jonny Williams
  - Mark Dawson
  - Christopher Bennett
- - Samuel Denton
 <!-- end-shortlog -->
 
 (All contributors are identifiable with email addresses in the git version
