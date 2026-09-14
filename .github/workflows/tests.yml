@@ -3,6 +3,10 @@ name: tests
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      cylc_rose_ref:
+        description: The cylc-rose branch to test against
+        required: true
   push:
     branches: [master]
   schedule:
@@ -43,18 +47,18 @@ jobs:
           create-args: >-
             python=${{ matrix.python-version }}
 
-      - name: install libs
+      - name: Install
         uses: cylc/release-actions/install-cylc-components@v1
         with:
+          branch: ${{ inputs.cylc_rose_ref || '' }}
           cylc_flow: true
           cylc_flow_opts: ''
           metomi_rose: true
           metomi_rose_opts: ''
+          local_source: .[tests]
+          editable_installations: true
 
-      - name: Install cylc-rose
-        # need editable install for coverage
-        run: |
-          pip install -e .[tests]
+      - run: pip list
 
       - name: Checkout FCM
         uses: actions/checkout@v5
