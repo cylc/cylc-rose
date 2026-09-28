@@ -36,6 +36,7 @@ from cylc.rose.utilities import (
     id_templating_section,
     identify_templating_section,
     retrieve_installed_cli_opts,
+    set_workflow_and_run_name,
 )
 
 
@@ -372,3 +373,112 @@ def test_retrieve_installed_cli_opts_returns_unchanged():
     """...if clear_rose_install_opts is true."""
     opts = SimpleNamespace(clear_rose_install_opts=True, against_source=True)
     assert retrieve_installed_cli_opts('Irrelevant', opts) == opts
+
+
+@pytest.mark.parametrize(
+    'config, cli, expected',
+    [
+        pytest.param(
+            # configured: [install]workflow-name, [install]run-name
+            (None, None),
+            # input: --workflow-name, --run-name, --no-run-name
+            (None, None, False),
+            # output: --workflow-name, --run-name, --no-run-name
+            (None, None, False),
+            id='default'
+        ),
+        pytest.param(
+            ('w', 'r'),
+            (None, None, False),
+            ('w', 'r', False),
+            id='workflow-and-run-defaults-configured'
+        ),
+        pytest.param(
+            ('w', ''),
+            (None, None, False),
+            ('w', None, True),
+            id='null-run-default-configured'
+        ),
+        pytest.param(
+            ('!w', '!r'),
+            (None, None, False),
+            (None, None, False),
+            id='workflow-and-run-configured-but-ignored'
+        ),
+        pytest.param(
+            ('w', 'r'),
+            ('W', 'R', False),
+            ('W', 'R', False),
+            id='workflow-and-run-defaults-configured-and-overridden-1'
+        ),
+        pytest.param(
+            ('w', 'r'),
+            ('W', None, True),
+            ('W', None, True),
+            id='workflow-and-run-defaults-configured-and-overridden-2'
+        ),
+        pytest.param(
+            ('w', None),
+            (None, 'r', False),
+            ('w', 'r', False),
+            id='mix-1'
+        ),
+        pytest.param(
+            (None, 'r'),
+            ('w', None, True),
+            ('w', None, True),
+            id='mix-2'
+        ),
+    ]
+)
+def test_set_workflow_and_run_name(config, cli, expected):
+    """Test the derivation of workflow and run names.
+
+    * cylc install provides implicit defaults.
+    * rose-suite.conf (config) can configure explicit defaults.
+    * cylc install --X (opts) can override defaults.
+    """
+    # unpack args
+    config_workflow_name, config_run_name = config
+    cli_workflow_name, cli_run_name, cli_no_run_name = cli
+    expected_workflow_name, expected_run_name, expected_no_run_name = expected
+
+    # create config object
+    tree = ConfigTree()
+    node = ConfigNode()
+    tree.node = node
+    if config_workflow_name is not None:
+        node.set(
+            ['install', 'workflow-name'],
+            config_workflow_name,
+            state=(
+                ConfigNode.STATE_USER_IGNORED
+                if config_workflow_name.startswith('!')
+                else ConfigNode.STATE_NORMAL
+            )
+        )
+    if config_run_name is not None:
+        node.set(
+            ['install', 'run-name'],
+            config_run_name,
+            state=(
+                ConfigNode.STATE_USER_IGNORED
+                if config_run_name.startswith('!')
+                else ConfigNode.STATE_NORMAL
+            )
+        )
+
+    # create CLI options object
+    opts = SimpleNamespace(
+        workflow_name=cli_workflow_name,
+        run_name=cli_run_name,
+        no_run_name=cli_no_run_name,
+    )
+
+    # run test
+    set_workflow_and_run_name(tree, opts)
+
+    # check modified options match expectations
+    assert opts.workflow_name == expected_workflow_name
+    assert opts.run_name == expected_run_name
+    assert opts.no_run_name == expected_no_run_name
