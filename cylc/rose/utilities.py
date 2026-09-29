@@ -24,6 +24,8 @@ from pathlib import Path
 import re
 import shlex
 import shutil
+from subprocess import PIPE, Popen
+import sys
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -90,6 +92,19 @@ class MultipleTemplatingEnginesError(CylcError):
 
 class InvalidDefineError(CylcError):
     ...
+
+
+class SubshellError(CylcError):
+    def __init__(self, string_template, subshell, stderr):
+        self.string_template = string_template
+        self.subshell = subshell
+        self.stderr = stderr
+
+    def __str__(self):
+        return (
+            f'Could not evaluate "{self.string_template}".'
+            f'\nError processing "{self.subshell}": {self.stderr}'
+        )
 
 
 def process_config(
@@ -1074,3 +1089,128 @@ def sanitize_opts(opts):
             with suppress(ValueError):
                 getattr(opts, section).remove(item)
     return opts
+
+
+RE_SUBSHELL = re.compile(
+    r'''
+        \$\(
+          (
+            (?:
+              [^\)\$]
+              |
+              \$[^\(]
+            )+
+          )
+        \)
+    ''',
+    re.X,
+)
+
+
+def _cli_template(string: str) -> str:
+    """Process a substring template.
+
+    * Plain strings are passed straight through.
+    * Subshells with $(...) syntax are executed as subprosses and replaced in
+      the string template with any stdout they return.
+    * Subprocess stderr goes to the process's stderr.
+    * Any non-zero subprocess return code will cause a ValueError to be raised.
+
+    Raises:
+        ValueError:
+            If any subprocess returns a non-zero code.
+
+            Note, subprocesses are *not* run as
+            `bash -l -c 'set -euo pipefail'`.
+
+    """
+    def _subshell(substring):
+        # run a subshell in a subprocess
+        proc = Popen(
+            substring,
+            stdout=PIPE,
+            stderr=PIPE,
+            text=True,
+            shell=True,
+        )
+        out, err = proc.communicate()
+        if proc.returncode:
+            # subshell returned non-zero => raise error
+            raise SubshellError(string, substring, err)
+        if err := err.strip():
+            # subshell wrote to stderr => forward to sys.stderr
+            print(err, file=sys.stderr, end='')
+        return out.strip()
+
+    parts = RE_SUBSHELL.split(string)
+    for ind in range(1, len(parts), 2):
+        parts[ind] = _subshell(parts[ind])
+
+    return ''.join(parts)
+
+
+def set_workflow_and_run_name(config_tree: ConfigTree, opts: 'Values') -> None:
+    """Implement support for the rose-suite.conf[install] settings.
+
+    This modifies the Cylc opts object to reflect any defaults configured in
+    the rose-suite.conf file.
+
+    Configs:
+        [install]workflow-name
+            Defines the default workflow name.
+        [install]run-name
+            Defines the default run name. A null-string value
+            (i.e, `run-name=`) is interpretted as "--no-run-name".
+
+    Warning:
+        This function will get called multiple times during a compound
+        operation. E.g, with "vip" it will be called three times, once for each
+        subcommand.
+
+        This is actually ok, if any defaults are provided, the relevant CLI
+        options are set, causing this logic to be skipped - so string templates
+        are only evaluated once - irrespective of how many times this function
+        is called.
+
+        We could avoid this situation with
+        https://github.com/cylc/cylc-rose/issues/444
+
+    """
+    if not hasattr(opts, 'workflow_name'):
+        # this is not a "cylc install" command (e.g, "cylc view")
+        return
+
+    # workflow name:
+    if (
+        # workflow name has not be overridden on the CLI
+        opts.workflow_name is None  # CLI default
+    ):
+        workflow_name_conf = config_tree.node.get(['install', 'workflow-name'])
+        if (
+            # default workflow name configured is in rose-suite.conf
+            workflow_name_conf is not None
+            # and is not ignored
+            and workflow_name_conf.state == ConfigNode.STATE_NORMAL
+        ):
+            opts.workflow_name = _cli_template(workflow_name_conf.value)
+
+    # run name:
+    if (
+        # run name not overriden on the CLI
+        opts.run_name is None  # CLI default
+        and opts.no_run_name is False  # CLI default
+    ):
+        # default run name configured in rose-suite.conf
+        run_name_conf = config_tree.node.get(['install', 'run-name'])
+        if (
+            # default run name configured is in rose-suite.conf
+            run_name_conf is not None
+            # and is not ignored
+            and run_name_conf.state == ConfigNode.STATE_NORMAL
+        ):
+            if run_name_conf.value:
+                # run name provided
+                opts.run_name = _cli_template(run_name_conf.value)
+            else:
+                # no run name provided (equiv --no-run-name)
+                opts.no_run_name = True
