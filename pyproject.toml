@@ -1,3 +1,113 @@
+# Copyright (C) Earth Sciences New Zealand & British Crown (Met Office)
+# & Contributors.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+[build-system]
+requires = [
+  "setuptools >= 77.0.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cylc-rose"
+authors = [
+    {name = "Earth Sciences New Zealand & British Crown (Met Office) & Contributors"},
+]
+description = "A Cylc plugin providing support for the Rose rose-suite.conf file"
+readme = "README.md"
+requires-python = ">=3.12"
+keywords = [
+    "cylc",
+    "rose",
+    "workflow",
+    "workflow-automation",
+    "workflow-engine",
+    "workflow-management",
+]
+license = "GPL-3.0-or-later"
+license-files = ["COPYING", "CONTRIBUTING.md"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+]
+dependencies = [
+    "metomi-rose==2.8.*",
+    "cylc-flow==8.7.*",
+    "metomi-isodatetime",
+    "ansimarkup",
+    "jinja2",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+tests = [
+    "coverage>=5.0.0",
+    "pytest>=6.2.0",
+    # https://github.com/pytest-dev/pytest-asyncio/issues/705
+    "pytest-asyncio==0.21.*",
+    "pytest-cov",
+    "pytest-xdist>=2",
+    "towncrier>=24.7.0",
+]
+lint = [
+    "flake8-broken-line>=0.3.0",
+    "flake8-bugbear>=21.0.0",
+    "flake8-builtins>=1.5.0",
+    "flake8-comprehensions>=3.5.0",
+    "flake8-debugger>=4.0.0",
+    "flake8-implicit-str-concat>=0.4",
+    "flake8-mutable>=1.2.0",
+    "flake8-simplify>=0.14.0; python_version<'3.14'",
+    "flake8-type-checking",
+    "flake8>=3.0.0",
+    "mypy>=0.910",
+]
+all = ["cylc-rose[tests,lint]"]
+
+[project.entry-points."cylc.pre_configure"]
+rose = "cylc.rose.entry_points:pre_configure"
+
+[project.entry-points."cylc.post_install"]
+rose_opts = "cylc.rose.entry_points:post_install"
+
+[project.entry-points."rose.commands"]
+stem = "cylc.rose.entry_points:rose_stem"
+
+[project.urls]
+Home = "https://cylc.org/"
+Documentation = "https://cylc.github.io/cylc-doc/latest/html/plugins/cylc-rose.html"
+Source = "https://github.com/cylc/cylc-rose"
+Tracker = "https://github.com/cylc/cylc-rose/issues"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "cylc.rose.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["cylc*"]
+namespaces = true
+
 [tool.towncrier]
 directory = "changes.d"
 name = "cylc-rose"

@@ -7,7 +7,6 @@ on:
   pull_request:
     paths:
       - '.github/workflows/build.yml'
-      - 'setup.cfg'
       - 'pyproject.toml'
       - 'README.md'       # check markdown is valid
       - 'MANIFEST.in'     # check packaging
