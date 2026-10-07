@@ -53,3 +53,6 @@ known_first_party = ["cylc", "cylc.flow", "metomi", "metomi.rose"]
 lines-after-imports = 2
 combine-as-imports = true
 force-sort-within-sections = true
+
+[tool.codespell]
+ignore-words-list = ["empy"]

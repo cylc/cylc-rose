@@ -300,7 +300,7 @@ async def cylc_inspect_scripts(capsys, caplog):
     * view
 
     n.b.
-    * Function adds arg ``--reference`` to supress image being displayed.
+    * Function adds arg ``--reference`` to suppress image being displayed.
     """
 
     async def _inner(wid, args):
@@ -331,7 +331,7 @@ async def cylc_inspect_scripts(capsys, caplog):
                     '"_main" or "run" function'
                 )
 
-            # Supress cylc-graph giving a graphical output:
+            # Suppress cylc-graph giving a graphical output:
             if script_name == 'graph':
                 args['reference'] = True
 
@@ -468,7 +468,7 @@ def test_dir(request, mod_test_dir):
 
 @pytest.fixture
 def file_poll():
-    """Poll for the existance of a file.
+    """Poll for the existence of a file.
     """
     def _inner(
         fpath: "Path", timeout: int = 5, inverse: bool = False
