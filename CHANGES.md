@@ -7,6 +7,12 @@ $ towncrier create <PR-number>.<break|feat|fix>.md --content "Short description"
 
 <!-- towncrier release notes start -->
 
+## 1.8.0 (Released 2026-10-13)
+
+### ⚠️ Breaking changes
+
+[#429](https://github.com/cylc/cylc-rose/pull/429) - Legacy support for zero-prefixed integers in template variables (e.g, `01`, `02`, `03` as opposed to `1`, `2`, `3`) has been removed. This support was dropped in Jinja2 v3.0, but support was extended in cylc-rose past this date in order to facilitate Cylc 7/8 interoperability.
+
 ## 1.7.2 (Released 2026-02-26)
 
 ### 🔧 Fixes
