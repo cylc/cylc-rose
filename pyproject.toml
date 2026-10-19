@@ -32,6 +32,7 @@ keywords = [
     "cylc",
     "rose",
     "workflow",
+    "configuration",
     "workflow-automation",
     "workflow-engine",
     "workflow-management",
