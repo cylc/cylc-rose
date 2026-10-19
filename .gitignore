@@ -28,6 +28,9 @@ MANIFEST
 *.egg-info
 .eggs
 
+# uv environments
+uv.lock
+
 # virtualenv
 venv
 
