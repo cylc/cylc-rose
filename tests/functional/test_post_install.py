@@ -277,7 +277,7 @@ def test_functional_rose_database_dumped_correctly(tmp_path):
     rundir = (tmp_path / 'rundir')
     for dir_ in [srcdir, rundir]:
         dir_.mkdir()
-    (srcdir / 'rose-suite.conf').touch()  # sidestep test for conf existance
+    (srcdir / 'rose-suite.conf').touch()  # sidestep test for conf existence
     (rundir / 'nicest_work_of.nature').touch()
     (rundir / 'rose-suite.conf').write_text(
         "[file:Gnu]\nsrc=nicest_work_of.nature\n"
