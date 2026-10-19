@@ -51,8 +51,8 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Atmospheric Science",
 ]
 dependencies = [
-    "metomi-rose==2.8.*",
-    "cylc-flow==8.7.*",
+    "metomi-rose==2.9.*",
+    "cylc-flow==8.8.*",
     "metomi-isodatetime",
     "ansimarkup",
     "jinja2",
