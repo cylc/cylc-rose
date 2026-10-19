@@ -55,6 +55,8 @@ below.
  - Christopher Bennett
  - Samuel Denton
  - Scott Owen James
+ - Mike Taves
+ - James Frost
 <!-- end-shortlog -->
 
 (All contributors are identifiable with email addresses in the git version
