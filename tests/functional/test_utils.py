@@ -17,10 +17,14 @@
 
 """Unit tests for utilities."""
 
+import os
 from pathlib import Path
 from textwrap import dedent
 
+import pytest
+
 from cylc.rose.entry_points import copy_config_file
+from cylc.rose.utilities import SubshellError, _cli_template
 
 from cylc.flow.pathutil import get_workflow_run_dir
 
@@ -127,3 +131,45 @@ async def test_global_config_environment_validate2(
         f'{tmp_path}/foo/cylc-run/{id_}/log'
     )
     assert expected_msg in caplog.messages
+
+
+def test_cli_template(capsys):
+    """It should process substring templates."""
+    # strings supported
+    assert _cli_template('') == ''
+    assert _cli_template('a-b-c') == 'a-b-c'
+
+    # $(subshells) - supported
+    assert _cli_template('a-$(echo b)-c') == 'a-b-c'
+    assert _cli_template('$(echo a)-$(echo b)-$(echo c)') == 'a-b-c'
+
+    # `subshells` - not supported
+    assert _cli_template('a-`echo b`-c') == 'a-`echo b`-c'
+
+    # subshell nesting is not supported
+    assert _cli_template('a-$(echo $(echo b))-c') == 'a-$(echo b)-c'
+
+    # environment variables are not supported
+    assert _cli_template('$USER') == '$USER'
+
+    # except in subshells
+    assert _cli_template('$(echo $USER)') == os.environ['USER']
+
+    # non-zero return code produces errors
+    assert _cli_template('$(true)') == ''
+    with pytest.raises(SubshellError, match=r'.*\$\(false\).*'):
+        _cli_template('$(false)')
+
+    # stderr from subshells goes to stderr - stdout is captured
+    capsys.readouterr()
+    assert _cli_template('$(echo out)$(echo err >&2)') == 'out'
+    assert capsys.readouterr() == ('', 'err')
+
+    # edge cases and implementation details
+    assert _cli_template(' a ') == ' a '
+    assert _cli_template('$(echo " a ")') == 'a'
+    assert _cli_template('$(false; true)') == ''
+    with pytest.raises(SubshellError):
+        _cli_template('$(true; false)')
+    assert _cli_template('$(false; true)') == ''
+    assert _cli_template('$(echo a | sed "s/a/b/")') == 'b'

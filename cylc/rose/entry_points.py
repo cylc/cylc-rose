@@ -31,6 +31,7 @@ from cylc.rose.utilities import (
     retrieve_installed_cli_opts,
     rose_config_exists,
     sanitize_opts,
+    set_workflow_and_run_name,
 )
 
 if TYPE_CHECKING:
@@ -57,6 +58,10 @@ def pre_configure(srcdir: Path, opts: 'Values') -> dict:
 
     # extract plugin return information from the Rose config
     plugin_result = process_config(config_tree)
+
+    # TODO: move to pre-install plugin
+    # https://github.com/cylc/cylc-rose/issues/444
+    set_workflow_and_run_name(config_tree, opts)
 
     # set environment variables
     export_environment(plugin_result['env'])
