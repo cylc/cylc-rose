@@ -116,6 +116,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Check spelling
+        uses: codespell-project/actions-codespell@v2
+
       - name: Configure Python
         uses: mamba-org/setup-micromamba@v3
         with:
