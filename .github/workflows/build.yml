@@ -10,6 +10,8 @@ on:
       - 'pyproject.toml'
       - 'README.md'       # check markdown is valid
       - 'MANIFEST.in'     # check packaging
+  schedule:
+    - cron: '53 0 * * 1' # 00:53 Mon
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
