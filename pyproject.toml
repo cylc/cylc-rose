@@ -63,8 +63,8 @@ dynamic = ["version"]
 tests = [
     "coverage>=5.0.0",
     "pytest>=6.2.0",
-    # https://github.com/pytest-dev/pytest-asyncio/issues/705
-    "pytest-asyncio==0.21.*",
+    # https://github.com/pytest-dev/pytest-asyncio/issues/706
+    "pytest-asyncio>=0.21.2,!=0.23.*",
     "pytest-cov",
     "pytest-xdist>=2",
     "towncrier>=24.7.0",
