@@ -308,7 +308,7 @@ def test_deprecation_warnings(caplog):
 def test_retrieve_installed_cli_opts(tmp_path, tv_string):
     """It merges src, dest and cli.
     """
-    # Create a source conifg
+    # Create a source config
     rose_suite_conf = tmp_path / 'src/rose-suite.conf'
     src = rose_suite_conf.parent
     src.mkdir(parents=True)

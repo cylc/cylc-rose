@@ -185,7 +185,7 @@ def process_config(
     }
 
     # Add the entire plugin_result to ROSE_SUITE_VARIABLES to allow for
-    # programatic access.
+    # programmatic access.
     parser = Parser()
     for key, value in plugin_result['template_variables'].items():
         # The special variables are already Python variables.
@@ -268,7 +268,7 @@ def rose_config_tree_loader(
             Search for a ``rose-suite.conf`` file in this location.
         opts:
             Options namespace: To be used to allow CLI
-            specification of optional configuarations.
+            specification of optional configurations.
     Returns:
         A Rose ConfigTree object.
     """
@@ -349,7 +349,7 @@ def merge_rose_cylc_suite_install_conf(old, new):
             old.value[after] = old.value[before]
             old.value.pop(before)
 
-    # Special treatement of opts key:
+    # Special treatment of opts key:
     if 'opts' in old and 'opts' in new:
         new_opts_str = f'{old["opts"].value} {new["opts"].value}'
         new['opts'].value = simplify_opts_strings(new_opts_str)
@@ -535,7 +535,7 @@ def get_cli_opts_node(srcdir: Path, opts: 'Values'):
             state=_match_groups['state'],
         )
 
-    # Specialised treatement of optional configs.
+    # Specialised treatment of optional configs.
     newconfig['opts'].value = ''
     newconfig['opts'].value = merge_opts(newconfig, opt_conf_keys)
     newconfig['opts'].state = '!'
@@ -639,9 +639,9 @@ def simplify_opts_strings(opts):
 
     Args:
         opts (str):
-            a string containing a space delimeted list of options.
+            a string containing a space delimited list of options.
     Returns (str):
-        A string which acts as a space delimeted list.
+        A string which acts as a space delimited list.
 
     Examples:
         >>> simplify_opts_strings('a b c')
@@ -812,7 +812,7 @@ def load_rose_config(
             (the directory containing the ``rose-suite.conf`` file).
         opts:
             Options object containing specification of optional
-            configuarations set by the CLI.
+            configurations set by the CLI.
 
             Note: this is None for "rose stem" usage.
 
