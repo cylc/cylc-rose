@@ -79,7 +79,7 @@ lint = [
     "flake8-mutable>=1.2.0",
     "flake8-simplify>=0.14.0; python_version<'3.14'",
     "flake8-type-checking",
-    "flake8>=3.0.0",
+    "flake8>=7.5.0",
     "mypy>=0.910",
 ]
 all = ["cylc-rose[tests,lint]"]
