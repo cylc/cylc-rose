@@ -67,7 +67,7 @@ tests = [
     "pytest-asyncio>=0.21.2,!=0.23.*",
     "pytest-cov",
     "pytest-xdist>=2",
-    "towncrier>=24.7.0",
+    "towncrier>=26.9.0",
 ]
 lint = [
     "flake8-broken-line>=0.3.0",
