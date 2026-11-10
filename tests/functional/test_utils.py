@@ -17,17 +17,16 @@
 
 """Unit tests for utilities."""
 
+import logging
 import os
 from pathlib import Path
-from textwrap import dedent
 from types import SimpleNamespace
 
-import pytest
-
 from cylc.flow.pathutil import get_workflow_run_dir
-
+from cylc.flow.util import sstrip
 from metomi.rose.config import ConfigNode
 from metomi.rose.config_tree import ConfigTree
+import pytest
 
 from cylc.rose.entry_points import copy_config_file
 from cylc.rose.utilities import (
@@ -55,41 +54,41 @@ def test_basic(tmp_path):
 
 
 async def test_global_config_environment_validate(
-    monkeypatch, tmp_path, cylc_validate_cli
+    monkeypatch, tmp_path, cylc_validate_cli, caplog
 ):
     """It should reload the global config after exporting env variables.
 
     See: https://github.com/cylc/cylc-rose/issues/237
     """
-    # Setup global config:
-    global_conf = """#!jinja2
+    monkeypatch.setenv('CYLC_CONF_PATH', str(tmp_path))
+
+    # global config
+    (tmp_path / 'global.cylc').write_text(sstrip('''
+        #!jinja2
         {% from "cylc.flow" import LOG %}
         {% set cylc_symlinks = environ.get('CYLC_SYMLINKS', None) %}
-        {% do LOG.critical(cylc_symlinks) %}
-    """
-    conf_path = tmp_path / 'conf'
-    conf_path.mkdir()
-    monkeypatch.setenv('CYLC_CONF_PATH', str(conf_path))
+        {% do LOG.critical('LOG global.cylc ' + cylc_symlinks) %}
+    '''))
 
-    # Setup workflow config:
-    (conf_path / 'global.cylc').write_text(global_conf)
-    (tmp_path / 'rose-suite.conf').write_text(
-        '[env]\nCYLC_SYMLINKS="Foo"\n')
-    (tmp_path / 'flow.cylc').write_text("""
+    # workflow config
+    (tmp_path / 'rose-suite.conf').write_text(sstrip('''
+        [env]
+        CYLC_SYMLINKS=Foo
+    '''))
+    (tmp_path / 'flow.cylc').write_text(sstrip('''
         [scheduling]
             initial cycle point = now
             [[graph]]
                 R1 = x
         [runtime]
             [[x]]
-    """)
+    '''))
+
+    caplog.set_level(logging.CRITICAL)
 
     # Validate the config:
-    output = await cylc_validate_cli(tmp_path)
-
-    # CYLC_SYMLINKS == None the first time the global.cylc
-    # is loaded and "Foo" the second time.
-    assert output.logging.split('\n')[-1] == '"Foo"'
+    await cylc_validate_cli(tmp_path)
+    assert caplog.messages == ['LOG global.cylc Foo']
 
 
 async def test_global_config_environment_validate2(
@@ -99,8 +98,10 @@ async def test_global_config_environment_validate2(
 
     See: https://github.com/cylc/cylc-rose/issues/237
     """
-    # Setup global config:
-    global_conf = dedent(f'''
+    monkeypatch.setenv('CYLC_CONF_PATH', str(tmp_path))
+
+    # global config
+    (tmp_path / 'global.cylc').write_text(sstrip(f'''
         #!jinja2
         [install]
             [[symlink dirs]]
@@ -111,34 +112,30 @@ async def test_global_config_environment_validate2(
         {{% else %}}
                     log = {str(tmp_path)}/bar
         {{% endif %}}
-    ''').strip()
-    glbl_conf_path = tmp_path / 'conf'
-    glbl_conf_path.mkdir()
-    (glbl_conf_path / 'global.cylc').write_text(global_conf)
-    monkeypatch.setenv('CYLC_CONF_PATH', str(glbl_conf_path))
+    '''))
 
-    # Setup workflow config:
-    (tmp_path / 'rose-suite.conf').write_text(
-        '[env]\nCYLC_SYMLINKS=foo\n')
-    (tmp_path / 'flow.cylc').write_text("""
+    # workflow config
+    (tmp_path / 'rose-suite.conf').write_text(sstrip('''
+        [env]
+        CYLC_SYMLINKS=foo
+    '''))
+    (tmp_path / 'flow.cylc').write_text(sstrip('''
         [scheduling]
             initial cycle point = now
             [[graph]]
                 R1 = x
         [runtime]
             [[x]]
-    """)
+    '''))
 
     # Install the config:
     _, id_ = await cylc_install_cli(tmp_path)
 
     # Assert symlink created back to test_path/foo:
     run_dir = get_workflow_run_dir(id_)
-    expected_msg = (
-        f'Symlink created: {run_dir}/log -> '
-        f'{tmp_path}/foo/cylc-run/{id_}/log'
-    )
-    assert expected_msg in caplog.messages
+    assert (
+        f'Symlink created: {run_dir}/log -> {tmp_path}/foo/cylc-run/{id_}/log'
+    ) in caplog.messages
 
 
 def test_cli_template(capsys):
@@ -171,7 +168,7 @@ def test_cli_template(capsys):
     # stderr from subshells goes to stderr - stdout is captured
     capsys.readouterr()
     assert _cli_template('$(echo out)$(echo err >&2)') == 'out'
-    assert capsys.readouterr() == ('', 'err')
+    assert capsys.readouterr() == ('', 'err\n')
 
     # edge cases and implementation details
     assert _cli_template(' a ') == ' a '
@@ -214,7 +211,7 @@ def test_set_workflow_and_run_name(tmp_path):
     # uses script from elsewhere in default $PATH
     node.set(
         ['install', 'run-name'],
-        '$(echo foo)',
+        '$(echo "$PWD")',
         state=ConfigNode.STATE_NORMAL
     )
 
@@ -230,5 +227,5 @@ def test_set_workflow_and_run_name(tmp_path):
 
     # check modified options match expectations
     assert opts.workflow_name == 'a-my-output-z'
-    assert opts.run_name == 'foo'
+    assert opts.run_name == str(tmp_path)
     assert opts.no_run_name is False

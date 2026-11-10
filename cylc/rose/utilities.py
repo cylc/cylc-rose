@@ -103,7 +103,8 @@ class SubshellError(CylcError):
     def __str__(self):
         return (
             f'Could not evaluate "{self.string_template}".'
-            f'\nError processing "{self.subshell}": {self.stderr}'
+            f'\nError processing "{self.subshell}"'
+            f'{f': {self.stderr.strip()}' if self.stderr else ''}'
         )
 
 
@@ -1109,17 +1110,22 @@ RE_SUBSHELL = re.compile(
 )
 
 
-def _cli_template(string: str, env: dict[str, str] | None = None) -> str:
+def _cli_template(
+    string: str,
+    env: dict[str, str] | None = None,
+    cwd: Path | None = None,
+) -> str:
     """Process a substring template.
 
     * Plain strings are passed straight through.
     * Subshells with $(...) syntax are executed as subprocesses and replaced in
       the string template with any stdout they return.
     * Subprocess stderr goes to the process's stderr.
-    * Any non-zero subprocess return code will cause a ValueError to be raised.
+    * Any non-zero subprocess return code will cause a SubshellError to be
+      raised.
 
     Raises:
-        ValueError:
+        SubshellError:
             If any subprocess returns a non-zero code.
 
             Note, subprocesses are *not* run as
@@ -1135,6 +1141,7 @@ def _cli_template(string: str, env: dict[str, str] | None = None) -> str:
             text=True,
             shell=True,
             env=env,
+            cwd=cwd,
         )
         out, err = proc.communicate()
         if proc.returncode:
@@ -1142,7 +1149,7 @@ def _cli_template(string: str, env: dict[str, str] | None = None) -> str:
             raise SubshellError(string, substring, err)
         if err := err.strip():
             # subshell wrote to stderr => forward to sys.stderr
-            print(err, file=sys.stderr, end='')
+            print(err, file=sys.stderr)
         return out.strip()
 
     parts = RE_SUBSHELL.split(string)
@@ -1188,8 +1195,10 @@ def set_workflow_and_run_name(
         return
 
     # add the workflow's bin directory onto PATH for any subprocesses we run
-    env = {**os.environ}
-    env['PATH'] = f'{srcdir / "bin"}:{os.environ["PATH"]}'
+    env = {
+        **os.environ,
+        'PATH': f'{srcdir / "bin"}:{os.environ["PATH"]}',
+    }
 
     # workflow name:
     if (
@@ -1203,7 +1212,9 @@ def set_workflow_and_run_name(
             # and is not ignored
             and workflow_name_conf.state == ConfigNode.STATE_NORMAL
         ):
-            opts.workflow_name = _cli_template(workflow_name_conf.value, env)
+            opts.workflow_name = _cli_template(
+                workflow_name_conf.value, env, srcdir
+            )
 
     # run name:
     if (
@@ -1221,7 +1232,7 @@ def set_workflow_and_run_name(
         ):
             if run_name_conf.value:
                 # run name provided
-                opts.run_name = _cli_template(run_name_conf.value, env)
+                opts.run_name = _cli_template(run_name_conf.value, env, srcdir)
             else:
                 # no run name provided (equiv --no-run-name)
                 opts.no_run_name = True
