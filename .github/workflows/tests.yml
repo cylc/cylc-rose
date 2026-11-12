@@ -118,9 +118,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Check spelling
-        uses: codespell-project/actions-codespell@v2
-
       - name: Configure Python
         uses: mamba-org/setup-micromamba@v3
         with:
@@ -150,6 +147,10 @@ jobs:
 
       - name: Towncrier - draft changelog
         uses: cylc/release-actions/towncrier-draft@v1
+
+      - name: Check spelling
+        uses: codespell-project/actions-codespell@v2
+        # If a false-positive is triggered, modify pyproject.toml [tool.codespell]
 
   codecov:
     needs: test
