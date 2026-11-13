@@ -7,6 +7,13 @@ $ towncrier create <PR-number>.<break|feat|fix>.md --content "Short description"
 
 <!-- towncrier release notes start -->
 
+## 1.9.0 (Released 2026-11-13)
+
+### 🚀 Enhancements
+
+[#443](https://github.com/cylc/cylc-rose/pull/443) - Added the `[install]workflow-name` and `[install]run-name` configurations for
+  defining the default workflow and run name options for `cylc install`.
+
 ## 1.8.0 (Released 2026-10-13)
 
 ### ⚠️ Breaking changes
