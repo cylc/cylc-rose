@@ -312,7 +312,7 @@ def test__deduce_mirror():
 
 
 def test_RoseSuiteConfNotFoundException_repr():
-    """It handles dirctory not existing _at all_"""
+    """It handles directory not existing _at all_"""
     result = RoseSuiteConfNotFoundException('/foo').__repr__()
     expect = 'Suite directory /foo is not a valid directory'
     assert expect in result

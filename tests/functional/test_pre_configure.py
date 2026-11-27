@@ -247,5 +247,5 @@ def test_invalid_cli_opts(tmp_path, caplog):
         "ROSE_ORIG_HOST=42 from command line args will be ignored"
         in caplog.messages[0]
     )
-    # Assert we haven't got any unwanted dupicate warnings:
+    # Assert we haven't got any unwanted duplicate warnings:
     assert len(caplog.messages) == 1

@@ -139,14 +139,19 @@ jobs:
         run: |
           pip install .[lint]
 
-      - name: Style
-        run: flake8
+      - parallel:
+          - name: Style
+            run: flake8
 
-      - name: Mypy
-        run: mypy
+          - name: Mypy
+            run: mypy
 
-      - name: Towncrier - draft changelog
-        uses: cylc/release-actions/towncrier-draft@v1
+          - name: Towncrier - draft changelog
+            uses: cylc/release-actions/towncrier-draft@v1
+
+          - name: Check spelling
+            uses: codespell-project/actions-codespell@v2
+            # If a false-positive is triggered, modify pyproject.toml [tool.codespell]
 
   codecov:
     needs: test
