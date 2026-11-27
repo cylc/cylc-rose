@@ -26,6 +26,16 @@ To run a rose-stem suite use "cylc play".
 Default values of some of these settings are suite-dependent, specified
 in the `rose-suite.conf` file.
 
+Note
+
+    We now recommend writing test workflows using native Cylc functionality
+    in preference to the `rose stem` wrapper script.
+
+    For details and guidance on converting Rose Stem suites to pure Cylc
+    workflows, please see this post on the Cylc forum:
+
+    https://cylc.discourse.group/t/rose-stem-update-for-maintainers-of-test-workflows/1451/1
+
 Examples
 
     rose stem --group=developer
